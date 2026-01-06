@@ -1,0 +1,64 @@
+.register-container {
+  min-height: 100vh;
+  padding: 40px 30px;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+
+  .header {
+    margin-top: 20px;
+    margin-bottom: 40px;
+    text-align: left;
+
+    .title {
+      font-size: 42px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 12px;
+    }
+    
+    .subtitle {
+      font-size: 20px;
+      color: #999;
+    }
+  }
+
+  .form {
+    .input-group {
+      margin-bottom: 24px;
+      
+      .label {
+        font-size: 20px;
+        color: #666;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .input {
+        width: 100%;
+        height: 72px;
+        background-color: #f8f8f8;
+        border-radius: 12px;
+        padding: 0 20px;
+        font-size: 24px;
+        color: #333;
+      }
+    }
+  }
+
+  .btn-register {
+    margin-top: 50px;
+    background-color: #00B96B;
+    color: white;
+    border-radius: 36px;
+    height: 72px;
+    line-height: 72px;
+    font-size: 26px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0, 185, 107, 0.3);
+    
+    &:active {
+      opacity: 0.9;
+    }
+  }
+}

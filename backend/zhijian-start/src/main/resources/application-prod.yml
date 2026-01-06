@@ -1,0 +1,49 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 生产环境数据库连接，默认连接本机 MySQL
+    url: jdbc:mysql://localhost:3306/zhijian_db?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: zhijian_db
+    # 请将在宝塔面板-数据库-root密码 中查看到的密码填在这里
+    password: ${DB_PASSWORD}
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      # 如果在宝塔 Redis 设置了密码，请填在这里；如果没有，留空即可
+      password: ${REDIS_PASSWORD}
+
+# 生产环境日志级别
+logging:
+  level:
+    root: INFO
+    com.zhijian: INFO
+
+knife4j:
+  production: true # 生产环境是否开启文档，建议关闭
+
+zhijian:
+  ai:
+    openai:
+      # 生产环境 API Key
+      api-key: ${OPENAI_API_KEY}
+      base-url: https://api.deepseek.com
+
+# Aliyun Config
+aliyun:
+  oss:
+    endpoint: ${ALIYUN_OSS_ENDPOINT:oss-cn-shenzhen.aliyuncs.com}
+    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID}
+    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET}
+    bucket-name: ${ALIYUN_OSS_BUCKET_NAME}
+  sms:
+    access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID}
+    access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET}
+    sign-name: ${ALIYUN_SMS_SIGN_NAME}
+    template-code: ${ALIYUN_SMS_TEMPLATE_CODE}

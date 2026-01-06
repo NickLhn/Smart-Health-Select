@@ -1,0 +1,51 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: zhijian-backend
+  profiles:
+    active: dev
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/zhijian_db?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# Knife4j API Docs
+knife4j:
+  enable: true
+  setting:
+    language: zh-CN
+
+zhijian:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      base-url: https://api.deepseek.com
+      
+# Aliyun OSS Config
+aliyun:
+  oss:
+    endpoint: oss-cn-shenzhen.aliyuncs.com
+    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID}
+    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET}
+    bucket-name: ${ALIYUN_OSS_BUCKET_NAME}
+  sms:
+    access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID}
+    access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET}
+    # 待替换为您的签名和模板代码
+    sign-name: ${ALIYUN_SMS_SIGN_NAME}
+    template-code: ${ALIYUN_SMS_TEMPLATE_CODE}

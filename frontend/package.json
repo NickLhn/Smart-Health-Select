@@ -1,0 +1,18 @@
+{
+  "name": "zhijian-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev:customer": "pnpm --filter @zhijian/customer dev",
+    "dev:merchant": "pnpm --filter @zhijian/merchant dev",
+    "dev:admin": "pnpm --filter @zhijian/admin dev",
+    "dev:rider": "pnpm --filter @zhijian/rider dev",
+    "dev:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ..\\scripts\\start-all.ps1",
+    "build:all": "pnpm -r build",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  }
+}
