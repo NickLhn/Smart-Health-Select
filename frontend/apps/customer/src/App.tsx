@@ -42,14 +42,43 @@ import PaymentPage from './pages/payment';
 const { Header, Content, Footer } = Layout;
 const { Search } = Input;
 
+const getCustomerTopNavKey = (pathname: string) => {
+  if (pathname === '/' || pathname === '') return '/';
+  if (pathname.startsWith('/medicine') || pathname.startsWith('/product') || pathname.startsWith('/shop')) return '/medicine';
+  if (pathname.startsWith('/category')) return '/category';
+  if (pathname.startsWith('/health')) return '/health';
+  if (pathname.startsWith('/orders') || pathname.startsWith('/order')) return '/orders';
+  return '';
+};
+
+const getCustomerBottomNavKey = (pathname: string) => {
+  if (pathname === '/' || pathname === '') return '/';
+  if (pathname.startsWith('/category')) return '/category';
+  if (pathname.startsWith('/cart')) return '/cart';
+  if (pathname.startsWith('/profile')) return '/profile';
+  return '';
+};
+
+const shouldHideCustomerBottomNav = (pathname: string) => {
+  return [
+    /^\/product\/\d+/,
+    /^\/order\/checkout/,
+    /^\/payment\/\d+/,
+    /^\/refund\/apply\/\d+/,
+    /^\/ai-consultation/,
+    /^\/login$/,
+    /^\/register$/,
+    /^\/forgot-password$/,
+  ].some((re) => re.test(pathname));
+};
+
 // Bottom Navigation Component for Mobile
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { totalItems } = useCart();
 
-  const hidePaths = ['/product/', '/cart', '/order/checkout', '/login', '/register', '/forgot-password', '/ai-consultation'];
-  if (hidePaths.some(path => location.pathname.startsWith(path))) {
+  if (shouldHideCustomerBottomNav(location.pathname)) {
     return null;
   }
 
@@ -63,7 +92,7 @@ const BottomNav = () => {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-2 flex justify-between items-center md:hidden z-50 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
       {navItems.map((item) => {
-        const isActive = location.pathname === item.key;
+        const isActive = getCustomerBottomNavKey(location.pathname) === item.key;
         return (
           <div
             key={item.key}
@@ -204,7 +233,7 @@ const MainLayout: React.FC = () => {
         <Menu
           theme="light"
           mode="horizontal"
-          selectedKeys={[location.pathname]}
+          selectedKeys={[getCustomerTopNavKey(location.pathname)]}
           items={menuItems}
           onClick={(e) => navigate(e.key)}
           className="hidden md:flex flex-1 border-none bg-transparent ml-8 text-[15px] font-medium"
@@ -233,7 +262,7 @@ const MainLayout: React.FC = () => {
       >
         <Menu
           mode="vertical"
-          selectedKeys={[location.pathname]}
+          selectedKeys={[getCustomerTopNavKey(location.pathname)]}
           items={menuItems}
           onClick={(e) => {
             navigate(e.key);
@@ -248,7 +277,7 @@ const MainLayout: React.FC = () => {
       </Content>
 
       <Footer className="text-center text-gray-400 text-sm bg-transparent py-6 hidden md:block">
-        <p>Zhijian System ©{new Date().getFullYear()} 智健医疗</p>
+        <p>Zhijian System ©{new Date().getFullYear()} 智健优选</p>
         <p className="text-xs mt-1 opacity-60">致力于为您提供最专业的医疗健康服务</p>
       </Footer>
       

@@ -4,8 +4,8 @@ import lombok.Data;
 
 /**
  * 统一响应结果封装类
- * 
- * @author TraeAI
+ *
+ * @author Liuhaonan
  * @since 1.0.0
  */
 @Data

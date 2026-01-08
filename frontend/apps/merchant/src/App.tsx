@@ -159,9 +159,10 @@ const MainLayout: React.FC = () => {
             <Outlet />
           </div>
         </Content>
-        <Footer style={{ textAlign: 'center' }}>
-          Zhijian System ©{new Date().getFullYear()} Created by Trae AI
-        </Footer>
+        <Footer className="text-center text-gray-400 text-sm bg-transparent py-6 hidden md:block">
+        <p>Zhijian System ©{new Date().getFullYear()} 智健优选</p>
+        <p className="text-xs mt-1 opacity-60">致力于为您提供最专业的医疗健康服务</p>
+      </Footer>
       </Layout>
     </Layout>
   );

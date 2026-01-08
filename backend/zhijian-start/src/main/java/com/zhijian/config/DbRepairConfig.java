@@ -23,7 +23,24 @@ public class DbRepairConfig {
         addColumn("oms_order", "audit_reason", "varchar(255) DEFAULT NULL COMMENT '审核不通过原因'");
         addColumn("oms_order", "comment_status", "int(11) DEFAULT 0 COMMENT '评价状态: 0未评价 1已评价'");
         
+        // Sync refund_reason from oms_refund_apply to oms_order for existing data
+        syncRefundReason();
+
         log.info("Database repair completed.");
+    }
+
+    private void syncRefundReason() {
+        try {
+            String sql = "UPDATE oms_order o JOIN oms_refund_apply ra ON o.id = ra.order_id " +
+                         "SET o.refund_reason = ra.reason " +
+                         "WHERE o.status = 4 AND (o.refund_reason IS NULL OR o.refund_reason = '')";
+            int count = jdbcTemplate.update(sql);
+            if (count > 0) {
+                log.info("Synced refund_reason for {} orders.", count);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to sync refund_reason: {}", e.getMessage());
+        }
     }
 
     private void addColumn(String tableName, String columnName, String columnDefinition) {

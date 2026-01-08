@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 /**
  * 配送状态变更事件
+ * 当订单配送状态发生变化时发布此事件
  *
  * @author Liuhaonan
  * @since 1.0.0
@@ -16,7 +17,17 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DeliveryStatusEvent implements Serializable {
+
+    /** 订单ID */
     private Long orderId;
+
+    /** 配送记录ID */
     private Long deliveryId;
-    private Integer status; // 1:配送中 2:已送达
+
+    /**
+     * 配送状态
+     * 1:配送中
+     * 2:已送达
+     */
+    private Integer status;
 }

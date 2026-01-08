@@ -3,16 +3,10 @@ import { Input, Button, Spin, Avatar } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined, ArrowLeftOutlined, RightOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
-import { sendChatMessage } from '../../services/ai';
+import { useAuth } from '../../context/AuthContext';
+import { useAI, type Message } from '../../context/AIContext';
+import { sendChatMessage, streamChatMessage } from '../../services/ai';
 import type { Medicine } from '../../services/medicine';
-
-interface Message {
-  id: string;
-  text: string;
-  sender: 'user' | 'ai';
-  timestamp: number;
-  recommendations?: Medicine[];
-}
 
 interface AIConsultationProps {
   isPopup?: boolean;
@@ -21,14 +15,7 @@ interface AIConsultationProps {
 
 const AIConsultation: React.FC<AIConsultationProps> = ({ isPopup = false, onClose }) => {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: '您好！我是智健系统的AI健康助手。请问有什么可以帮您的吗？您可以描述您的症状，我会为您提供初步的健康建议。',
-      sender: 'ai',
-      timestamp: Date.now(),
-    },
-  ]);
+  const { messages, addMessage, updateMessage } = useAI();
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -51,33 +38,38 @@ const AIConsultation: React.FC<AIConsultationProps> = ({ isPopup = false, onClos
       timestamp: Date.now(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    addMessage(userMessage);
     setInputValue('');
     setLoading(true);
 
-    try {
-      const res = await sendChatMessage(inputValue);
-      
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: res.text,
-        sender: 'ai',
-        timestamp: Date.now(),
-        recommendations: res.recommendations
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      console.error('AI chat failed', error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: 'AI服务暂时繁忙，请稍后再试。',
-        sender: 'ai',
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setLoading(false);
-    }
+    // Placeholder for AI message
+    const aiMessageId = (Date.now() + 1).toString();
+    const initialAiMessage: Message = {
+      id: aiMessageId,
+      text: '',
+      sender: 'ai',
+      timestamp: Date.now(),
+    };
+    addMessage(initialAiMessage);
+
+    let currentText = '';
+    await streamChatMessage(inputValue, {
+      onMessage: (content) => {
+        currentText += content;
+        updateMessage(aiMessageId, { text: currentText });
+      },
+      onCards: (cards) => {
+         updateMessage(aiMessageId, { recommendations: cards });
+      },
+      onDone: () => {
+        setLoading(false);
+      },
+      onError: (error) => {
+        console.error('AI chat failed', error);
+        updateMessage(aiMessageId, { text: 'AI服务暂时繁忙，请稍后再试。' });
+        setLoading(false);
+      },
+    });
   };
 
   return (
@@ -95,7 +87,7 @@ const AIConsultation: React.FC<AIConsultationProps> = ({ isPopup = false, onClos
                 <RobotOutlined className="text-xl" />
             </div>
             <div>
-                <h1 className="text-lg font-bold text-gray-800 m-0 leading-tight">AI 智能导诊</h1>
+                <h1 className="text-lg font-bold text-gray-800 m-0 leading-tight">智能客服</h1>
                 <p className="text-xs text-gray-500 m-0">24小时在线为您服务</p>
             </div>
         </div>
@@ -179,7 +171,7 @@ const AIConsultation: React.FC<AIConsultationProps> = ({ isPopup = false, onClos
       <div className="bg-white p-4 border-t border-gray-100 flex-shrink-0 pb-safe">
         <div className="max-w-[1200px] mx-auto flex gap-3 items-end">
             <Input.TextArea
-              placeholder="请详细描述您的症状，例如：头痛持续了两天，伴有发热..."
+              placeholder="请输入您的问题..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => {

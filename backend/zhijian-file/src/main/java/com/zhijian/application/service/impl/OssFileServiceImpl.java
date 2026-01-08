@@ -59,10 +59,7 @@ public class OssFileServiceImpl implements FileService {
 
                 // 上传文件
                 ossClient.putObject(bucketName, objectName, inputStream);
-
-                // 返回文件URL
-                // 格式：https://bucket-name.endpoint/object-name
-                // 注意：endpoint可能带http/https，需要处理
+                
                 String protocol = "https://";
                 String domain = endpoint;
                 if (endpoint.startsWith("http://")) {

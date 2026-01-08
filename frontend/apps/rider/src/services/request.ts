@@ -7,21 +7,14 @@ export const getApiBaseUrl = () => {
     return '/api'
   }
 
-  // ============================================================
-  // 【上线配置】请修改此处为您的实际后端接口地址
-  // 小程序上线必须使用 HTTPS，且需要在小程序后台配置服务器域名
-  // 例如: https://api.example.com/api
-  // ============================================================
-  // TODO: 上线前请取消注释并修改为真实域名
+
   // const PROD_API_URL = 'https://api.zhijianshangcheng.cn/api'
-  
-  // 临时使用 IP 调试 (记得在开发者工具勾选"不校验合法域名")
   const PROD_API_URL = 'http://39.108.166.216:8080/api'
+  // const PROD_API_URL = 'http://localhost:8080/api'
   return PROD_API_URL
   
-  // 如果是模拟器调试，可以使用 localhost
-  // 如果是真机调试，请使用局域网 IP，例如: http://192.168.1.5:8080/api
-  // const PROD_API_URL = 'http://localhost:8080/api'
+
+  // 
 }
 
 export const baseUrl = getApiBaseUrl()

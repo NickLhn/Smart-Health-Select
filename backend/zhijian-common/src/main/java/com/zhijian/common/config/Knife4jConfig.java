@@ -22,6 +22,6 @@ public class Knife4jConfig {
                         .title("智健优选 API 接口文档")
                         .version("1.0")
                         .description("基于 DDD 架构的医药电商平台后端接口")
-                        .contact(new Contact().name("TraeAI").email("support@zhijian.com")));
+                        .contact(new Contact().name("Liuhaonan-ZhiJianYouXuan").email("support@zhijian.com")));
     }
 }

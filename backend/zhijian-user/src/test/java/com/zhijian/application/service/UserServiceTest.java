@@ -14,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import cn.hutool.crypto.digest.BCrypt;
 
+import java.util.Collections;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -41,7 +43,7 @@ public class UserServiceTest {
     @DisplayName("测试用户注册 - 成功")
     void testRegisterSuccess() {
         // 模拟数据库中没有该用户名
-        when(userMapper.selectOne(any())).thenReturn(null);
+        when(userMapper.selectCount(any())).thenReturn(0L);
         when(userMapper.insert(any())).thenReturn(1);
 
         UserRegisterDTO dto = new UserRegisterDTO();
@@ -60,7 +62,7 @@ public class UserServiceTest {
     @DisplayName("测试用户注册 - 用户名已存在")
     void testRegisterFailDuplicate() {
         // 模拟数据库中已存在该用户名
-        when(userMapper.selectOne(any())).thenReturn(new SysUser());
+        when(userMapper.selectCount(any())).thenReturn(1L);
 
         UserRegisterDTO dto = new UserRegisterDTO();
         dto.setUsername("testuser");
@@ -83,7 +85,7 @@ public class UserServiceTest {
         mockUser.setPassword(BCrypt.hashpw("123456", BCrypt.gensalt()));
         mockUser.setStatus(1);
 
-        when(userMapper.selectOne(any())).thenReturn(mockUser);
+        when(userMapper.selectList(any())).thenReturn(Collections.singletonList(mockUser));
 
         UserLoginDTO dto = new UserLoginDTO();
         dto.setUsername("admin");
@@ -104,7 +106,7 @@ public class UserServiceTest {
         mockUser.setPassword(BCrypt.hashpw("123456", BCrypt.gensalt()));
         mockUser.setStatus(1);
 
-        when(userMapper.selectOne(any())).thenReturn(mockUser);
+        when(userMapper.selectList(any())).thenReturn(Collections.singletonList(mockUser));
 
         UserLoginDTO dto = new UserLoginDTO();
         dto.setUsername("admin");

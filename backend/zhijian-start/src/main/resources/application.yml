@@ -32,20 +32,23 @@ knife4j:
 
 zhijian:
   ai:
+    coze:
+      api-token: ${COZE_API_TOKEN:sat_QgCl82pNnvtYPDHHTeBW2o5m0ZGqQmzjlyM7cDtIhV9CeT2bUZsK5Sq9GaFwlLqr}
+      bot-id: 7592221151066325035
     openai:
-      api-key: ${OPENAI_API_KEY}
+      api-key: ${OPENAI_API_KEY:sk-a56903ddc505472a8a2c615250254bdc}
       base-url: https://api.deepseek.com
       
 # Aliyun OSS Config
 aliyun:
   oss:
-    endpoint: oss-cn-shenzhen.aliyuncs.com
-    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID}
-    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET}
-    bucket-name: ${ALIYUN_OSS_BUCKET_NAME}
+    endpoint: ${ALIYUN_OSS_ENDPOINT:oss-cn-shenzhen.aliyuncs.com}
+    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:your_access_key_id}
+    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:your_access_key_secret}
+    bucket-name: ${ALIYUN_OSS_BUCKET_NAME:liuhaonan-java-ai}
   sms:
-    access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID}
-    access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET}
-    # 待替换为您的签名和模板代码
-    sign-name: ${ALIYUN_SMS_SIGN_NAME}
-    template-code: ${ALIYUN_SMS_TEMPLATE_CODE}
+    access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID:your_access_key_id}
+    access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:your_access_key_secret}
+    sign-name: ${ALIYUN_SMS_SIGN_NAME:阿里云短信测试}
+    template-code: ${ALIYUN_SMS_TEMPLATE_CODE:SMS_329195922}
+

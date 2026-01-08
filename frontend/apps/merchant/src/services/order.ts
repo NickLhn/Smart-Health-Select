@@ -5,6 +5,7 @@ export interface OrderQuery {
   size?: number;
   status?: number;
   orderNo?: string;
+  receiverName?: string;
   startTime?: string;
   endTime?: string;
 }
@@ -24,11 +25,16 @@ export interface Order {
   orderNo: string;
   userId: number;
   sellerId: number;
+  medicineId?: number;
+  medicineName?: string;
+  medicineImage?: string;
+  quantity?: number;
+  price?: number;
   totalAmount: number;
   couponAmount: number;
   payAmount: number;
   freightAmount: number;
-  status: number; // 0待支付 1待发货 2待收货 3已完成 4已取消 5已退款 7待审核
+  status: number; // 0待支付 1待发货 2已发货 3已完成 4售后中 5已退款 6已取消 -1已取消 7待审核 8待揽收
   receiverName: string;
   receiverPhone: string;
   receiverAddress: string;
@@ -40,6 +46,7 @@ export interface Order {
   prescriptionImage?: string; // 处方图
   auditReason?: string; // 审核拒绝原因
   refundReason?: string; // 退款原因
+  refundRemark?: string;
 }
 
 export interface PageResult<T> {

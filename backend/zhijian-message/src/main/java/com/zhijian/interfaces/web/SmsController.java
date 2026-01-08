@@ -37,7 +37,7 @@ public class SmsController {
         // 1. 生成6位随机验证码
         String code = RandomUtil.randomNumbers(6);
         // TODO: 开发环境打印验证码，方便测试
-        System.out.println("DEBUG: Sending SMS code " + code + " to " + phone);
+        System.out.println("DEBUG:手机验证码为： " + code);
 
         // 2. 发送短信
         boolean success = smsService.sendVerificationCode(phone, code);
@@ -53,7 +53,7 @@ public class SmsController {
             // 虽然发送失败，但我们已经存入 Redis 并打印了验证码，所以返回一个特殊的提示
             // 或者直接返回成功，假装发送成功（为了前端体验）
             // 这里选择返回成功，但在日志中记录错误
-            System.err.println("WARNING: SMS send failed, but code saved to Redis for debugging.");
+            System.err.println("WARNING: 短信发送失败，但代码已保存到Redis用于调试。");
             return Result.success(null, "发送成功(开发模式:请查看控制台验证码)");
         }
     }

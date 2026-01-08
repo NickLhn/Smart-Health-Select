@@ -5,6 +5,7 @@ import { SearchOutlined, EyeOutlined, SendOutlined, AuditOutlined, PayCircleOutl
 import { useLocation } from 'react-router-dom';
 import { getSellerOrderList, shipOrder, auditOrder, processRefund } from '../../../services/order';
 import type { Order } from '../../../services/order';
+import { type Dayjs } from 'dayjs';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -25,19 +26,31 @@ const OrderList: React.FC = () => {
   const [detailVisible, setDetailVisible] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<Order>();
 
+  const [draftOrderNo, setDraftOrderNo] = useState('');
+  const [draftReceiverName, setDraftReceiverName] = useState('');
+  const [draftRange, setDraftRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
+  const [filters, setFilters] = useState<{
+    orderNo?: string;
+    receiverName?: string;
+    startTime?: string;
+    endTime?: string;
+  }>({});
+
   // Audit State
   const [auditVisible, setAuditVisible] = useState(false);
-  const [auditStatus, setAuditStatus] = useState<number>(2); // 2通过 3拒绝
+  const [auditStatus, setAuditStatus] = useState<number>(1);
   const [auditReason, setAuditReason] = useState('');
+  const [auditSubmitting, setAuditSubmitting] = useState(false);
 
   // Refund State
   const [refundVisible, setRefundVisible] = useState(false);
-  const [refundStatus, setRefundStatus] = useState<number>(5); // 5已退款
+  const [refundStatus, setRefundStatus] = useState<number>(1);
   const [refundRemark, setRefundRemark] = useState('');
+  const [refundSubmitting, setRefundSubmitting] = useState(false);
 
   useEffect(() => {
     fetchOrders();
-  }, [pagination.current, pagination.pageSize, status]);
+  }, [pagination.current, pagination.pageSize, status, filters]);
 
   useEffect(() => {
     if (isPendingPage) {
@@ -52,13 +65,14 @@ const OrderList: React.FC = () => {
         page: pagination.current,
         size: pagination.pageSize,
         status: status,
+        orderNo: filters.orderNo,
+        receiverName: filters.receiverName,
+        startTime: filters.startTime,
+        endTime: filters.endTime,
       });
       if (res.code === 200) {
         setData(res.data.records);
-        setPagination({
-          ...pagination,
-          total: res.data.total,
-        });
+        setPagination((prev) => ({ ...prev, total: res.data.total }));
       }
     } catch (error) {
       console.error(error);
@@ -66,6 +80,26 @@ const OrderList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilters = () => {
+    const startTime = draftRange?.[0] ? draftRange[0].format('YYYY-MM-DD HH:mm:ss') : undefined;
+    const endTime = draftRange?.[1] ? draftRange[1].format('YYYY-MM-DD HH:mm:ss') : undefined;
+    setFilters({
+      orderNo: draftOrderNo.trim() || undefined,
+      receiverName: draftReceiverName.trim() || undefined,
+      startTime,
+      endTime,
+    });
+    setPagination((prev) => ({ ...prev, current: 1 }));
+  };
+
+  const resetFilters = () => {
+    setDraftOrderNo('');
+    setDraftReceiverName('');
+    setDraftRange(null);
+    setFilters({});
+    setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
   const handleShip = (record: Order) => {
@@ -95,15 +129,18 @@ const OrderList: React.FC = () => {
 
   const handleAuditClick = (record: Order) => {
     setCurrentOrder(record);
-    setAuditStatus(1); // Default to pass (1=Pass in backend param for auditWithId, 2=Pass in Order entity? Wait. Controller uses 1=Pass)
-    // Controller: boolean pass = status != null && status == 1;
-    // So 1 is pass.
+    setAuditStatus(1);
     setAuditReason('');
     setAuditVisible(true);
   };
 
   const handleAuditSubmit = async () => {
     if (!currentOrder) return;
+    if (auditStatus === 2 && !auditReason.trim()) {
+      message.warning('请填写拒绝原因');
+      return;
+    }
+    setAuditSubmitting(true);
     try {
         const res = await auditOrder(currentOrder.id, auditStatus, auditReason);
         if (res.code === 200) {
@@ -115,18 +152,25 @@ const OrderList: React.FC = () => {
         }
     } catch (error) {
         message.error('操作失败');
+    } finally {
+        setAuditSubmitting(false);
     }
   };
 
   const handleRefundClick = (record: Order) => {
     setCurrentOrder(record);
-    setRefundStatus(1); // Controller: 1=Agree
+    setRefundStatus(1);
     setRefundRemark('');
     setRefundVisible(true);
   };
 
   const handleRefundSubmit = async () => {
     if (!currentOrder) return;
+    if (refundStatus === 2 && !refundRemark.trim()) {
+      message.warning('请填写拒绝原因');
+      return;
+    }
+    setRefundSubmitting(true);
     try {
         const res = await processRefund(currentOrder.id, refundStatus, refundRemark);
         if (res.code === 200) {
@@ -138,6 +182,8 @@ const OrderList: React.FC = () => {
         }
     } catch (error) {
         message.error('操作失败');
+    } finally {
+        setRefundSubmitting(false);
     }
   };
 
@@ -158,11 +204,22 @@ const OrderList: React.FC = () => {
       key: 'medicineName',
       render: (_, record) => (
         <div className="flex items-center gap-2">
-           {record.medicineImage && <img src={record.medicineImage} alt="" className="w-8 h-8 object-cover rounded" />}
-           <div>
-               <div className="text-sm">{record.medicineName}</div>
-               <div className="text-xs text-gray-500">x {record.quantity}</div>
-           </div>
+          {(record.medicineImage || record.items?.[0]?.medicineImage) && (
+            <img
+              src={record.medicineImage || record.items?.[0]?.medicineImage}
+              alt=""
+              className="w-8 h-8 object-cover rounded"
+            />
+          )}
+          <div>
+            <div className="text-sm">
+              {record.medicineName || record.items?.[0]?.medicineName || '-'}
+              {record.items?.length > 1 ? ` 等${record.items.length}件` : ''}
+            </div>
+            <div className="text-xs text-gray-500">
+              x {record.quantity ?? record.items?.[0]?.count ?? '-'}
+            </div>
+          </div>
         </div>
       ),
     },
@@ -185,16 +242,20 @@ const OrderList: React.FC = () => {
       render: (status) => {
         let color = 'default';
         let text = '未知';
-        // 0待支付 1待发货 2待收货 3已完成 4已取消
         switch (status) {
           case 0: color = 'default'; text = '待支付'; break;
           case 1: color = 'orange'; text = '待发货'; break;
           case 2: color = 'blue'; text = '已发货'; break;
           case 8: color = 'purple'; text = '待揽收'; break;
           case 3: color = 'green'; text = '已完成'; break;
-          case 4: color = 'red'; text = '已取消'; break;
+          case 4: color = 'red'; text = '售后中'; break;
           case 5: color = 'default'; text = '已退款'; break;
           case 7: color = 'orange'; text = '待审核'; break;
+          case 6:
+          case -1:
+            color = 'default';
+            text = '已取消';
+            break;
         }
         return <Tag color={color}>{text}</Tag>;
       },
@@ -249,7 +310,7 @@ const OrderList: React.FC = () => {
   ];
 
   const handleTableChange = (pag: any) => {
-    setPagination({ ...pagination, current: pag.current, pageSize: pag.pageSize });
+    setPagination((prev) => ({ ...prev, current: pag.current, pageSize: pag.pageSize }));
   };
 
   const handleStatusChange = (value: string) => {
@@ -258,26 +319,52 @@ const OrderList: React.FC = () => {
     } else {
         setStatus(Number(value));
     }
-    setPagination({ ...pagination, current: 1 });
+    setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
   return (
     <div className="space-y-4">
       <Card variant="outlined">
         <div className="flex flex-wrap gap-4 items-center">
-          <Input placeholder="订单编号/客户姓名" prefix={<SearchOutlined />} style={{ width: 200 }} />
-          <RangePicker />
+          <Input
+            placeholder="订单编号"
+            prefix={<SearchOutlined />}
+            style={{ width: 200 }}
+            value={draftOrderNo}
+            onChange={(e) => setDraftOrderNo(e.target.value)}
+            allowClear
+          />
+          <Input
+            placeholder="收货人姓名"
+            style={{ width: 160 }}
+            value={draftReceiverName}
+            onChange={(e) => setDraftReceiverName(e.target.value)}
+            allowClear
+          />
+          <RangePicker
+            value={draftRange?.[0] && draftRange?.[1] ? [draftRange[0], draftRange[1]] : null}
+            onChange={(dates) => setDraftRange(dates ? [dates[0], dates[1]] : null)}
+            showTime
+            format="YYYY-MM-DD HH:mm:ss"
+            allowClear
+          />
           <Select 
             value={status === undefined ? 'all' : String(status)} 
             style={{ width: 120 }}
             onChange={handleStatusChange}
           >
             <Option value="all">全部状态</Option>
+            <Option value="7">待审核</Option>
             <Option value="1">待发货</Option>
             <Option value="2">配送中</Option>
             <Option value="3">已完成</Option>
+            <Option value="4">售后中</Option>
+            <Option value="5">已退款</Option>
+            <Option value="6">已取消</Option>
+            <Option value="-1">已取消</Option>
           </Select>
-          <Button type="primary" icon={<SearchOutlined />} onClick={() => fetchOrders()}>查询</Button>
+          <Button type="primary" icon={<SearchOutlined />} onClick={applyFilters}>查询</Button>
+          <Button onClick={resetFilters}>重置</Button>
         </div>
       </Card>
       
@@ -317,15 +404,45 @@ const OrderList: React.FC = () => {
                 <Descriptions.Item label="收货人">{currentOrder.receiverName}</Descriptions.Item>
                 <Descriptions.Item label="电话">{currentOrder.receiverPhone}</Descriptions.Item>
                 <Descriptions.Item label="地址" span={2}>{currentOrder.receiverAddress}</Descriptions.Item>
-                <Descriptions.Item label="药品" span={2}>
-                    <div className="flex items-center gap-2">
-                        {currentOrder.medicineImage && <img src={currentOrder.medicineImage} alt="" className="w-12 h-12 object-cover" />}
-                        <span>{currentOrder.medicineName} x {currentOrder.quantity}</span>
-                    </div>
+                <Descriptions.Item label="商品" span={2}>
+                  <div className="space-y-2">
+                    {(currentOrder.items?.length
+                      ? currentOrder.items
+                      : (currentOrder.medicineName
+                          ? [
+                              {
+                                id: 0,
+                                orderId: currentOrder.id,
+                                medicineId: currentOrder.medicineId ?? 0,
+                                medicineName: currentOrder.medicineName,
+                                medicineImage: currentOrder.medicineImage ?? '',
+                                medicinePrice: currentOrder.price ?? 0,
+                                count: currentOrder.quantity ?? 1,
+                              },
+                            ]
+                          : [])
+                    ).map((item) => (
+                      <div key={`${item.orderId}-${item.medicineId}-${item.id}`} className="flex items-center gap-2">
+                        {item.medicineImage ? (
+                          <Image src={item.medicineImage} width={48} height={48} style={{ objectFit: 'cover' }} />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-100 rounded" />
+                        )}
+                        <div className="flex-1">
+                          <div className="text-sm">{item.medicineName}</div>
+                          <div className="text-xs text-gray-500">
+                            x {item.count} · ¥{Number(item.medicinePrice).toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </Descriptions.Item>
                 <Descriptions.Item label="支付金额">¥{currentOrder.payAmount}</Descriptions.Item>
                 <Descriptions.Item label="创建时间">{currentOrder.createTime}</Descriptions.Item>
                 {currentOrder.refundReason && <Descriptions.Item label="退款原因" span={2}>{currentOrder.refundReason}</Descriptions.Item>}
+                {currentOrder.refundRemark && <Descriptions.Item label="退款备注" span={2}>{currentOrder.refundRemark}</Descriptions.Item>}
+                {currentOrder.auditReason && <Descriptions.Item label="审核拒绝原因" span={2}>{currentOrder.auditReason}</Descriptions.Item>}
                 {currentOrder.prescriptionImage && (
                     <Descriptions.Item label="处方" span={2}>
                         <Image src={currentOrder.prescriptionImage} width={100} />
@@ -336,10 +453,12 @@ const OrderList: React.FC = () => {
       </Modal>
 
       <Modal
-        title="处方审核"
+        title={`处方审核${currentOrder?.orderNo ? `（${currentOrder.orderNo}）` : ''}`}
         open={auditVisible}
         onOk={handleAuditSubmit}
         onCancel={() => setAuditVisible(false)}
+        okButtonProps={{ loading: auditSubmitting }}
+        cancelButtonProps={{ disabled: auditSubmitting }}
       >
         <div className="space-y-4">
             {currentOrder?.prescriptionImage && (
@@ -370,14 +489,16 @@ const OrderList: React.FC = () => {
       </Modal>
 
       <Modal
-        title="退款处理"
+        title={`退款处理${currentOrder?.orderNo ? `（${currentOrder.orderNo}）` : ''}`}
         open={refundVisible}
         onOk={handleRefundSubmit}
         onCancel={() => setRefundVisible(false)}
+        okButtonProps={{ loading: refundSubmitting }}
+        cancelButtonProps={{ disabled: refundSubmitting }}
       >
         <div className="space-y-4">
             <div className="bg-gray-50 p-3 rounded">
-                <div>退款原因：{currentOrder?.refundReason}</div>
+                <div>退款原因：{currentOrder?.refundReason || <span className="text-gray-400">暂无</span>}</div>
                 <div>退款金额：¥{currentOrder?.payAmount}</div>
             </div>
             <div>
@@ -405,4 +526,3 @@ const OrderList: React.FC = () => {
 };
 
 export default OrderList;
-

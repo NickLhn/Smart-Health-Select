@@ -281,7 +281,7 @@ const Home: React.FC = () => {
 
   const renderServiceGrid = () => {
     const services = [
-      { name: 'AI 导诊', icon: <RobotOutlined />, path: '/ai-consultation', color: '#1890ff' },
+      { name: '智能客服', icon: <RobotOutlined />, path: '/ai-consultation', color: '#1890ff' },
       { name: '找药品', icon: <SearchOutlined />, path: '/medicine', color: '#00B96B' },
       { name: '健康资讯', icon: <ReadOutlined />, path: '/health', color: '#faad14' },
       { name: '我的订单', icon: <FileTextOutlined />, path: '/orders', color: '#ff4d4f' },

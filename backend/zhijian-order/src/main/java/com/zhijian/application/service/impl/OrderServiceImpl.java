@@ -35,11 +35,13 @@ import com.zhijian.common.event.NotificationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -416,6 +418,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Order::getUserId, userId)
                 .eq(queryDTO.getStatus() != null, Order::getStatus, queryDTO.getStatus())
+                .like(StringUtils.hasText(queryDTO.getOrderNo()), Order::getOrderNo, queryDTO.getOrderNo())
+                .like(StringUtils.hasText(queryDTO.getReceiverName()), Order::getReceiverName, queryDTO.getReceiverName())
+                .ge(parseDateTimeOrNull(queryDTO.getStartTime()) != null, Order::getCreateTime, parseDateTimeOrNull(queryDTO.getStartTime()))
+                .le(parseDateTimeOrNull(queryDTO.getEndTime()) != null, Order::getCreateTime, parseDateTimeOrNull(queryDTO.getEndTime()))
                 .orderByDesc(Order::getCreateTime);
         
         IPage<Order> orderPage = this.page(page, wrapper);
@@ -439,6 +445,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Order::getSellerId, sellerId)
                 .eq(queryDTO.getStatus() != null, Order::getStatus, queryDTO.getStatus())
+                .like(StringUtils.hasText(queryDTO.getOrderNo()), Order::getOrderNo, queryDTO.getOrderNo())
+                .like(StringUtils.hasText(queryDTO.getReceiverName()), Order::getReceiverName, queryDTO.getReceiverName())
+                .ge(parseDateTimeOrNull(queryDTO.getStartTime()) != null, Order::getCreateTime, parseDateTimeOrNull(queryDTO.getStartTime()))
+                .le(parseDateTimeOrNull(queryDTO.getEndTime()) != null, Order::getCreateTime, parseDateTimeOrNull(queryDTO.getEndTime()))
                 .orderByDesc(Order::getCreateTime);
         
         IPage<Order> orderPage = this.page(page, wrapper);
@@ -460,6 +470,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         Page<Order> page = new Page<>(queryDTO.getPage(), queryDTO.getSize());
         LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(queryDTO.getStatus() != null, Order::getStatus, queryDTO.getStatus())
+                .like(StringUtils.hasText(queryDTO.getOrderNo()), Order::getOrderNo, queryDTO.getOrderNo())
+                .like(StringUtils.hasText(queryDTO.getReceiverName()), Order::getReceiverName, queryDTO.getReceiverName())
+                .ge(parseDateTimeOrNull(queryDTO.getStartTime()) != null, Order::getCreateTime, parseDateTimeOrNull(queryDTO.getStartTime()))
+                .le(parseDateTimeOrNull(queryDTO.getEndTime()) != null, Order::getCreateTime, parseDateTimeOrNull(queryDTO.getEndTime()))
                 .orderByDesc(Order::getCreateTime);
         
         IPage<Order> orderPage = this.page(page, wrapper);
@@ -952,6 +966,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         for (Order order : orders) {
             List<OrderItem> orderItems = itemMap.get(order.getId());
             if (orderItems != null && !orderItems.isEmpty()) {
+                // Populate images for all items
+                for (OrderItem it : orderItems) {
+                    if (it.getMedicineImage() == null || it.getMedicineImage().isEmpty()) {
+                        it.setMedicineImage(medicineImageMap.get(it.getMedicineId()));
+                    }
+                }
+                
                 order.setItems(orderItems);
                 
                 // For backward compatibility
@@ -967,6 +988,30 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 order.setPrice(item.getMedicinePrice());
                 order.setQuantity(item.getCount());
             }
+        }
+    }
+
+    private LocalDateTime parseDateTimeOrNull(String value) {
+        if (!StringUtils.hasText(value)) return null;
+        String v = value.trim();
+        DateTimeFormatter[] fmts = new DateTimeFormatter[] {
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        };
+        for (DateTimeFormatter fmt : fmts) {
+            try {
+                if ("yyyy-MM-dd".equals(fmt.toString())) {
+                    return LocalDate.parse(v, fmt).atStartOfDay();
+                }
+                return LocalDateTime.parse(v, fmt);
+            } catch (DateTimeParseException ignored) {
+            }
+        }
+        try {
+            return LocalDateTime.parse(v);
+        } catch (DateTimeParseException ignored) {
+            return null;
         }
     }
 

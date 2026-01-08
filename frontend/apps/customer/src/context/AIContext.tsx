@@ -1,23 +1,98 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Drawer } from 'antd';
 import AIConsultation from '../pages/ai-consultation';
+import type { Medicine } from '../services/medicine';
+
+export interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'ai';
+  timestamp: number;
+  recommendations?: Medicine[];
+}
 
 interface AIContextType {
   openAI: () => void;
   closeAI: () => void;
   isAIOpen: boolean;
+  messages: Message[];
+  addMessage: (message: Message) => void;
+  updateMessage: (id: string, updates: Partial<Message>) => void;
+  clearMessages: () => void;
 }
 
 const AIContext = createContext<AIContextType | undefined>(undefined);
 
+const WELCOME_MESSAGE: Message = {
+  id: '1',
+  text: `您好！欢迎来到智健优选。我是您的专属健康服务助手，很高兴为您服务！
+
+我主要可以帮助您：
+
+**📋 产品咨询与服务**
+* 日常健康产品使用指导（例如：“季节性不适有什么建议？”）
+* 了解产品特性与注意事项
+* 健康生活小贴士分享
+
+**📦 订单与配送查询**
+* 查看订单状态和物流进度
+* 协助查询具体订单信息
+* 了解配送相关安排
+
+**🔍 服务支持**
+* 了解平台服务流程
+* 查询服务所需资料
+* 获取操作指引
+
+请您直接告知我您的需求，我会尽力为您提供准确的信息和帮助！`,
+  sender: 'ai',
+  timestamp: Date.now(),
+};
+
 export const AIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAIOpen, setIsAIOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('zhijian_ai_history');
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse chat history', e);
+        setMessages([WELCOME_MESSAGE]);
+      }
+    } else {
+      setMessages([WELCOME_MESSAGE]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('zhijian_ai_history', JSON.stringify(messages));
+    }
+  }, [messages]);
 
   const openAI = () => setIsAIOpen(true);
   const closeAI = () => setIsAIOpen(false);
 
+  const addMessage = (message: Message) => {
+    setMessages((prev) => [...prev, message]);
+  };
+
+  const updateMessage = (id: string, updates: Partial<Message>) => {
+    setMessages((prev) =>
+      prev.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg))
+    );
+  };
+
+  const clearMessages = () => {
+    setMessages([WELCOME_MESSAGE]);
+    localStorage.removeItem('zhijian_ai_history');
+  };
+
   return (
-    <AIContext.Provider value={{ openAI, closeAI, isAIOpen }}>
+    <AIContext.Provider value={{ openAI, closeAI, isAIOpen, messages, addMessage, updateMessage, clearMessages }}>
       {children}
       <Drawer
         title={null}
@@ -27,7 +102,8 @@ export const AIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         width={window.innerWidth > 768 ? 480 : '100%'}
         styles={{ body: { padding: 0 } }}
         closable={false}
-        destroyOnClose
+        // Remove destroyOnClose to keep state when just toggling visibility (though we now use global state anyway)
+        // destroyOnClose 
         zIndex={1001} // Ensure it's above other elements
       >
         <AIConsultation isPopup={true} onClose={closeAI} />

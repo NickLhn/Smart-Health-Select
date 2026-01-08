@@ -99,7 +99,6 @@ const Dashboard: React.FC = () => {
         name: '订单数',
         type: 'line',
         data: orderTrendData.map(item => item.value),
-        areaStyle: {},
         smooth: true,
         itemStyle: {
            color: '#1890ff'
