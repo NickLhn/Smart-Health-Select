@@ -30,6 +30,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 // 设置排除路径：排除认证相关接口和Swagger文档资源
                 .excludePathPatterns(
                         "/auth/**",           // 认证相关接口（如登录、注册等）
+                        "/sms/**",            // 短信验证码接口
                         "/doc.html",          // Swagger UI主页面
                         "/webjars/**",        // Swagger依赖的静态资源
                         "/swagger-resources/**", // Swagger资源配置
@@ -47,7 +48,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(org.springframework.web.servlet.config.annotation.CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOriginPatterns("*")
+                .allowedOriginPatterns(
+                    "http://localhost:*",
+                    "https://*.zhijianshangcheng.cn",
+                    "https://zhijianshangcheng.cn"
+                )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)

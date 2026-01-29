@@ -7,7 +7,8 @@ import {
   FileTextOutlined,
   LogoutOutlined,
   KeyOutlined,
-  MessageOutlined
+  MessageOutlined,
+  RobotOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
@@ -25,6 +26,7 @@ import Password from './pages/password';
 import StoreApply from './pages/store/apply';
 import StoreSetting from './pages/store/setting';
 import NotFound from './pages/not-found';
+import AiAdvisorPage from './pages/ai/advisor';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { getMyStore } from './services/store';
 import PrivateRoute from './components/private-route';
@@ -62,6 +64,7 @@ const items: MenuItem[] = [
       getItem('全部评价', '/review/list'),
   ]),
   getItem('消息中心', '/im', <MessageOutlined />),
+  getItem('AI助手', '/ai/advisor', <RobotOutlined />),
   getItem('店铺设置', '/store/setting', <UserOutlined />),
 ];
 
@@ -206,8 +209,9 @@ const App: React.FC = () => {
                   <Route path="order/list" element={<OrderList />} />
                   <Route path="order/pending" element={<OrderList />} />
                   <Route path="review/list" element={<ReviewList />} />
-                  <Route path="store/setting" element={<StoreSetting />} />
                   <Route path="im" element={<ImPage />} />
+                  <Route path="ai/advisor" element={<AiAdvisorPage />} />
+                  <Route path="store/setting" element={<StoreSetting />} />
                   <Route path="password" element={<Password />} />
                   <Route path="*" element={<div>页面开发中...</div>} />
                 </Route>

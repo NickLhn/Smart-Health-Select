@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { Drawer } from 'antd';
 import AIConsultation from '../pages/ai-consultation';
 import type { Medicine } from '../services/medicine';
+import { clearChatHistory, getChatHistory } from '../services/ai';
 
 export interface Message {
   id: string;
@@ -18,7 +19,8 @@ interface AIContextType {
   messages: Message[];
   addMessage: (message: Message) => void;
   updateMessage: (id: string, updates: Partial<Message>) => void;
-  clearMessages: () => void;
+  reloadMessages: () => Promise<void>;
+  clearMessages: () => Promise<void>;
 }
 
 const AIContext = createContext<AIContextType | undefined>(undefined);
@@ -53,27 +55,28 @@ export const AIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('zhijian_ai_history');
-    if (saved) {
-      try {
-        setMessages(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to parse chat history', e);
+  const reloadMessages = useCallback(async () => {
+    try {
+      const history = await getChatHistory();
+      if (history && history.length > 0) {
+        setMessages(history);
+      } else {
         setMessages([WELCOME_MESSAGE]);
       }
-    } else {
+    } catch (e) {
+      console.error('Failed to load chat history', e);
       setMessages([WELCOME_MESSAGE]);
     }
   }, []);
 
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('zhijian_ai_history', JSON.stringify(messages));
-    }
-  }, [messages]);
+    reloadMessages();
+  }, []);
 
-  const openAI = () => setIsAIOpen(true);
+  const openAI = () => {
+    void reloadMessages();
+    setIsAIOpen(true);
+  };
   const closeAI = () => setIsAIOpen(false);
 
   const addMessage = (message: Message) => {
@@ -86,13 +89,17 @@ export const AIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     );
   };
 
-  const clearMessages = () => {
+  const clearMessages = async () => {
+    try {
+      await clearChatHistory();
+    } catch (e) {
+      console.error('Failed to clear chat history', e);
+    }
     setMessages([WELCOME_MESSAGE]);
-    localStorage.removeItem('zhijian_ai_history');
   };
 
   return (
-    <AIContext.Provider value={{ openAI, closeAI, isAIOpen, messages, addMessage, updateMessage, clearMessages }}>
+    <AIContext.Provider value={{ openAI, closeAI, isAIOpen, messages, addMessage, updateMessage, reloadMessages, clearMessages }}>
       {children}
       <Drawer
         title={null}

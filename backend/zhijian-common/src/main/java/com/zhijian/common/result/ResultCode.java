@@ -1,7 +1,5 @@
 package com.zhijian.common.result;
 
-import lombok.Data;
-
 /**
  * 统一响应状态码枚举
  * 定义系统中所有的HTTP响应状态码和对应的消息

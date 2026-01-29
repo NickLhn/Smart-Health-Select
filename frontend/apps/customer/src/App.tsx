@@ -12,7 +12,7 @@ import {
   HeartOutlined
 } from '@ant-design/icons';
 import zhCN from 'antd/locale/zh_CN';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, Outlet, Navigate } from 'react-router-dom';
 import Home from './pages/home';
 import MedicineList from './pages/medicine';
 import CategoryBrowse from './pages/category';
@@ -70,6 +70,17 @@ const shouldHideCustomerBottomNav = (pathname: string) => {
     /^\/register$/,
     /^\/forgot-password$/,
   ].some((re) => re.test(pathname));
+};
+
+const RequireAuth: React.FC<React.PropsWithChildren> = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+
+  return <>{children}</>;
 };
 
 // Bottom Navigation Component for Mobile
@@ -277,8 +288,8 @@ const MainLayout: React.FC = () => {
       </Content>
 
       <Footer className="text-center text-gray-400 text-sm bg-transparent py-6 hidden md:block">
-        <p>Zhijian System ©{new Date().getFullYear()} 智健优选</p>
-        <p className="text-xs mt-1 opacity-60">致力于为您提供最专业的医疗健康服务</p>
+        <p>2025-2026 Zhijianshangcheng.cn Liuhaonan Tech co.Ltd</p>
+        <p className="text-xs mt-1 opacity-60">黑ICP备2026000416号</p>
       </Footer>
       
       {/* Mobile Bottom Navigation */}
@@ -325,9 +336,9 @@ const App: React.FC = () => {
                   <Route path="health/article/:id" element={<HealthArticleDetail />} />
                   <Route path="product/:id" element={<ProductDetail />} />
                   <Route path="shop/:id" element={<ShopDetail />} />
-                  <Route path="orders" element={<OrderList />} />
-                  <Route path="order/list" element={<OrderList />} />
-                  <Route path="order/:id" element={<OrderDetail />} />
+                  <Route path="orders" element={<RequireAuth><OrderList /></RequireAuth>} />
+                  <Route path="order/list" element={<RequireAuth><OrderList /></RequireAuth>} />
+                  <Route path="order/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
                   <Route path="cart" element={<Cart />} />
                   <Route path="order/checkout" element={<Checkout />} />
                   <Route path="payment/:orderId" element={<PaymentPage />} />

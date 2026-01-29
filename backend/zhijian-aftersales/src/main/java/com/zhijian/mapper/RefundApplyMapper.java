@@ -1,0 +1,10 @@
+package com.zhijian.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.zhijian.pojo.aftersales.entity.RefundApply;
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
+public interface RefundApplyMapper extends BaseMapper<RefundApply> {
+}
+

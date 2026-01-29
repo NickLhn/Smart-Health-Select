@@ -24,7 +24,6 @@ import Login from './pages/login';
 import Register from './pages/register';
 import ForgotPassword from './pages/forgot-password';
 import Password from './pages/password';
-import SystemSetting from './pages/system/setting';
 import BannerList from './pages/operation/banner';
 import ArticleList from './pages/operation/article';
 import CouponList from './pages/marketing/coupon';
@@ -72,7 +71,6 @@ const items: MenuItem[] = [
     getItem('轮播图管理', '/operation/banner', <PictureOutlined />),
     getItem('健康资讯', '/operation/article', <ReadOutlined />),
   ]),
-  getItem('系统设置', '/system/setting', <DesktopOutlined />),
 ];
 
 const MainLayout: React.FC = () => {
@@ -160,9 +158,9 @@ const MainLayout: React.FC = () => {
           </div>
         </Content>
         <Footer className="text-center text-gray-400 text-sm bg-transparent py-6 hidden md:block">
-        <p>Zhijian System ©{new Date().getFullYear()} 智健优选</p>
-        <p className="text-xs mt-1 opacity-60">致力于为您提供最专业的医疗健康服务</p>
-      </Footer>
+          <p>2025-2026 Zhijianshangcheng.cn Liuhaonan Tech co.Ltd</p>
+          <p className="text-xs mt-1 opacity-60">黑ICP备2026000416号</p>
+        </Footer>
       </Layout>
     </Layout>
   );
@@ -198,7 +196,6 @@ const App: React.FC = () => {
                 <Route path="marketing/coupon" element={<CouponList />} />
                 <Route path="operation/banner" element={<BannerList />} />
                 <Route path="operation/article" element={<ArticleList />} />
-                <Route path="system/setting" element={<SystemSetting />} />
                 <Route path="password" element={<Password />} />
                 <Route path="*" element={<div>页面开发中...</div>} />
               </Route>

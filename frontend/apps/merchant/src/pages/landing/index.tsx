@@ -461,7 +461,7 @@ const LandingPage: React.FC = () => {
         </div>
 
         {/* Partner Section (Optional Placeholder) */}
-        <div style={{ padding: '80px 50px', background: '#fff', textAlign: 'center' }}>
+        {/* <div style={{ padding: '80px 50px', background: '#fff', textAlign: 'center' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             <Title level={4} style={{ marginBottom: '40px', color: '#999', textTransform: 'uppercase', letterSpacing: '2px' }}>
               合作伙伴
@@ -486,7 +486,7 @@ const LandingPage: React.FC = () => {
               ))}
             </Row>
           </div>
-        </div>
+        </div> */}
       </Content>
 
       <Footer style={footerStyle}>
@@ -543,13 +543,10 @@ const LandingPage: React.FC = () => {
         
         <Space direction="vertical" size="small" style={{ width: '100%' }}>
           <Text style={{ color: 'rgba(255, 255, 255, 0.45)' }}>
-            Copyright © 2035-2026 Zhijian.com Liuhaonan Tech Co.,Ltd All Rights Reserved.
+            2025-2026 Zhijianshangcheng.cn Liuhaonan Tech co.Ltd
           </Text>
-          <Text style={{ color: 'rgba(255, 255, 255, 0.45)' }}>
-            桂ICP备20250001号 | 增值电信业务经营许可证：桂A1-20250001
-          </Text>
-          <Text style={{ color: 'rgba(255, 255, 255, 0.45)' }}>
-            桂公安网备 2025122501871号
+          <Text style={{ color: 'rgba(255, 255, 255, 0.45)', cursor: 'pointer' }} onClick={() => window.open('https://beian.miit.gov.cn/', '_blank')}>
+            黑ICP备2026000416号
           </Text>
         </Space>
       </Footer>
