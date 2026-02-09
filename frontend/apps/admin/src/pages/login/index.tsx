@@ -62,40 +62,58 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Image/Banner */}
-      <div className="hidden lg:flex lg:w-1/2 bg-cover bg-center relative" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80')" }}>
-        <div className="absolute inset-0 bg-green-900 opacity-40"></div>
-        <div className="relative z-10 flex flex-col justify-center px-16 text-white h-full">
-          <h1 className="text-5xl font-bold mb-6">智健管理后台</h1>
-          <p className="text-xl leading-relaxed opacity-90">
-            系统运维与数据监控中心，<br/>
-            守护平台稳定运行。
+    <div className="min-h-screen flex bg-white">
+      <div
+        className="hidden lg:flex lg:w-1/2 bg-cover bg-center relative"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80')",
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 to-slate-800/85 mix-blend-multiply" />
+        <div className="relative z-10 flex flex-col justify-center px-20 text-white h-full">
+          <div className="mb-8">
+            <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center mb-8 border border-white/20 shadow-2xl">
+              <SafetyCertificateOutlined style={{ fontSize: 40 }} className="text-blue-300" />
+            </div>
+            <h1 className="text-5xl font-bold mb-4 tracking-tight leading-tight">
+              智健运营<br />
+              <span className="text-blue-300">稳定守护</span>
+            </h1>
+          </div>
+          <p className="text-lg leading-relaxed opacity-80 font-light max-w-lg">
+            面向平台运营与管理人员，统一监控用户、订单与药品履约情况。
           </p>
         </div>
       </div>
-
-      {/* Right Side - Form */}
-      <div className="flex-1 flex items-center justify-center bg-white px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-gray-900">管理员登录</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              请选择登录方式
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-slate-50 lg:hidden -z-20" />
+        <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none lg:hidden -z-10">
+          <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-slate-200/30 blur-3xl" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-blue-200/20 blur-3xl" />
+        </div>
+        <div className="max-w-md w-full py-12 lg:py-0 glass-panel !bg-white/70 lg:!bg-transparent backdrop-blur-xl lg:backdrop-blur-none p-8 lg:p-0 rounded-3xl lg:rounded-none shadow-xl lg:shadow-none border border-white/60 lg:border-none relative z-10">
+          <div className="text-center lg:text-left mb-10">
+            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-blue-700">
+              管理员登录
+            </h2>
+            <p className="mt-3 text-base text-gray-500">
+              登录运营后台，管理平台数据与配置
             </p>
           </div>
-          
           <Tabs
             defaultActiveKey="account"
-            centered
+            centered={false}
+            size="large"
+            className="custom-tabs"
             items={[
               {
                 key: 'account',
-                label: '账号密码登录',
+                label: '账号登录',
                 children: (
                   <Form
                     name="normal_login"
-                    className="login-form mt-4 space-y-6"
+                    className="login-form mt-4 space-y-5"
                     initialValues={{ remember: true }}
                     onFinish={onFinish}
                     size="large"
@@ -104,32 +122,42 @@ const Login: React.FC = () => {
                       name="username"
                       rules={[{ required: true, message: '请输入用户名!' }]}
                     >
-                      <Input prefix={<UserOutlined className="site-form-item-icon text-gray-400" />} placeholder="用户名/手机号" className="rounded-md" />
+                      <Input
+                        prefix={<UserOutlined className="site-form-item-icon text-blue-500 text-lg" />}
+                        placeholder="用户名 / 手机号"
+                        className="rounded-2xl h-14 bg-white/60 border-gray-200 hover:bg-white focus:bg-white focus:border-blue-500 focus:shadow-sm transition-all pl-4 backdrop-blur-sm"
+                      />
                     </Form.Item>
                     <Form.Item
                       name="password"
                       rules={[{ required: true, message: '请输入密码!' }]}
                     >
-                      <Input
-                        prefix={<LockOutlined className="site-form-item-icon text-gray-400" />}
-                        type="password"
+                      <Input.Password
+                        prefix={<LockOutlined className="site-form-item-icon text-blue-500 text-lg" />}
                         placeholder="密码"
-                        className="rounded-md"
+                        className="rounded-2xl h-14 bg-white/60 border-gray-200 hover:bg-white focus:bg-white focus:border-blue-500 focus:shadow-sm transition-all pl-4 backdrop-blur-sm"
                       />
                     </Form.Item>
                     <Form.Item>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center text-sm">
                         <Form.Item name="remember" valuePropName="checked" noStyle>
-                          <Checkbox>记住我</Checkbox>
+                          <Checkbox className="text-gray-500">记住我</Checkbox>
                         </Form.Item>
-                        <Link to="/forgot-password" className="text-green-600 hover:text-green-500">
-                          忘记密码
+                        <Link
+                          to="/forgot-password"
+                          className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                        >
+                          忘记密码?
                         </Link>
                       </div>
                     </Form.Item>
-            
                     <Form.Item>
-                      <Button type="primary" htmlType="submit" className="w-full bg-green-600 hover:bg-green-500 border-none h-10 rounded-md text-lg" loading={loading}>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        className="w-full bg-gradient-to-r from-blue-600 to-slate-900 hover:from-blue-700 hover:to-slate-950 border-none h-14 rounded-2xl text-lg font-bold shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-95"
+                        loading={loading}
+                      >
                         登 录
                       </Button>
                     </Form.Item>
@@ -138,12 +166,12 @@ const Login: React.FC = () => {
               },
               {
                 key: 'mobile',
-                label: '手机号登录',
+                label: '手机登录',
                 children: (
                   <Form
                     form={mobileForm}
                     name="mobile_login"
-                    className="login-form mt-4 space-y-6"
+                    className="login-form mt-4 space-y-5"
                     onFinish={onFinish}
                     size="large"
                   >
@@ -151,33 +179,41 @@ const Login: React.FC = () => {
                       name="mobile"
                       rules={[
                         { required: true, message: '请输入手机号!' },
-                        { pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号!' }
+                        { pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号!' },
                       ]}
                     >
-                      <Input prefix={<MobileOutlined className="site-form-item-icon text-gray-400" />} placeholder="手机号" className="rounded-md" />
+                      <Input
+                        prefix={<MobileOutlined className="site-form-item-icon text-blue-500 text-lg" />}
+                        placeholder="手机号"
+                        className="rounded-2xl h-14 bg-white/60 border-gray-200 hover:bg-white focus:bg-white focus:border-blue-500 focus:shadow-sm transition-all pl-4 backdrop-blur-sm"
+                      />
                     </Form.Item>
                     <Form.Item
                       name="captcha"
                       rules={[{ required: true, message: '请输入验证码!' }]}
                     >
-                      <div className="flex gap-2">
+                      <div className="flex gap-3">
                         <Input
-                          prefix={<SafetyCertificateOutlined className="site-form-item-icon text-gray-400" />}
+                          prefix={<SafetyCertificateOutlined className="site-form-item-icon text-blue-500 text-lg" />}
                           placeholder="验证码"
-                          className="rounded-md"
+                          className="rounded-2xl h-14 bg-white/60 border-gray-200 hover:bg-white focus:bg-white focus:border-blue-500 focus:shadow-sm transition-all pl-4 backdrop-blur-sm"
                         />
-                        <Button 
-                          className="rounded-md"
+                        <Button
+                          className="h-14 rounded-2xl px-6 font-semibold text-blue-700 hover:text-blue-800 border-blue-100 hover:border-blue-300 bg-blue-50 hover:bg-blue-100 transition-all"
                           disabled={countdown > 0}
                           onClick={handleSendCode}
                         >
-                          {countdown > 0 ? `${countdown}s后重新获取` : '获取验证码'}
+                          {countdown > 0 ? `${countdown}s` : '获取验证码'}
                         </Button>
                       </div>
                     </Form.Item>
-            
                     <Form.Item>
-                      <Button type="primary" htmlType="submit" className="w-full bg-green-600 hover:bg-green-500 border-none h-10 rounded-md text-lg" loading={loading}>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        className="w-full bg-gradient-to-r from-blue-600 to-slate-900 hover:from-blue-700 hover:to-slate-950 border-none h-14 rounded-2xl text-lg font-bold shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-95"
+                        loading={loading}
+                      >
                         登 录
                       </Button>
                     </Form.Item>
@@ -186,11 +222,13 @@ const Login: React.FC = () => {
               },
             ]}
           />
-          
-          <div className="text-center mt-4">
-             <p className="text-sm text-gray-600">
+          <div className="text-center mt-8">
+            <p className="text-gray-500">
               需要管理员权限？{' '}
-              <Link to="/register" className="font-medium text-green-600 hover:text-green-500">
+              <Link
+                to="/register"
+                className="font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+              >
                 申请加入
               </Link>
             </p>

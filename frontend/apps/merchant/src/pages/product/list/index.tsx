@@ -104,7 +104,12 @@ const ProductList: React.FC = () => {
       dataIndex: 'stock',
       key: 'stock',
       render: (stock) => (
-        <span style={{ color: stock < 10 ? 'red' : 'inherit' }}>
+        <span
+          style={{
+            color: stock < 10 ? '#DC2626' : '#111827',
+            fontWeight: stock < 10 ? 600 : 400,
+          }}
+        >
           {stock}
         </span>
       ),
@@ -144,27 +149,82 @@ const ProductList: React.FC = () => {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-        <h2>商品列表</h2>
-        <Space>
-          <Input 
-            placeholder="搜索商品" 
-            prefix={<SearchOutlined />} 
+      <div
+        style={{
+          marginBottom: 16,
+          padding: '8px 12px 12px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          gap: 16,
+          borderBottom: '1px solid #E5E7EB',
+        }}
+      >
+        <div>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 20,
+              fontWeight: 600,
+              color: '#022c22',
+            }}
+          >
+            商品列表
+          </h2>
+          <div
+            style={{
+              marginTop: 4,
+              fontSize: 12,
+              color: '#6B7280',
+            }}
+          >
+            管理店铺在售商品，支持搜索、上架和下架
+          </div>
+        </div>
+        <Space size="middle">
+          <Input
+            placeholder="搜索商品名称或关键字"
+            prefix={<SearchOutlined style={{ color: '#9CA3AF' }} />}
             value={searchText}
-            onChange={e => setSearchText(e.target.value)}
+            onChange={(e) => setSearchText(e.target.value)}
             onPressEnter={handleSearch}
+            allowClear
+            style={{ width: 260, borderRadius: 999 }}
+            size="middle"
           />
-          <Button type="primary" onClick={handleSearch}>搜索</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/product/add')}>
+          <Button
+            onClick={handleSearch}
+            size="middle"
+            style={{
+              borderRadius: 999,
+              borderColor: '#D1D5DB',
+              color: '#374151',
+            }}
+          >
+            搜索
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => navigate('/product/add')}
+            size="middle"
+            style={{
+              borderRadius: 999,
+              paddingInline: 18,
+              background: 'linear-gradient(90deg, #059669, #10B981)',
+              border: 'none',
+            }}
+          >
             添加商品
           </Button>
         </Space>
       </div>
-      <Table 
-        columns={columns} 
-        dataSource={data} 
+      <Table
+        columns={columns}
+        dataSource={data}
         rowKey="id"
         loading={loading}
+        size="middle"
         pagination={{
           ...pagination,
           showSizeChanger: true,

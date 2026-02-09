@@ -179,55 +179,67 @@ const MedicineList: React.FC = () => {
   ];
 
   return (
-    <Card title="药品库管理" variant="borderless">
-      <Form
-        form={form}
-        layout="inline"
-        onFinish={handleSearch}
-        style={{ marginBottom: 24 }}
+    <div className="space-y-4">
+      <Card
+        title="药品库管理"
+        bordered={false}
+        className="shadow-sm"
       >
-        <Form.Item name="keyword" label="关键词">
-          <Input placeholder="输入药品名称/编码" allowClear />
-        </Form.Item>
-        <Form.Item name="categoryId" label="分类">
-          <Select placeholder="选择分类" allowClear style={{ width: 150 }}>
-            {categories.map((c) => (
-              <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-        <Form.Item name="status" label="状态">
-          <Select placeholder="全部" allowClear style={{ width: 100 }}>
-            <Select.Option value={1}>上架</Select.Option>
-            <Select.Option value={0}>下架</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
-              搜索
-            </Button>
-            <Button onClick={handleReset}>重置</Button>
-          </Space>
-        </Form.Item>
-      </Form>
+        <Form
+          form={form}
+          layout="inline"
+          onFinish={handleSearch}
+        >
+          <Form.Item name="keyword" label="关键词">
+            <Input placeholder="输入药品名称/编码" allowClear style={{ width: 220 }} />
+          </Form.Item>
+          <Form.Item name="categoryId" label="分类">
+            <Select placeholder="选择分类" allowClear style={{ width: 160 }}>
+              {categories.map((c) => (
+                <Select.Option key={c.id} value={c.id}>
+                  {c.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name="status" label="状态">
+            <Select placeholder="全部" allowClear style={{ width: 120 }}>
+              <Select.Option value={1}>上架</Select.Option>
+              <Select.Option value={0}>下架</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
+                搜索
+              </Button>
+              <Button onClick={handleReset}>重置</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
 
-      <Table
-        columns={columns}
-        dataSource={data}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          current: query.page,
-          pageSize: query.size,
-          total: total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
-        }}
-        onChange={handleTableChange}
-      />
-    </Card>
+      <Card
+        bordered={false}
+        className="shadow-sm"
+      >
+        <Table
+          columns={columns}
+          dataSource={data}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            current: query.page,
+            pageSize: query.size,
+            total: total,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
+          }}
+          onChange={handleTableChange}
+        />
+      </Card>
+    </div>
   );
 };
 

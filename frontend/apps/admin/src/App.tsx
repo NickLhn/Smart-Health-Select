@@ -119,28 +119,43 @@ const MainLayout: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
+        style={{ background: '#ffffff', borderRight: '1px solid #e5e7eb' }}
+      >
         <div className="demo-logo-vertical" style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: 16 }}>
-             <h1 style={{ color: 'white', margin: 0, fontSize: collapsed ? '12px' : '18px', transition: 'all 0.2s', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+             <h1 style={{ color: '#0f172a', margin: 0, fontSize: collapsed ? '13px' : '18px', fontWeight: 600, transition: 'all 0.2s', whiteSpace: 'nowrap', overflow: 'hidden' }}>
                 {collapsed ? '智健' : '智健优选管理端'}
              </h1>
         </div>
         <Menu 
-          theme="dark" 
+          theme="light" 
           defaultSelectedKeys={[selectedKey]} 
           selectedKeys={[selectedKey]}
           defaultOpenKeys={[openKey]}
           mode="inline" 
           items={items} 
           onClick={onClick}
+          style={{ borderInlineEnd: 'none' }}
         />
       </Sider>
       <Layout>
-        <Header style={{ padding: '0 24px', background: colorBgContainer, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Header
+          style={{
+            padding: '0 24px',
+            background: '#f9fafb',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid #e5e7eb'
+          }}
+        >
             <Breadcrumb items={[{ title: '首页' }, { title: '工作台' }]} />
             <Dropdown menu={{ items: userMenuItems }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                  <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#00B96B' }} src={user?.avatar} />
+                  <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#2563eb' }} src={user?.avatar} />
                   <span>{user?.nickname || user?.username || '管理员'}</span>
               </div>
             </Dropdown>
@@ -172,7 +187,7 @@ const App: React.FC = () => {
       locale={zhCN}
       theme={{
         token: {
-          colorPrimary: '#00B96B',
+          colorPrimary: '#2563eb',
           borderRadius: 6,
         },
       }}

@@ -9,26 +9,26 @@ export default defineAppConfig({
     'pages/wallet/index'
   ],
   tabBar: {
-    color: '#999',
-    selectedColor: '#00B96B',
-    backgroundColor: '#fff',
+    color: '#9CA3AF',
+    selectedColor: '#8B5CF6',
+    backgroundColor: '#FFFFFF',
     borderStyle: 'white',
     list: [
       {
         pagePath: 'pages/index/index',
-        text: '接单大厅',
+        text: '接单',
         iconPath: './assets/tab-home.png',
         selectedIconPath: './assets/tab-home-active.png'
       },
       {
         pagePath: 'pages/orders/index',
-        text: '我的订单',
+        text: '订单',
         iconPath: './assets/tab-home.png', // Temporary reuse
         selectedIconPath: './assets/tab-home-active.png'
       },
       {
         pagePath: 'pages/profile/index',
-        text: '个人中心',
+        text: '我的',
         iconPath: './assets/tab-profile.png',
         selectedIconPath: './assets/tab-profile-active.png'
       }
@@ -36,7 +36,7 @@ export default defineAppConfig({
   },
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#fff',
+    navigationBarBackgroundColor: '#FAFAFA',
     navigationBarTitleText: '智健配送',
     navigationBarTextStyle: 'black'
   },

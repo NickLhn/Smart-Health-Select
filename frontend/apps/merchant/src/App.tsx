@@ -123,32 +123,74 @@ const MainLayout: React.FC = () => {
   const openKey = '/' + selectedKey.split('/')[1];
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
-        <div className="demo-logo-vertical" style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: 16 }}>
-             <h1 style={{ color: 'white', margin: 0, fontSize: collapsed ? '12px' : '18px', transition: 'all 0.2s', whiteSpace: 'nowrap', overflow: 'hidden' }}>
-                {collapsed ? '智健' : '智健商家端'}
-             </h1>
+    <Layout style={{ minHeight: '100vh', background: '#ECFDF5' }}>
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
+        style={{
+          background: 'linear-gradient(180deg, #022c22 0%, #064e3b 45%, #047857 100%)',
+          borderRight: 'none',
+        }}
+      >
+        <div
+          className="demo-logo-vertical"
+          style={{
+            height: 64,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: 16,
+          }}
+        >
+          <h1
+            style={{
+              color: '#ECFDF5',
+              margin: 0,
+              fontSize: collapsed ? '12px' : '18px',
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+            }}
+          >
+            {collapsed ? '智健' : '智健商家端'}
+          </h1>
         </div>
-        <Menu 
-          theme="dark" 
-          defaultSelectedKeys={[selectedKey]} 
+        <Menu
+          theme="dark"
+          defaultSelectedKeys={[selectedKey]}
           selectedKeys={[selectedKey]}
           defaultOpenKeys={[openKey]}
-          mode="inline" 
-          items={items} 
+          mode="inline"
+          items={items}
           onClick={onClick}
+          style={{
+            background: 'transparent',
+            borderInlineEnd: 'none',
+          }}
         />
       </Sider>
       <Layout>
-        <Header style={{ padding: '0 24px', background: colorBgContainer, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Breadcrumb items={[{ title: '首页' }, { title: '商家中心' }]} />
-            <Dropdown menu={{ items: userMenuItems }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                  <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#00B96B' }} src={user?.avatar} />
-                  <span>{user?.nickname || user?.username || '商家用户'}</span>
-              </div>
-            </Dropdown>
+        <Header
+          style={{
+            padding: '0 24px',
+            background: 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(10px)',
+            borderBottom: '1px solid #E5E7EB',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Breadcrumb items={[{ title: '首页' }, { title: '商家中心' }]} />
+          <Dropdown menu={{ items: userMenuItems }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+              <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#00B96B' }} src={user?.avatar} />
+              <span style={{ fontWeight: 500 }}>{user?.nickname || user?.username || '商家用户'}</span>
+            </div>
+          </Dropdown>
         </Header>
         <Content style={{ margin: '16px 16px' }}>
           <div
@@ -157,15 +199,16 @@ const MainLayout: React.FC = () => {
               minHeight: 360,
               background: colorBgContainer,
               borderRadius: borderRadiusLG,
+              boxShadow: '0 18px 45px rgba(15, 118, 110, 0.08)',
             }}
           >
             <Outlet />
           </div>
         </Content>
         <Footer className="text-center text-gray-400 text-sm bg-transparent py-6 hidden md:block">
-        <p>Zhijian System ©{new Date().getFullYear()} 智健优选</p>
-        <p className="text-xs mt-1 opacity-60">致力于为您提供最专业的医疗健康服务</p>
-      </Footer>
+          <p>Zhijian System ©{new Date().getFullYear()} 智健优选</p>
+          <p className="text-xs mt-1 opacity-60">致力于为您提供最专业的医疗健康服务</p>
+        </Footer>
       </Layout>
     </Layout>
   );

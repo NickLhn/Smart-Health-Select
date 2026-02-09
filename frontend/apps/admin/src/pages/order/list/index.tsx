@@ -192,13 +192,20 @@ const OrderList: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card
+        bordered={false}
+        className="shadow-sm"
+      >
         <div className="flex flex-wrap gap-4 items-center">
-          <Input placeholder="订单编号/客户姓名" prefix={<SearchOutlined />} style={{ width: 200 }} />
+          <Input
+            placeholder="订单编号/客户姓名"
+            prefix={<SearchOutlined />}
+            style={{ width: 220 }}
+          />
           <RangePicker />
-          <Select 
-            value={status === undefined ? 'all' : String(status)} 
-            style={{ width: 120 }}
+          <Select
+            value={status === undefined ? 'all' : String(status)}
+            style={{ width: 140 }}
             onChange={handleStatusChange}
           >
             <Option value="all">全部状态</Option>
@@ -208,11 +215,16 @@ const OrderList: React.FC = () => {
             <Option value="3">已完成</Option>
             <Option value="7">待审核</Option>
           </Select>
-          <Button type="primary" icon={<SearchOutlined />} onClick={() => fetchOrders()}>查询</Button>
+          <Button type="primary" icon={<SearchOutlined />} onClick={() => fetchOrders()}>
+            查询
+          </Button>
         </div>
       </Card>
 
-      <Card>
+      <Card
+        bordered={false}
+        className="shadow-sm"
+      >
         <Table
           columns={columns}
           dataSource={data}
@@ -222,8 +234,8 @@ const OrderList: React.FC = () => {
             showTotal: (total) => `共 ${total} 条`,
             showSizeChanger: true,
             onChange: (page, pageSize) => {
-                setPagination({ ...pagination, current: page, pageSize: pageSize });
-            }
+              setPagination({ ...pagination, current: page, pageSize: pageSize });
+            },
           }}
           loading={loading}
           onChange={handleTableChange}

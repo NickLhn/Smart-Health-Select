@@ -141,14 +141,17 @@ const UserList: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <Card variant="borderless" style={{ marginBottom: 24 }}>
+    <div className="space-y-4">
+      <Card
+        bordered={false}
+        className="shadow-sm"
+      >
         <Form form={form} layout="inline" onFinish={handleSearch}>
           <Form.Item name="keyword" label="关键词">
-            <Input placeholder="用户名/昵称/手机号" allowClear />
+            <Input placeholder="用户名/昵称/手机号" allowClear style={{ width: 220 }} />
           </Form.Item>
           <Form.Item name="role" label="角色">
-            <Select placeholder="请选择" allowClear style={{ width: 120 }}>
+            <Select placeholder="请选择" allowClear style={{ width: 140 }}>
               <Select.Option value="USER">用户</Select.Option>
               <Select.Option value="SELLER">商家</Select.Option>
               <Select.Option value="RIDER">骑手</Select.Option>
@@ -157,7 +160,7 @@ const UserList: React.FC = () => {
             </Select>
           </Form.Item>
           <Form.Item name="status" label="状态">
-            <Select placeholder="请选择" allowClear style={{ width: 120 }}>
+            <Select placeholder="请选择" allowClear style={{ width: 140 }}>
               <Select.Option value={1}>正常</Select.Option>
               <Select.Option value={0}>禁用</Select.Option>
             </Select>
@@ -175,7 +178,10 @@ const UserList: React.FC = () => {
         </Form>
       </Card>
 
-      <Card variant="borderless">
+      <Card
+        bordered={false}
+        className="shadow-sm"
+      >
         <Table
           columns={columns}
           dataSource={data}

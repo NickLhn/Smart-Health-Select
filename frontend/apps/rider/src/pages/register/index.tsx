@@ -41,25 +41,27 @@ const Register: React.FC = () => {
     <View className='register-container'>
       <View className='header'>
         <View className='title'>加入我们</View>
-        <View className='subtitle'>成为智健配送骑手，开始接单赚钱</View>
+        <View className='subtitle'>注册成为智健骑手</View>
       </View>
 
       <View className='form'>
         <View className='input-group'>
-          <Text className='label'>账号</Text>
+          <Text className='label'>账号设置</Text>
           <Input
             className='input'
             placeholder='设置用户名'
+            placeholderClass='input-placeholder'
             value={username}
             onInput={(e) => setUsername(e.detail.value)}
           />
         </View>
 
         <View className='input-group'>
-          <Text className='label'>手机号</Text>
+          <Text className='label'>手机号码</Text>
           <Input
             className='input'
             placeholder='请输入手机号'
+            placeholderClass='input-placeholder'
             type='number'
             maxLength={11}
             value={mobile}
@@ -72,13 +74,17 @@ const Register: React.FC = () => {
           <Input
             className='input'
             placeholder='设置登录密码'
+            placeholderClass='input-placeholder'
             password
             value={password}
             onInput={(e) => setPassword(e.detail.value)}
           />
         </View>
 
-        <Button className='btn-register' onClick={handleRegister}>立即注册</Button>
+        <Button className='btn-register' onClick={handleRegister}>
+          确认注册
+          <Text className='btn-icon'>+</Text>
+        </Button>
       </View>
     </View>
   )

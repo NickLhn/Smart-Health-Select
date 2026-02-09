@@ -105,34 +105,129 @@ const StoreApply: React.FC = () => {
   const renderStatus = () => {
     if (!merchant) return null;
     if (merchant.auditStatus === 0) {
-      return <Alert message="店铺审核中" description="您的资料正在审核中，请耐心等待。" type="info" showIcon className="mb-6" />;
+      return (
+        <Alert
+          message="店铺审核中"
+          description="您的资料正在审核中，请耐心等待。"
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      );
     }
     if (merchant.auditStatus === 1) {
-      return <Alert message="审核通过" description="恭喜，您的店铺已通过审核！" type="success" showIcon className="mb-6" />;
+      return (
+        <Alert
+          message="审核通过"
+          description="恭喜，您的店铺已通过审核！"
+          type="success"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      );
     }
     if (merchant.auditStatus === 2) {
-      return <Alert message="审核驳回" description={`驳回原因: ${merchant.auditRemark}`} type="error" showIcon className="mb-6" />;
+      return (
+        <Alert
+          message="审核驳回"
+          description={`驳回原因: ${merchant.auditRemark}`}
+          type="error"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      );
     }
     return null;
   };
 
+  const currentStep = (() => {
+    if (!merchant) return 0;
+    if (merchant.auditStatus === 0) return 2;
+    if (merchant.auditStatus === 1) return 3;
+    if (merchant.auditStatus === 2) return 1;
+    return 0;
+  })();
+
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold text-gray-900">商家入驻信息完善</h2>
-          <p className="mt-2 text-sm text-gray-600">请填写真实的店铺信息以便通过审核</p>
+    <div>
+      <div
+        style={{
+          marginBottom: 16,
+          padding: '8px 12px 12px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          gap: 16,
+          borderBottom: '1px solid #E5E7EB',
+        }}
+      >
+        <div>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 20,
+              fontWeight: 600,
+              color: '#022c22',
+            }}
+          >
+            商家入驻信息完善
+          </h2>
+          <div
+            style={{
+              marginTop: 4,
+              fontSize: 12,
+              color: '#6B7280',
+            }}
+          >
+            请填写真实、完整的店铺及资质信息，以便平台审核
+          </div>
+        </div>
+        {merchant?.auditStatus === 1 && (
+          <Button
+            type="primary"
+            size="middle"
+            onClick={() => navigate('/dashboard')}
+            style={{
+              borderRadius: 999,
+              paddingInline: 18,
+              background: 'linear-gradient(90deg, #059669, #10B981)',
+              border: 'none',
+            }}
+          >
+            进入商家工作台
+          </Button>
+        )}
+      </div>
+
+      {renderStatus()}
+
+      <Card
+        variant="outlined"
+        style={{
+          borderRadius: 16,
+          borderColor: '#E5E7EB',
+        }}
+      >
+        <div style={{ marginBottom: 24 }}>
+          <Steps
+            current={currentStep}
+            responsive
+            items={[
+              { title: '填写基本信息' },
+              { title: '上传证件资料' },
+              { title: '等待平台审核' },
+              { title: '审核通过开始经营' },
+            ]}
+          />
         </div>
 
-        {renderStatus()}
-
-        <Card variant="outlined">
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={onFinish}
-            disabled={merchant?.auditStatus === 0} // 审核中不可编辑
-          >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          disabled={merchant?.auditStatus === 0}
+          style={{ marginTop: 8 }}
+        >
             <Form.Item
               name="shopName"
               label="店铺名称"
@@ -229,19 +324,23 @@ const StoreApply: React.FC = () => {
             </Form.Item>
 
             <Form.Item>
-              <Button type="primary" htmlType="submit" loading={loading} block size="large">
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                block
+                size="large"
+                style={{
+                  borderRadius: 999,
+                  background: 'linear-gradient(90deg, #059669, #10B981)',
+                  border: 'none',
+                }}
+              >
                 提交审核
               </Button>
             </Form.Item>
-            
-            {merchant?.auditStatus === 1 && (
-                <div className="text-center mt-4">
-                    <Button type="link" onClick={() => navigate('/dashboard')}>进入商家工作台</Button>
-                </div>
-            )}
           </Form>
-        </Card>
-      </div>
+      </Card>
     </div>
   );
 };

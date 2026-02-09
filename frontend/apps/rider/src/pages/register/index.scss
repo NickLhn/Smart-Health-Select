@@ -1,64 +1,105 @@
+@import '../../app.scss';
+
 .register-container {
   min-height: 100vh;
-  padding: 40px 30px;
-  background-color: #fff;
+  padding: 40px 32px; // Increased padding
+  background-color: $bg-color;
   display: flex;
   flex-direction: column;
 
   .header {
-    margin-top: 20px;
+    margin-top: 40px; // 32->40
     margin-bottom: 40px;
-    text-align: left;
 
     .title {
-      font-size: 42px;
-      font-weight: bold;
-      color: #333;
+      font-size: 36px; // 32->36
+      font-weight: 900;
+      color: $text-primary;
       margin-bottom: 12px;
+      letter-spacing: -1px;
+      text-transform: uppercase;
     }
     
     .subtitle {
-      font-size: 20px;
-      color: #999;
+      font-size: 16px; // 14->16
+      color: $text-secondary;
+      font-weight: 500;
     }
   }
 
   .form {
+    background: $card-bg;
+    padding: 32px; // 24->32
+    border-radius: $radius-lg;
+    border: 1px solid $border-color;
+    box-shadow: $shadow-md;
+
     .input-group {
-      margin-bottom: 24px;
+      margin-bottom: 32px; // 24->32
       
       .label {
-        font-size: 20px;
-        color: #666;
-        margin-bottom: 10px;
+        font-size: 14px; // 12->14
+        color: $text-secondary;
+        margin-bottom: 12px;
         display: block;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
       }
 
       .input {
         width: 100%;
-        height: 72px;
-        background-color: #f8f8f8;
-        border-radius: 12px;
+        height: 64px; // 56->64
+        border-radius: $radius-md;
         padding: 0 20px;
-        font-size: 24px;
-        color: #333;
+        font-size: 20px; // 18->20
+        font-weight: 600;
+        color: $text-primary;
+        background: $input-bg;
+        border: 2px solid transparent;
+        border-bottom: 2px solid $border-color;
+        transition: $transition-base;
+        
+        &:focus {
+          background: #FFFFFF;
+          border-color: $primary-color;
+          border-radius: $radius-md;
+        }
+      }
+      
+      .input-placeholder {
+        color: $text-tertiary;
+        font-weight: 400;
       }
     }
-  }
 
-  .btn-register {
-    margin-top: 50px;
-    background-color: #00B96B;
-    color: white;
-    border-radius: 36px;
-    height: 72px;
-    line-height: 72px;
-    font-size: 26px;
-    font-weight: bold;
-    box-shadow: 0 4px 12px rgba(0, 185, 107, 0.3);
-    
-    &:active {
-      opacity: 0.9;
+    .btn-register {
+      margin-top: 40px;
+      background: $text-primary; // Black/Dark button for register
+      color: #FFFFFF;
+      border-radius: $radius-md;
+      height: 68px; // 60->68
+      line-height: 68px;
+      font-size: 22px; // 18->22
+      font-weight: 700;
+      box-shadow: $shadow-sharp;
+      border: 2px solid $text-primary;
+      @include active-press;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .btn-icon {
+        margin-left: 10px;
+        font-weight: 900;
+      }
+
+      &::after { border: none; }
+      
+      &:active {
+        box-shadow: none;
+        transform: translate(2px, 2px);
+      }
     }
   }
 }

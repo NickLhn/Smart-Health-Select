@@ -324,15 +324,52 @@ const OrderList: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <Card variant="outlined">
+      <Card
+        variant="outlined"
+        bodyStyle={{
+          padding: 16,
+        }}
+      >
+        <div
+          style={{
+            marginBottom: 12,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            gap: 16,
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 20,
+                fontWeight: 600,
+                color: '#022c22',
+              }}
+            >
+              {isPendingPage ? '待处理订单' : '订单列表'}
+            </h2>
+            <div
+              style={{
+                marginTop: 4,
+                fontSize: 12,
+                color: '#6B7280',
+              }}
+            >
+              {isPendingPage ? '查看并处理待发货、待审核的订单' : '查看并管理店铺订单，支持筛选和处理售后'}
+            </div>
+          </div>
+        </div>
         <div className="flex flex-wrap gap-4 items-center">
           <Input
             placeholder="订单编号"
-            prefix={<SearchOutlined />}
+            prefix={<SearchOutlined style={{ color: '#9CA3AF' }} />}
             style={{ width: 200 }}
             value={draftOrderNo}
             onChange={(e) => setDraftOrderNo(e.target.value)}
             allowClear
+            size="middle"
           />
           <Input
             placeholder="收货人姓名"
@@ -340,6 +377,7 @@ const OrderList: React.FC = () => {
             value={draftReceiverName}
             onChange={(e) => setDraftReceiverName(e.target.value)}
             allowClear
+            size="middle"
           />
           <RangePicker
             value={draftRange?.[0] && draftRange?.[1] ? [draftRange[0], draftRange[1]] : null}
@@ -347,11 +385,14 @@ const OrderList: React.FC = () => {
             showTime
             format="YYYY-MM-DD HH:mm:ss"
             allowClear
+            style={{ minWidth: 260 }}
+            size="middle"
           />
-          <Select 
-            value={status === undefined ? 'all' : String(status)} 
-            style={{ width: 120 }}
+          <Select
+            value={status === undefined ? 'all' : String(status)}
+            style={{ width: 140 }}
             onChange={handleStatusChange}
+            size="middle"
           >
             <Option value="all">全部状态</Option>
             <Option value="7">待审核</Option>
@@ -363,20 +404,46 @@ const OrderList: React.FC = () => {
             <Option value="6">已取消</Option>
             <Option value="-1">已取消</Option>
           </Select>
-          <Button type="primary" icon={<SearchOutlined />} onClick={applyFilters}>查询</Button>
-          <Button onClick={resetFilters}>重置</Button>
+          <Space size="middle">
+            <Button
+              type="primary"
+              icon={<SearchOutlined />}
+              onClick={applyFilters}
+              size="middle"
+              style={{
+                borderRadius: 999,
+                paddingInline: 18,
+                background: 'linear-gradient(90deg, #059669, #10B981)',
+                border: 'none',
+              }}
+            >
+              查询
+            </Button>
+            <Button
+              onClick={resetFilters}
+              size="middle"
+              style={{
+                borderRadius: 999,
+                borderColor: '#D1D5DB',
+                color: '#374151',
+              }}
+            >
+              重置
+            </Button>
+          </Space>
         </div>
       </Card>
       
-      <Table 
-        columns={columns} 
-        dataSource={data} 
-        rowKey="id" 
+      <Table
+        columns={columns}
+        dataSource={data}
+        rowKey="id"
         loading={loading}
+        size="middle"
         pagination={{
-            ...pagination,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条`
+          ...pagination,
+          showSizeChanger: true,
+          showTotal: (total) => `共 ${total} 条`,
         }}
         onChange={handleTableChange}
       />

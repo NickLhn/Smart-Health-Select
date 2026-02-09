@@ -121,33 +121,38 @@ const OrderList: React.FC<OrderListProps> = ({ active }) => {
           onChange: (p) => fetchOrders(p, status),
         }}
         renderItem={(item) => (
-          <List.Item key={item.id} className="block mb-4 border rounded-lg p-0 overflow-hidden hover:shadow-md transition-shadow">
-             <div className="bg-gray-50 px-4 py-2 border-b flex justify-between items-center text-sm text-gray-500">
-                <span>{item.createTime} 订单号: {item.orderNo}</span>
+          <List.Item key={item.id} className="block mb-4 glass-panel !bg-white/40 border border-white/60 rounded-2xl p-0 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+             <div className="bg-white/40 px-6 py-3 border-b border-white/60 flex justify-between items-center text-sm text-gray-500 backdrop-blur-sm">
+                <span className="font-medium">{item.createTime} <span className="mx-2">|</span> 订单号: {item.orderNo}</span>
                 {getStatusTag(item.status)}
              </div>
-             <div className="p-4 flex gap-4">
-                <Image 
-                    src={item.medicineImage || 'https://via.placeholder.com/100'} 
-                    width={80} 
-                    height={80} 
-                    className="rounded object-cover"
-                    fallback="https://via.placeholder.com/100"
-                />
+             <div className="p-6 flex gap-6 items-center">
+                <div className="relative group">
+                    <Image 
+                        src={item.medicineImage || 'https://via.placeholder.com/100'} 
+                        width={90} 
+                        height={90} 
+                        className="rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"
+                        fallback="https://via.placeholder.com/100"
+                    />
+                </div>
                 <div className="flex-1">
-                    <div className="text-gray-500 text-sm">
+                    <div className="text-gray-800 font-bold text-lg mb-2 line-clamp-1">
+                        {item.medicineName || '药品商品'}
+                    </div>
+                    <div className="text-gray-500 text-sm bg-white/50 px-2 py-1 rounded-lg inline-block">
                         数量: x{item.quantity || 1}
                     </div>
                 </div>
-                <div className="text-right min-w-[100px]">
-                    <div className="text-lg font-bold text-red-500">¥{item.totalAmount.toFixed(2)}</div>
-                    <div className="mt-2 space-x-2">
-                        <Button size="small" onClick={() => navigate(`/order/${item.id}`)}>查看详情</Button>
+                <div className="text-right min-w-[120px]">
+                    <div className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-pink-600">¥{item.totalAmount.toFixed(2)}</div>
+                    <div className="mt-3 flex flex-col gap-2 items-end">
+                        <Button size="small" className="rounded-full border-emerald-200 text-emerald-600 hover:text-emerald-700 hover:border-emerald-300 bg-emerald-50/50" onClick={() => navigate(`/order/${item.id}`)}>查看详情</Button>
                         {item.status === 0 && (
-                            <Button type="primary" size="small" onClick={() => handlePay(item.id)}>去支付</Button>
+                            <Button type="primary" size="small" className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 border-none shadow-md shadow-emerald-500/20" onClick={() => handlePay(item.id)}>去支付</Button>
                         )}
                         {item.status === 2 && (
-                             <Button type="primary" size="small" onClick={() => handleConfirmReceipt(item.id)}>确认收货</Button>
+                             <Button type="primary" size="small" className="rounded-full bg-gradient-to-r from-blue-500 to-cyan-600 border-none shadow-md shadow-blue-500/20" onClick={() => handleConfirmReceipt(item.id)}>确认收货</Button>
                         )}
                     </div>
                 </div>

@@ -16,7 +16,6 @@ const OrderDetail: React.FC = () => {
   const { id } = router.params
   const [info, setInfo] = useState<any>(null)
   const [proofImage, setProofImage] = useState('')
-  // const [verifyCode, setVerifyCode] = useState('')
   const [mapInstance, setMapInstance] = useState<any>(null)
   const [mapError, setMapError] = useState<string>('')
   const [targetLngLat, setTargetLngLat] = useState<{lng: number, lat: number} | null>(null)
@@ -38,37 +37,26 @@ const OrderDetail: React.FC = () => {
     if (info && info.status === 1 && !mapInstance) {
        // H5 Map Initialization
        if (process.env.TARO_ENV === 'h5') {
-           // Check if AMap is loaded
            if (!window.AMap) {
                console.warn('AMap not loaded yet, retrying...');
-               // If it takes too long, set error
                const timer = setTimeout(() => {
                    if (!window.AMap) {
                        setMapError('地图加载失败，请检查网络或Key配置');
                    }
                }, 3000);
-               
-               setTimeout(() => setInfo({...info}), 500); // Trigger re-render to retry
+               setTimeout(() => setInfo({...info}), 500);
                return () => clearTimeout(timer);
            }
     
-           // Use a timeout to ensure DOM is rendered
            setTimeout(() => {
                const container = document.getElementById('amap-container');
-               if (!container) {
-                   console.error('Map container not found');
-                   return;
-               }
+               if (!container) return;
     
                try {
                    const map = new window.AMap.Map('amap-container', {
                       zoom: 14,
-                      center: [116.397428, 39.90923], // Default Beijing
+                      center: [116.397428, 39.90923],
                       viewMode: '2D',
-                   });
-                   
-                   map.on('complete', () => {
-                       console.log('Map load complete');
                    });
                    
                    map.on('error', (e: any) => {
@@ -76,18 +64,12 @@ const OrderDetail: React.FC = () => {
                        setMapError('地图加载异常');
                    });
                    
-                   // Force resize
-                   setTimeout(() => {
-                       map.resize();
-                   }, 200);
-                   
+                   setTimeout(() => { map.resize(); }, 200);
                    setMapInstance(map);
             
-                   // Mock geocoding
                    window.AMap.plugin(['AMap.Geocoder', 'AMap.Driving', 'AMap.Marker', 'AMap.ToolBar'], function() {
                       try {
                           map.addControl(new window.AMap.ToolBar());
-                          
                           var geocoder = new window.AMap.Geocoder({});
                           
                           if (info.receiverAddress) {
@@ -96,7 +78,6 @@ const OrderDetail: React.FC = () => {
                                       var lnglat = result.geocodes[0].location
                                        setTargetLngLat({ lng: lnglat.lng, lat: lnglat.lat })
                                        
-                                       // Add marker
                                       var marker = new window.AMap.Marker({
                                           position: lnglat,
                                           title: '终点'
@@ -104,20 +85,11 @@ const OrderDetail: React.FC = () => {
                                       map.add(marker);
                                       map.setFitView();
                                       
-                                      // Plan route
-                                      var driving = new window.AMap.Driving({
-                                          map: map,
-                                      }); 
-                                      
-                                      console.log('Map initialized with address:', info.receiverAddress);
-                                  } else {
-                                      console.log('Geocoding failed');
+                                      var driving = new window.AMap.Driving({ map: map }); 
                                   }
                               });
                           }
-                      } catch(e) {
-                          console.error('Plugin init error', e);
-                      }
+                      } catch(e) { console.error('Plugin init error', e); }
                    });
                } catch (e) {
                    console.error('Map init error:', e);
@@ -125,37 +97,21 @@ const OrderDetail: React.FC = () => {
                }
            }, 200);
        } else {
-           // 小程序端逻辑：解析目标地址
             if (info.receiverAddress && !targetLngLat) {
-                // 尝试使用高德地图 Web 服务 API 进行地址解析
-                // 注意：需要确保 Key 开通了 "Web 服务" 权限
-                // 使用新的 Web 服务 Key (用户提供: 44bb291fa15e965c72a710f23b18c49c)
                 const key = '44bb291fa15e965c72a710f23b18c49c';
-                
                 Taro.request({
                     url: 'https://restapi.amap.com/v3/geocode/geo',
-                   data: {
-                       address: info.receiverAddress,
-                       key: key
-                   },
+                   data: { address: info.receiverAddress, key: key },
                    success: (res) => {
                        if (res.data.status === '1' && res.data.geocodes && res.data.geocodes.length > 0) {
                            const location = res.data.geocodes[0].location;
                            const [lng, lat] = location.split(',').map(Number);
                            setTargetLngLat({ lng, lat });
-                           console.log('Weapp geocode success:', lng, lat);
                        } else {
-                           console.warn('Weapp geocode failed:', res.data);
-                           // 如果 Key 报错，尝试提示
-                           if (res.data.status === '0') {
-                               setMapError(`地图解析失败: ${res.data.info}`);
-                           }
+                           if (res.data.status === '0') setMapError(`地图解析失败: ${res.data.info}`);
                        }
                    },
-                   fail: (err) => {
-                       console.error('Weapp geocode request failed:', err);
-                       setMapError('网络请求失败');
-                   }
+                   fail: (err) => { setMapError('网络请求失败'); }
                });
            }
        }
@@ -193,11 +149,6 @@ const OrderDetail: React.FC = () => {
         Taro.showToast({ title: '请上传送达凭证', icon: 'none' })
         return
       }
-      // if (!verifyCode) {
-      //   Taro.showToast({ title: '请输入签收码', icon: 'none' })
-      //   return
-      // }
-      
       const res = await request.post(`/delivery/${info.id}/complete?proofImage=${encodeURIComponent(proofImage)}`)
       if (res.code === 200) {
         Taro.showToast({ title: '已送达', icon: 'success' })
@@ -212,7 +163,6 @@ const OrderDetail: React.FC = () => {
       const destName = type === 'shop' ? info.shopAddress : info.receiverAddress
       
       if (process.env.TARO_ENV === 'h5') {
-          // H5 navigation logic (simplified for now, ideally needs geocoding for shop too)
           if (!destName) {
               Taro.showToast({ title: '无法获取目的地', icon: 'none' })
               return
@@ -220,22 +170,16 @@ const OrderDetail: React.FC = () => {
           const url = `https://uri.amap.com/navigation?to=,,${destName}&mode=ride&policy=1&src=zhijian&callnative=1`
           window.location.href = url
       } else {
-          // 小程序端逻辑
-          // 尝试解析地址坐标
-          // 使用新的 Web 服务 Key (用户提供: e43c92dca357b9d01d0183da81ea9af8)
           const key = 'e43c92dca357b9d01d0183da81ea9af8';
           Taro.showLoading({ title: '准备导航...' });
           
           const performNavigation = (city?: string, isRetry = false) => {
-              // 使用 POI 搜索 (place/text) 代替地理编码 (geocode/geo)
-              // 解决：地理编码对"小区名"等非结构化地址容易解析到城市中心的问题
               Taro.request({
                   url: 'https://restapi.amap.com/v3/place/text',
                   data: {
                       keywords: destName,
                       key: key,
                       city: city,
-                      // 如果是重试（跨城查找），则取消城市限制
                       citylimit: !!city && !isRetry,
                       offset: 1,
                       page: 1,
@@ -251,21 +195,17 @@ const OrderDetail: React.FC = () => {
                            Taro.openLocation({
                                latitude: lat,
                                longitude: lng,
-                               name: poi.name, // 使用搜索到的准确名称
-                               address: poi.address // 使用搜索到的详细地址
+                               name: poi.name,
+                               address: poi.address
                            })
                        } else {
-                           // 如果是首次搜索失败，且指定了城市，尝试进行一次全局搜索（跨城）
                            if (!isRetry && city) {
-                               console.log('Local search failed, retrying globally...');
                                performNavigation(undefined, true);
                                return;
                            }
 
                            Taro.hideLoading();
-                           console.warn('Place Search API response:', res.data);
-                           // 搜索失败兜底
-                            Taro.showModal({
+                           Taro.showModal({
                                title: '导航提示',
                                content: `系统无法找到: ${destName}\n建议手动复制地址在地图中搜索。`,
                                showCancel: false,
@@ -290,12 +230,10 @@ const OrderDetail: React.FC = () => {
               });
           };
 
-          // 1. 获取当前定位，确定城市上下文，避免跨城市匹配错误
           Taro.getLocation({
               type: 'gcj02',
               success: (res) => {
                   const { latitude, longitude } = res;
-                  // 2. 逆地理编码获取城市
                   Taro.request({
                       url: 'https://restapi.amap.com/v3/geocode/regeo',
                       data: {
@@ -307,21 +245,16 @@ const OrderDetail: React.FC = () => {
                           let city = '';
                           if (regeoRes.data.status === '1' && regeoRes.data.regeocode) {
                               const addressComponent = regeoRes.data.regeocode.addressComponent;
-                              // city 可能是数组[] (当是直辖市时)，此时取 province
                               city = (typeof addressComponent.city === 'string' && addressComponent.city) ? addressComponent.city : addressComponent.province;
                           }
-                          console.log('Current city context:', city);
                           performNavigation(city);
                       },
                       fail: () => {
-                          console.warn('Reverse geocoding failed');
                           performNavigation();
                       }
                   });
               },
-              fail: (err) => {
-                  console.warn('Get location failed:', err);
-                  // 定位失败（如未授权），则不带城市上下文尝试导航
+              fail: () => {
                   performNavigation();
               }
           });
@@ -387,7 +320,7 @@ const OrderDetail: React.FC = () => {
     })
   }
   
-  if (!info) return <View>Loading...</View>
+  if (!info) return <View className='detail-container loading'><Text>加载中...</Text></View>
 
   return (
     <View className='detail-container'>
@@ -396,7 +329,7 @@ const OrderDetail: React.FC = () => {
            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
            height: '44px', background: '#fff', display: 'flex', alignItems: 'center', padding: '0 10px',
            paddingTop: `${statusBarHeight}px`,
-           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+           boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
            boxSizing: 'content-box'
        }}>
            <View className='back-btn' onClick={() => {
@@ -404,20 +337,18 @@ const OrderDetail: React.FC = () => {
                if (pages.length > 1) {
                    Taro.navigateBack()
                } else {
-                   // Fallback to home if no history
                    Taro.reLaunch({ url: '/pages/index/index' })
                }
            }} style={{ padding: '10px' }}>
-               <Text style={{ fontSize: '20px', color: '#333' }}>{'<'}</Text>
+               <Text style={{ fontSize: '20px', color: '#111827', fontFamily: 'monospace', fontWeight: 'bold' }}>{'<'}</Text>
            </View>
-           <Text style={{ fontSize: '16px', fontWeight: 'bold', flex: 1, textAlign: 'center', marginRight: '40px' }}>
-               订单详情
+           <Text style={{ fontSize: '16px', fontWeight: '800', flex: 1, textAlign: 'center', marginRight: '40px', color: '#111827', letterSpacing: '1px' }}>
+               订单号 #{info.orderId || info.id}
            </Text>
        </View>
 
-       <View style={{ paddingTop: `${50 + statusBarHeight}px` }}>
        {info.status === 1 && (
-           <View className="map-container" style={{ height: '200px', width: '100%', position: 'relative' }}>
+           <View className="map-container" style={{ marginTop: `${44 + statusBarHeight}px` }}>
                {process.env.TARO_ENV === 'h5' ? (
                    <View id="amap-container" style={{ width: '100%', height: '100%' }}></View>
                ) : (
@@ -437,12 +368,11 @@ const OrderDetail: React.FC = () => {
                         style={{ width: '100%', height: '100%' }}
                    />
                )}
-               
                {mapError && (
-                   <View style={{
-                       position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
-                       display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                       background: '#f5f5f5', color: '#999', zIndex: 10
+                   <View className='map-error' style={{
+                       position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                       background: 'rgba(15, 23, 42, 0.96)', color: '#e5e7eb', zIndex: 10,
+                       display: 'flex', alignItems: 'center', justifyContent: 'center'
                    }}>
                        <Text>{mapError}</Text>
                    </View>
@@ -450,90 +380,97 @@ const OrderDetail: React.FC = () => {
            </View>
        )}
        
-       <View className='card'>
-         <View className='header'>
-            <Text className='status'>
-                {info.status === 0 ? '待接单' : info.status === 1 ? '配送中' : '已完成'}
-            </Text>
-            {info.isUrgent === 1 && <Text className='tag urgent' style={{color: 'red', marginLeft: 10, fontWeight: 'bold'}}>急单</Text>}
-            <Text className='price'>¥{info.deliveryFee}</Text>
+       <View className='content-body' style={info.status !== 1 ? { paddingTop: `${54 + statusBarHeight}px` } : {}}>
+         {/* Status Card */}
+         <View className='card status-card'>
+             <View className='header'>
+                <View>
+                    <Text className='label'>状态</Text>
+                    <Text className='status'>
+                        {info.status === 0 ? '待接单' : info.status === 1 ? '配送中' : '已完成'}
+                    </Text>
+                </View>
+                <View className='price-box'>
+                    <Text className='currency'>¥</Text>
+                    <Text className='amount'>{info.deliveryFee}</Text>
+                </View>
+             </View>
+             <View className='meta-info'>
+                {info.isUrgent === 1 && <Text className='tag'>加急</Text>}
+                <Text className='tag'>#{info.orderId}</Text>
+             </View>
          </View>
-         
-         <View className='address-box'>
-            <View className='row'>
-                <Text className='label'>取</Text>
-                <View style={{flex: 1}}>
-                    <Text className='addr'>{info.shopAddress}</Text>
-                    <Text className='name'>{info.shopName}</Text>
-                </View>
-                {info.status === 1 && (
-                   <View className='nav-btn' onClick={() => handleNavigate('shop')}>
-                       <Text className='icon'>🧭</Text>
-                       <Text>导航</Text>
-                   </View>
-                )}
-            </View>
-            <View className='row'>
-                <Text className='label deliver'>送</Text>
-                <View style={{flex: 1}}>
-                    <Text className='addr'>{info.receiverAddress}</Text>
-                    <Text className='name'>{info.receiverName} {info.receiverPhone}</Text>
-                </View>
-                {info.status === 1 && (
-                    <View className='nav-btn' onClick={() => handleNavigate('receiver')}>
-                        <Text className='icon'>🧭</Text>
-                        <Text>导航</Text>
+
+         {/* Route Card */}
+         <View className='card route-card'>
+            <View className='address-section'>
+                <View className='location-item pickup'>
+                    <View className='icon-box'><Text>取</Text></View>
+                    <View className='info'>
+                        <Text className='name'>{info.shopName}</Text>
+                        <Text className='address'>{info.shopAddress}</Text>
                     </View>
-                )}
+                    {info.status === 1 && (
+                        <View className='action-btn' onClick={() => handleNavigate('shop')}>
+                            <Text>🧭</Text>
+                        </View>
+                    )}
+                </View>
+                
+                <View className='location-item deliver'>
+                    <View className='icon-box'><Text>送</Text></View>
+                    <View className='info'>
+                        <Text className='name'>{info.receiverName}</Text>
+                        <Text className='address'>{info.receiverAddress}</Text>
+                    </View>
+                    {info.status === 1 && (
+                        <View className='actions' style={{display:'flex'}}>
+                             <View className='action-btn' onClick={() => Taro.makePhoneCall({ phoneNumber: info.receiverPhone })}>
+                                <Text>📞</Text>
+                             </View>
+                             <View className='action-btn' onClick={() => handleNavigate('receiver')}>
+                                <Text>🧭</Text>
+                             </View>
+                        </View>
+                    )}
+                </View>
             </View>
          </View>
+
+         {/* Proof Card */}
+         {info.status === 1 && (
+             <View className='card proof-card'>
+                <Text className='section-title'>送达凭证</Text>
+                <View className='upload-area' onClick={handleUpload}>
+                    {proofImage ? (
+                        <Image src={proofImage} mode='aspectFill' className='preview' />
+                    ) : (
+                        <View className='placeholder'>
+                            <Text className='icon'>📷</Text>
+                            <Text className='text'>点击上传</Text>
+                        </View>
+                    )}
+                </View>
+             </View>
+         )}
        </View>
 
-       {info.status === 1 && (
-         <View className='action-area'>
-            <View className='upload-box' onClick={handleUpload}>
-                {proofImage ? (
-                    <Image src={proofImage} mode='aspectFill' className='preview' />
-                ) : (
-                    <View className='placeholder'>
-                        <Text>上传送达凭证</Text>
-                    </View>
-                )}
-            </View>
-            
-            {/* <View className='input-box' style={{marginTop: 20, marginBottom: 20, padding: '0 10px', background: '#fff'}}>
-                <Input 
-                    placeholder='请输入签收码'
-                    placeholderStyle='font-size: 18px; color: #ccc; text-align: center;'
-                    type='number' 
-                    maxLength={4}
-                    value={verifyCode}
-                    onInput={(e) => setVerifyCode(e.detail.value)}
-                    style={{
-                        border: '2px solid #00B96B', 
-                        padding: '10px', 
-                        borderRadius: '12px', 
-                        fontSize: '48px', 
-                        height: '80px', 
-                        textAlign: 'center', 
-                        fontWeight: 'bold', 
-                        letterSpacing: '16px',
-                        background: '#f8f8f8',
-                        color: '#333'
-                    }}
-                />
-            </View> */}
-
-            <Button className='btn-primary' onClick={handleAction}>确认送达</Button>
-            <Button className='btn-secondary' style={{marginTop: 10, background: '#f5f5f5', color: '#666'}} onClick={handleReportException}>异常上报</Button>
-         </View>
-       )}
-
-       {info.status === 0 && (
-         <View className='fixed-bottom'>
-            <Button className='btn-primary' onClick={handleAction}>立即抢单</Button>
-         </View>
-       )}
+       {/* Footer Action */}
+       <View className='footer-action'>
+            {info.status === 1 ? (
+                 <>
+                    <Button className='btn-main secondary' onClick={handleReportException}>异常上报</Button>
+                    <Button className={`btn-main ${proofImage ? 'success' : 'disabled'}`} onClick={handleAction}>
+                        确认送达
+                    </Button>
+                 </>
+            ) : info.status === 0 ? (
+                 <Button className='btn-main' onClick={handleAction}>
+                    立即抢单
+                 </Button>
+            ) : (
+                 <Button className='btn-main disabled'>已完成</Button>
+            )}
        </View>
     </View>
   )

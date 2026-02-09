@@ -1,0 +1,82 @@
+// Global Variables for "Hyper-Clarity" Theme (High Efficiency)
+
+// Colors - High Contrast & Visibility
+$primary-color: #2563EB; // Electric Blue - High Visibility
+$primary-dark: #1D4ED8; // Darker shade for active states
+$secondary-color: #0F172A; // Dark Slate - for high contrast elements
+$success-color: #059669; // Emerald - Sharp success
+$warning-color: #D97706; // Amber - Sharp warning
+$error-color: #DC2626; // Red - Sharp error
+
+$bg-color: #F3F4F6; // Cool Gray - Technical background
+$card-bg: #FFFFFF;
+$input-bg: #F9FAFB;
+$border-color: #E5E7EB;
+$border-focus: #2563EB;
+
+$text-primary: #111827; // Gray-900 - Max Contrast
+$text-secondary: #4B5563; // Gray-600 - High Legibility
+$text-tertiary: #9CA3AF; // Gray-400
+$text-inverse: #FFFFFF;
+
+// Shadows (Sharp & Defined)
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+$shadow-sharp: 4px 4px 0px 0px rgba(0,0,0,0.1); // "Hard" shadow option
+
+// Radius (Functional & Precise)
+$radius-sm: 6px;
+$radius-md: 12px;
+$radius-lg: 16px;
+$radius-full: 9999px;
+
+// Typography
+$font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+$font-mono: 'DIN Alternate', 'Courier New', Courier, monospace; // For numbers
+
+// Animation (Snappy)
+$transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin card-base {
+  background: $card-bg;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+  border: 1px solid $border-color; // Distinct edges
+  padding: 16px; // Reduced from 24px for better mobile fit
+  position: relative;
+  overflow: hidden;
+}
+
+@mixin active-press {
+  &:active {
+    transform: translateY(1px);
+    opacity: 0.95;
+  }
+}
+
+// Global Reset & Base Styles
+page {
+  background-color: $bg-color;
+  color: $text-primary;
+  font-family: $font-family-base;
+  font-size: 34rpx;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+view, text, image, navigator, input {
+  box-sizing: border-box;
+}
+
+.text-mono {
+  font-family: $font-mono;
+  letter-spacing: -0.5px;
+}

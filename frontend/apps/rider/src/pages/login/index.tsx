@@ -38,8 +38,9 @@ const Login: React.FC = () => {
   return (
     <View className='login-container'>
       <View className='header'>
-        <View className='title'>欢迎回来</View>
-        <View className='subtitle'>请登录您的骑手账号</View>
+        <View className='brand-logo'>智健骑手</View>
+        <View className='title'>欢迎登录</View>
+        <View className='subtitle'>高效率 · 高回报 · 准时达</View>
       </View>
       
       <View className='form'>
@@ -47,7 +48,8 @@ const Login: React.FC = () => {
           <Text className='label'>账号</Text>
           <Input
             className='input'
-            placeholder='请输入用户名'
+            placeholder='请输入账号'
+            placeholderClass='input-placeholder'
             value={username}
             onInput={(e) => setUsername(e.detail.value)}
           />
@@ -58,17 +60,21 @@ const Login: React.FC = () => {
           <Input
             className='input'
             placeholder='请输入密码'
+            placeholderClass='input-placeholder'
             password
             value={password}
             onInput={(e) => setPassword(e.detail.value)}
           />
         </View>
 
-        <Button className='btn-login' onClick={handleLogin}>登录</Button>
+        <Button className='btn-login' onClick={handleLogin}>
+          立即登录
+          <Text className='btn-icon'>→</Text>
+        </Button>
       </View>
 
       <View className='footer'>
-        <View className='link' onClick={goToRegister}>没有账号？立即注册</View>
+        <View className='link' onClick={goToRegister}>注册新骑手账号</View>
       </View>
     </View>
   )

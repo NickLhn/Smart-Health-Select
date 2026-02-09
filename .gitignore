@@ -5,6 +5,15 @@
 *.swp
 *.DS_Store
 
+# Local sandbox / tools
+/langgraph-sandbox/
+.trae/
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+
 # Java
 target/
 *.class

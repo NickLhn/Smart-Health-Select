@@ -101,9 +101,14 @@ const AddressList: React.FC = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">收货地址</h3>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-bold text-gray-800">收货地址</h3>
+        <Button 
+          type="primary" 
+          icon={<PlusOutlined />} 
+          onClick={handleAdd}
+          className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 border-none shadow-md shadow-emerald-500/20 hover:shadow-lg hover:scale-105 transition-all"
+        >
           添加新地址
         </Button>
       </div>
@@ -113,26 +118,29 @@ const AddressList: React.FC = () => {
         dataSource={addresses}
         locale={{ emptyText: <Empty description="暂无收货地址" /> }}
         renderItem={(item) => (
-          <div className="border rounded p-4 mb-4 flex justify-between items-start hover:shadow-md transition-shadow bg-white">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-bold text-lg">{item.receiverName}</span>
-                <span className="text-gray-500">{item.receiverPhone}</span>
-                {item.isDefault === 1 && <Tag color="green">默认</Tag>}
+          <div className="glass-panel !bg-white/40 border border-white/60 rounded-2xl p-5 mb-4 flex justify-between items-start hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
+            {item.isDefault === 1 && (
+                <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-400 to-teal-500"></div>
+            )}
+            <div className="flex-1 pl-2">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="font-bold text-lg text-gray-800">{item.receiverName}</span>
+                <span className="text-gray-500 font-din text-base">{item.receiverPhone}</span>
+                {item.isDefault === 1 && <Tag className="border-none bg-emerald-100 text-emerald-700 font-bold rounded-full px-2">默认</Tag>}
               </div>
-              <div className="text-gray-600">
+              <div className="text-gray-600 leading-relaxed pr-4">
                 {item.province} {item.city} {item.region} {item.detailAddress}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 {item.isDefault === 0 && (
-                <Button type="link" size="small" onClick={() => handleSetDefault(item.id)}>
+                <Button type="link" size="small" className="text-emerald-600 hover:text-emerald-700" onClick={() => handleSetDefault(item.id)}>
                   设为默认
                 </Button>
               )}
-              <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(item)} />
+              <Button type="text" className="text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full" icon={<EditOutlined />} onClick={() => handleEdit(item)} />
               <Popconfirm title="确定删除吗？" onConfirm={() => handleDelete(item.id)}>
-                <Button type="text" danger icon={<DeleteOutlined />} />
+                <Button type="text" danger className="hover:bg-red-50 rounded-full" icon={<DeleteOutlined />} />
               </Popconfirm>
             </div>
           </div>

@@ -1,81 +1,130 @@
+@import '../../app.scss';
+
 .login-container {
   min-height: 100vh;
-  padding: 40px 30px;
-  background-color: #fff;
+  padding: 40px 32px; // Increased padding
+  background-color: $bg-color;
   display: flex;
   flex-direction: column;
 
   .header {
-    margin-top: 40px;
-    margin-bottom: 60px;
-    text-align: left;
+    margin-top: 64px; // Increased margin
+    margin-bottom: 48px;
+
+    .brand-logo {
+      font-size: 16px; // 14->16
+      font-weight: 900;
+      color: $primary-color;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+      opacity: 0.8;
+    }
 
     .title {
-      font-size: 42px;
-      font-weight: bold;
-      color: #333;
+      font-size: 48px; // 40->48
+      font-weight: 900;
+      color: $text-primary;
       margin-bottom: 12px;
+      line-height: 1.1;
+      letter-spacing: -1px;
     }
     
     .subtitle {
-      font-size: 20px;
-      color: #999;
+      font-size: 18px; // 16->18
+      color: $text-secondary;
+      font-weight: 500;
     }
   }
 
   .form {
+    background: $card-bg;
+    padding: 32px; // 24->32
+    border-radius: $radius-lg;
+    border: 1px solid $border-color;
+    box-shadow: $shadow-md;
+
     .input-group {
-      margin-bottom: 24px;
+      margin-bottom: 32px; // 24->32
       
       .label {
-        font-size: 20px;
-        color: #666;
-        margin-bottom: 10px;
+        font-size: 14px; // 12->14
+        color: $text-secondary;
+        margin-bottom: 12px;
         display: block;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
       }
 
       .input {
         width: 100%;
-        height: 72px;
-        background-color: #f8f8f8;
-        border-radius: 12px;
+        height: 64px; // 56->64
+        border-radius: $radius-md;
         padding: 0 20px;
-        font-size: 24px;
-        color: #333;
+        font-size: 20px; // 18->20
+        font-weight: 600;
+        color: $text-primary;
+        background: $input-bg;
+        border: 2px solid transparent; // Reserve space for border
+        border-bottom: 2px solid $border-color; // Underline style mixed with box
+        transition: $transition-base;
         
-        &.input-placeholder {
-          color: #ccc;
+        &:focus {
+          background: #FFFFFF;
+          border-color: $primary-color;
+          border-radius: $radius-md;
         }
       }
+      
+      .input-placeholder {
+        color: $text-tertiary;
+        font-weight: 400;
+      }
     }
-  }
 
-  .btn-login {
-    margin-top: 50px;
-    background-color: #00B96B;
-    color: white;
-    border-radius: 36px;
-    height: 72px;
-    line-height: 72px;
-    font-size: 26px;
-    font-weight: bold;
-    box-shadow: 0 4px 12px rgba(0, 185, 107, 0.3);
-    
-    &:active {
-      opacity: 0.9;
+    .btn-login {
+      margin-top: 40px;
+      background: $primary-color;
+      color: #FFFFFF;
+      border-radius: $radius-md; // Sharper corners
+      height: 68px; // 60->68
+      line-height: 68px;
+      font-size: 22px; // 18->22
+      font-weight: 700;
+      box-shadow: $shadow-sharp; // Hard shadow
+      border: 2px solid $primary-dark;
+      @include active-press;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .btn-icon {
+        margin-left: 10px;
+        font-weight: 900;
+      }
+
+      &::after { border: none; }
+      
+      &:active {
+        box-shadow: none;
+        transform: translate(2px, 2px);
+      }
     }
   }
 
   .footer {
     margin-top: auto;
     text-align: center;
-    padding-bottom: 30px;
+    padding-bottom: 40px;
 
     .link {
-      color: #00B96B;
-      font-size: 20px;
+      color: $text-secondary;
+      font-size: 16px; // 14->16
+      font-weight: 600;
+      padding: 16px;
       display: inline-block;
-      padding: 12px;
+      text-decoration: underline;
+      text-decoration-color: $border-color;
     }
   }
 }

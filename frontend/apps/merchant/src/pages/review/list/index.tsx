@@ -50,7 +50,7 @@ const ReviewList: React.FC = () => {
       messageApi.warning('请输入回复内容');
       return;
     }
-    
+
     setReplyLoading(true);
     try {
       const res = await replyComment(currentReplyId, replyContent);
@@ -92,8 +92,19 @@ const ReviewList: React.FC = () => {
       title: '评分',
       dataIndex: 'star',
       key: 'star',
-      width: 150,
-      render: (star) => <Rate disabled defaultValue={star} allowHalf style={{ fontSize: 14 }} />,
+      width: 200,
+      render: (star) => (
+        <Space>
+          <Rate disabled defaultValue={star} allowHalf style={{ fontSize: 14 }} />
+          <Tag
+            color={
+              star >= 4 ? 'green' : star >= 3 ? 'blue' : 'red'
+            }
+          >
+            {star >= 4 ? '好评' : star >= 3 ? '中评' : '差评'}
+          </Tag>
+        </Space>
+      ),
     },
     {
       title: '评价内容',
@@ -127,35 +138,87 @@ const ReviewList: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 100,
-      render: (_, record) => (
+      width: 120,
+      render: (_, record) =>
         !record.reply && (
-            <Button type="link" onClick={() => handleReplyClick(record)}>回复</Button>
-        )
-      ),
+          <Button type="link" onClick={() => handleReplyClick(record)}>
+            回复
+          </Button>
+        ),
     },
   ];
 
   return (
-    <Card title="评价管理" variant="borderless">
+    <div>
       {contextHolder}
-      <Table
-        rowKey="id"
-        columns={columns}
-        dataSource={data}
-        loading={loading}
-        pagination={{
-          current: page,
-          pageSize: pageSize,
-          total: total,
-          showSizeChanger: true,
-          onChange: (p, s) => {
-            setPage(p);
-            setPageSize(s);
-          },
+      <div
+        style={{
+          marginBottom: 16,
+          padding: '8px 12px 12px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          gap: 16,
+          borderBottom: '1px solid #E5E7EB',
         }}
-      />
-      
+      >
+        <div>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 20,
+              fontWeight: 600,
+              color: '#022c22',
+            }}
+          >
+            评价管理
+          </h2>
+          <div
+            style={{
+              marginTop: 4,
+              fontSize: 12,
+              color: '#6B7280',
+            }}
+          >
+            查看用户对商品的评价，及时回复提升店铺口碑
+          </div>
+        </div>
+        <Space size="middle">
+          <Tag color="default">共 {total} 条评价</Tag>
+          <Button
+            size="middle"
+            onClick={() => loadData(page, pageSize)}
+            style={{
+              borderRadius: 999,
+              borderColor: '#D1D5DB',
+              color: '#374151',
+            }}
+          >
+            刷新列表
+          </Button>
+        </Space>
+      </div>
+      <Card variant="borderless">
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={data}
+          loading={loading}
+          size="middle"
+          pagination={{
+            current: page,
+            pageSize,
+            total,
+            showSizeChanger: true,
+            showTotal: (t) => `共 ${t} 条`,
+            onChange: (p, s) => {
+              setPage(p);
+              setPageSize(s);
+            },
+          }}
+        />
+      </Card>
+
       <Modal
         title="回复评价"
         open={replyVisible}
@@ -163,14 +226,14 @@ const ReviewList: React.FC = () => {
         onCancel={() => setReplyVisible(false)}
         confirmLoading={replyLoading}
       >
-        <Input.TextArea 
-            rows={4} 
-            value={replyContent} 
-            onChange={e => setReplyContent(e.target.value)} 
-            placeholder="请输入回复内容..."
+        <Input.TextArea
+          rows={4}
+          value={replyContent}
+          onChange={(e) => setReplyContent(e.target.value)}
+          placeholder="请输入回复内容..."
         />
       </Modal>
-    </Card>
+    </div>
   );
 };
 

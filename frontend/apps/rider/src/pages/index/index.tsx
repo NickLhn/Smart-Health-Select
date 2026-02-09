@@ -58,39 +58,108 @@ const Index: React.FC = () => {
     Taro.navigateTo({ url: `/pages/order-detail/index?id=${id}` })
   }
 
+  // Handle scroll for glassmorphism effect
+  const [scrollTop, setScrollTop] = useState(0)
+  const onScroll = (e) => setScrollTop(e.detail.scrollTop)
+
+  const [isOnline, setIsOnline] = useState(true)
+  const toggleOnline = () => {
+    setIsOnline(!isOnline)
+    Taro.showToast({ title: !isOnline ? '开始听单' : '已休息', icon: 'none' })
+  }
+
   return (
     <View className='index-container'>
-      <View className='header'>接单大厅</View>
-      <ScrollView scrollY className='list'>
-        {list.length === 0 ? (
-          <View className='empty'>暂无待接订单</View>
-        ) : (
-          list.map(item => (
-            <View key={item.id} className='card' onClick={() => handleCardClick(item.id)}>
-              <View className='card-header'>
-                <View className='flex items-center'>
-                  {item.isUrgent === 1 && <Text className='tag urgent'>急</Text>}
-                  <Text className='shop-name'>{item.shopName || '智健合作商家'}</Text>
-                </View>
-                <Text className='distance'>500m内</Text>
+      {/* 顶部仪表盘 */}
+      <View className={`header ${scrollTop > 10 ? 'scrolled' : ''}`}>
+        <View className='dashboard-card'>
+          <View className='row'>
+            <View className='col'>
+              <Text className='label'>今日收入</Text>
+              <View className='value-group'>
+                <Text className='symbol'>¥</Text>
+                <Text className='value'>128.50</Text>
               </View>
-              
-              <View className='info-row'>
-                <Text className='tag pickup'>取</Text>
-                <Text className='address'>{item.shopAddress}</Text>
+            </View>
+            <View className='col'>
+              <Text className='label'>待抢订单</Text>
+              <View className='value-group'>
+                <Text className='value'>{list.length}</Text>
+                <Text className='unit'>单</Text>
               </View>
-              
-              <View className='info-row'>
-                <Text className='tag deliver'>送</Text>
-                <Text className='address'>{item.receiverAddress}</Text>
+            </View>
+          </View>
+          <View className='divider' />
+          <View className='row'>
+            <View className='col'>
+              <Text className='label'>在线时长</Text>
+              <Text className='sub-value'>4h 12m</Text>
+            </View>
+            <View className='col'>
+              <View className={`status-badge ${isOnline ? 'online' : 'offline'}`} onClick={toggleOnline}>
+                <Text>{isOnline ? '听单中' : '休息中'}</Text>
               </View>
+            </View>
+          </View>
+        </View>
+      </View>
 
-              <View className='footer'>
-                <View className='price-box'>
-                  <Text className='label'>本单收入 </Text>
-                  <Text className='price'><Text className='currency'>¥</Text>{item.deliveryFee || 0}</Text>
+      {/* 订单列表 */}
+      <View className='section-header'>
+        <Text className='title'>附近新订单</Text>
+        <View className='filter-tags'>
+           <Text className='tag active'>全部</Text>
+           <Text className='tag'>附近</Text>
+           <Text className='tag'>加急</Text>
+        </View>
+      </View>
+
+      <ScrollView className='list' scrollY onScroll={onScroll}>
+        {list.length === 0 ? (
+          <View className='empty'>
+            <Text>暂无新订单</Text>
+          </View>
+        ) : (
+          list.map((item) => (
+            <View className='card' key={item.id} onClick={() => handleCardClick(item.id)}>
+              <View className='status-bar'></View>
+              <View className='card-content'>
+                <View className='card-header'>
+                  <View className='shop-info'>
+                     <Text className='shop-name'>{item.shopName}</Text>
+                     <View className='tags'>
+                       <Text className='tag'>帮送</Text>
+                       {item.isUrgent === 1 && <Text className='tag urgent'>加急</Text>}
+                       <Text className='tag distance'>距离 {item.distance || '0.8'}km</Text>
+                     </View>
+                  </View>
+                  <View className='price'>
+                    <Text className='currency'>¥</Text>
+                    <Text className='amount'>{item.deliveryFee}</Text>
+                  </View>
                 </View>
-                <Button className='btn-accept' onClick={(e) => { e.stopPropagation(); handleAccept(item.id) }}>立即抢单</Button>
+                
+                <View className='route-info'>
+                  <View className='timeline-item pickup'>
+                    <View className='dot' />
+                    <View className='info'>
+                      <Text className='address'>{item.shopAddress}</Text>
+                      <Text className='detail'>取货点</Text>
+                    </View>
+                  </View>
+                  
+                  <View className='timeline-item deliver'>
+                    <View className='dot' />
+                    <View className='info'>
+                      <Text className='address'>{item.receiverAddress}</Text>
+                      <Text className='detail'>送货点</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View className='card-footer'>
+                  <Button className='btn-accept' onClick={(e) => { e.stopPropagation(); handleAccept(item.id) }}>立即抢单</Button>
+                </View>
               </View>
             </View>
           ))
