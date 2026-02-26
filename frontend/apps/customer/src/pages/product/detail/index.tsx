@@ -153,22 +153,22 @@ const ProductDetail: React.FC = () => {
   const MobileActionBar = () => (
     <div className="fixed bottom-0 left-0 right-0 glass-panel !bg-white/80 border-t border-white/30 p-3 px-4 flex items-center justify-between md:hidden z-50 pb-safe shadow-[0_-4px_30px_rgba(0,0,0,0.05)]">
       <div className="flex items-center gap-5 mr-4">
-        <div className="flex flex-col items-center justify-center cursor-pointer text-gray-400 hover:text-emerald-600 transition-colors" onClick={() => navigate('/')}>
+        <button type="button" className="bg-transparent border-0 p-0 flex flex-col items-center justify-center cursor-pointer text-gray-400 hover:text-emerald-600 transition-colors" onClick={() => navigate('/')} aria-label="返回首页">
            <ShopOutlined className="text-xl mb-0.5" />
            <span className="text-[10px] font-medium">店铺</span>
-        </div>
-        <div className="flex flex-col items-center justify-center cursor-pointer text-gray-400 hover:text-emerald-600 transition-colors" onClick={() => setChatOpen(true)}>
+        </button>
+        <button type="button" className="bg-transparent border-0 p-0 flex flex-col items-center justify-center cursor-pointer text-gray-400 hover:text-emerald-600 transition-colors" onClick={() => setChatOpen(true)} aria-label="联系商家客服">
            <MessageOutlined className="text-xl mb-0.5" />
            <span className="text-[10px] font-medium">客服</span>
-        </div>
-        <div className="flex flex-col items-center justify-center cursor-pointer text-gray-400 hover:text-red-500 transition-colors" onClick={handleFavorite}>
+        </button>
+        <button type="button" className="bg-transparent border-0 p-0 flex flex-col items-center justify-center cursor-pointer text-gray-400 hover:text-red-500 transition-colors" onClick={handleFavorite} aria-label={isFavorite ? '取消收藏' : '收藏'}>
            {isFavorite ? <HeartFilled className="text-xl mb-0.5 text-red-500" /> : <HeartOutlined className="text-xl mb-0.5" />}
            <span className="text-[10px] font-medium">{isFavorite ? '已藏' : '收藏'}</span>
-        </div>
-        <div className="flex flex-col items-center justify-center cursor-pointer text-gray-400 hover:text-emerald-600 transition-colors relative" onClick={() => navigate('/cart')}>
+        </button>
+        <button type="button" className="bg-transparent border-0 p-0 flex flex-col items-center justify-center cursor-pointer text-gray-400 hover:text-emerald-600 transition-colors relative" onClick={() => navigate('/cart')} aria-label="打开购物车">
            <ShoppingCartOutlined className="text-xl mb-0.5" />
            <span className="text-[10px] font-medium">购物车</span>
-        </div>
+        </button>
       </div>
       <div className="flex-1 flex gap-3">
         <Button 

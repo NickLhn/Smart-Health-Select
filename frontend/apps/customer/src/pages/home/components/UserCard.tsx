@@ -46,31 +46,31 @@ const UserCard: React.FC = () => {
         {/* Middle: Stats / Quick Actions */}
         {isAuthenticated && (
           <div className="grid grid-cols-3 gap-2 mb-6 text-center">
-            <div className="cursor-pointer hover:bg-white/50 p-2 rounded-xl transition-all duration-200 group" onClick={() => navigate('/orders')}>
+            <button type="button" className="bg-transparent border-0 cursor-pointer hover:bg-white/50 p-2 rounded-xl transition-all duration-200 group" onClick={() => navigate('/orders')}>
               <CreditCardOutlined className="text-xl text-gray-400 group-hover:text-primary mb-1.5 block transition-colors" />
               <div className="text-xs text-gray-500 group-hover:text-gray-700">待付款</div>
-            </div>
-            <div className="cursor-pointer hover:bg-white/50 p-2 rounded-xl transition-all duration-200 group" onClick={() => navigate('/orders')}>
+            </button>
+            <button type="button" className="bg-transparent border-0 cursor-pointer hover:bg-white/50 p-2 rounded-xl transition-all duration-200 group" onClick={() => navigate('/orders')}>
               <CarOutlined className="text-xl text-gray-400 group-hover:text-primary mb-1.5 block transition-colors" />
               <div className="text-xs text-gray-500 group-hover:text-gray-700">待收货</div>
-            </div>
-            <div className="cursor-pointer hover:bg-white/50 p-2 rounded-xl transition-all duration-200 group" onClick={() => navigate('/profile/coupon')}>
+            </button>
+            <button type="button" className="bg-transparent border-0 cursor-pointer hover:bg-white/50 p-2 rounded-xl transition-all duration-200 group" onClick={() => navigate('/profile/coupon')}>
               <WalletOutlined className="text-xl text-gray-400 group-hover:text-primary mb-1.5 block transition-colors" />
               <div className="text-xs text-gray-500 group-hover:text-gray-700">优惠券</div>
-            </div>
+            </button>
           </div>
         )}
 
         {/* Core Services Links */}
         <div className="space-y-2.5">
-          <div className="flex items-center justify-between text-xs text-gray-600 hover:text-primary cursor-pointer group transition-all bg-white/40 hover:bg-primary-50/50 p-2.5 rounded-xl border border-transparent hover:border-primary-100">
+          <button type="button" className="w-full bg-transparent border-0 text-left p-0 flex items-center justify-between text-xs text-gray-600 hover:text-primary cursor-pointer group transition-all bg-white/40 hover:bg-primary-50/50 p-2.5 rounded-xl border border-transparent hover:border-primary-100" onClick={() => navigate('/health')}>
             <span className="flex items-center gap-2.5 font-medium"><SafetyCertificateOutlined className="text-primary" /> 正品保障</span>
             <RightOutlined className="text-[10px] text-gray-300 group-hover:text-primary-400" />
-          </div>
-          <div className="flex items-center justify-between text-xs text-gray-600 hover:text-secondary cursor-pointer group transition-all bg-white/40 hover:bg-secondary-50/50 p-2.5 rounded-xl border border-transparent hover:border-secondary-100">
+          </button>
+          <button type="button" className="w-full bg-transparent border-0 text-left p-0 flex items-center justify-between text-xs text-gray-600 hover:text-secondary cursor-pointer group transition-all bg-white/40 hover:bg-secondary-50/50 p-2.5 rounded-xl border border-transparent hover:border-secondary-100" onClick={() => navigate('/orders')}>
              <span className="flex items-center gap-2.5 font-medium"><FileTextOutlined className="text-secondary" /> 处方审核</span>
              <RightOutlined className="text-[10px] text-gray-300 group-hover:text-secondary-400" />
-          </div>
+          </button>
         </div>
       </div>
 
@@ -80,12 +80,12 @@ const UserCard: React.FC = () => {
           <BellOutlined /> <span>最新公告</span>
         </div>
         <div className="space-y-1.5">
-           <div className="text-xs text-gray-500 truncate cursor-pointer hover:text-primary flex items-center gap-1.5 transition-colors">
+           <button type="button" className="bg-transparent border-0 p-0 w-full text-left text-xs text-gray-500 truncate cursor-pointer hover:text-primary flex items-center gap-1.5 transition-colors" onClick={() => navigate('/health')}>
              <span className="w-1.5 h-1.5 rounded-full bg-gray-300"></span> 智健优选新版上线通知
-           </div>
-           <div className="text-xs text-gray-500 truncate cursor-pointer hover:text-primary flex items-center gap-1.5 transition-colors">
+           </button>
+           <button type="button" className="bg-transparent border-0 p-0 w-full text-left text-xs text-gray-500 truncate cursor-pointer hover:text-primary flex items-center gap-1.5 transition-colors" onClick={() => navigate('/health')}>
              <span className="w-1.5 h-1.5 rounded-full bg-gray-300"></span> 夏季防暑降温药品特惠
-           </div>
+           </button>
         </div>
       </div>
     </div>

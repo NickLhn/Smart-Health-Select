@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Breadcrumb, theme, ConfigProvider, Avatar, Dropdown, App as AntdApp } from 'antd';
+import { Layout, Menu, Breadcrumb, theme, ConfigProvider, Avatar, Dropdown, App as AntdApp, Button } from 'antd';
 import {
   DesktopOutlined,
   PieChartOutlined,
@@ -10,7 +10,11 @@ import {
   KeyOutlined,
   PictureOutlined,
   ReadOutlined,
-  GiftOutlined
+  GiftOutlined,
+  RobotOutlined,
+  SettingOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
@@ -27,6 +31,8 @@ import Password from './pages/password';
 import BannerList from './pages/operation/banner';
 import ArticleList from './pages/operation/article';
 import CouponList from './pages/marketing/coupon';
+import SystemSetting from './pages/system/setting';
+import AdminAgent from './pages/system/agent';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 import OrderList from './pages/order/list';
@@ -52,6 +58,7 @@ function getItem(
 
 const items: MenuItem[] = [
   getItem('工作台', '/dashboard', <PieChartOutlined />),
+  getItem('智能体', '/agent', <RobotOutlined />),
   getItem('用户管理', '/user', <UserOutlined />, [
     getItem('普通用户', '/user/user-list'),
     getItem('商家审核', '/user/merchant-audit'),
@@ -70,6 +77,9 @@ const items: MenuItem[] = [
   getItem('运营管理', '/operation', <DesktopOutlined />, [
     getItem('轮播图管理', '/operation/banner', <PictureOutlined />),
     getItem('健康资讯', '/operation/article', <ReadOutlined />),
+  ]),
+  getItem('系统管理', '/system', <SettingOutlined />, [
+    getItem('系统设置', '/system/setting'),
   ]),
 ];
 
@@ -117,18 +127,61 @@ const MainLayout: React.FC = () => {
   // Simple logic to find open key based on path structure like /user/user-list -> /user
   const openKey = '/' + selectedKey.split('/')[1];
 
+  const currentTitle = (() => {
+    const map: Record<string, string> = {
+      '/dashboard': '工作台',
+      '/user/user-list': '普通用户',
+      '/user/merchant-audit': '商家审核',
+      '/medicine/list': '药品库',
+      '/medicine/category': '分类管理',
+      '/order/order-list': '订单列表',
+      '/order/refund': '售后处理',
+      '/marketing/coupon': '优惠券管理',
+      '/operation/banner': '轮播图管理',
+      '/operation/article': '健康资讯',
+      '/system/setting': '系统设置',
+      '/agent': '智能体',
+      '/system/agent': '智能体',
+      '/password': '修改密码',
+    };
+    return map[selectedKey] || '管理端';
+  })();
+
+  const breadcrumbItems = [
+    {
+      title: (
+        <button
+          type="button"
+          className="bg-transparent border-0 p-0 cursor-pointer hover:text-blue-600 transition-colors"
+          onClick={() => navigate('/dashboard')}
+        >
+          首页
+        </button>
+      ),
+    },
+    { title: currentTitle },
+  ];
+
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh', background: '#F8FAFC' }}>
       <Sider
-        collapsible
         collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
-        style={{ background: '#ffffff', borderRight: '1px solid #e5e7eb' }}
+        trigger={null}
+        width={264}
+        collapsedWidth={84}
+        className="a-sider"
+        style={{ background: '#ffffff', borderRight: '1px solid rgba(15, 23, 42, 0.08)' }}
       >
-        <div className="demo-logo-vertical" style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: 16 }}>
-             <h1 style={{ color: '#0f172a', margin: 0, fontSize: collapsed ? '13px' : '18px', fontWeight: 600, transition: 'all 0.2s', whiteSpace: 'nowrap', overflow: 'hidden' }}>
-                {collapsed ? '智健' : '智健优选管理端'}
-             </h1>
+        <div className="a-siderLogo">
+          <button
+            type="button"
+            className="a-siderLogoBtn"
+            onClick={() => navigate('/dashboard')}
+            aria-label="返回工作台"
+          >
+            <span className="a-siderLogoMark" aria-hidden="true" />
+            <span className="a-siderLogoText">{collapsed ? '智健' : '智健优选管理端'}</span>
+          </button>
         </div>
         <Menu 
           theme="light" 
@@ -138,26 +191,41 @@ const MainLayout: React.FC = () => {
           mode="inline" 
           items={items} 
           onClick={onClick}
+          className="a-menu"
           style={{ borderInlineEnd: 'none' }}
         />
       </Sider>
       <Layout>
         <Header
+          className="a-header"
           style={{
             padding: '0 24px',
-            background: '#f9fafb',
+            background: 'rgba(248,250,252,0.78)',
+            backdropFilter: 'blur(10px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderBottom: '1px solid #e5e7eb'
+            borderBottom: '1px solid rgba(15, 23, 42, 0.08)'
           }}
         >
-            <Breadcrumb items={[{ title: '首页' }, { title: '工作台' }]} />
-            <Dropdown menu={{ items: userMenuItems }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+            <div className="a-headerLeft">
+              <Button
+                type="text"
+                className="a-collapseBtn"
+                icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                onClick={() => setCollapsed((v) => !v)}
+                aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}
+              />
+              <div className="a-headerMeta">
+                <div className="a-pageTitle">{currentTitle}</div>
+                <Breadcrumb items={breadcrumbItems} />
+              </div>
+            </div>
+            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>
+              <button type="button" className="a-userBtn" aria-label="用户菜单">
                   <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#2563eb' }} src={user?.avatar} />
                   <span>{user?.nickname || user?.username || '管理员'}</span>
-              </div>
+              </button>
             </Dropdown>
         </Header>
         <Content style={{ margin: '16px 16px' }}>
@@ -167,6 +235,7 @@ const MainLayout: React.FC = () => {
               minHeight: 360,
               background: colorBgContainer,
               borderRadius: borderRadiusLG,
+              boxShadow: '0 18px 45px rgba(2, 6, 23, 0.06)',
             }}
           >
             <Outlet />
@@ -211,6 +280,9 @@ const App: React.FC = () => {
                 <Route path="marketing/coupon" element={<CouponList />} />
                 <Route path="operation/banner" element={<BannerList />} />
                 <Route path="operation/article" element={<ArticleList />} />
+                <Route path="system/setting" element={<SystemSetting />} />
+                <Route path="agent" element={<AdminAgent />} />
+                <Route path="system/agent" element={<AdminAgent />} />
                 <Route path="password" element={<Password />} />
                 <Route path="*" element={<div>页面开发中...</div>} />
               </Route>

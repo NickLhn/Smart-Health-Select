@@ -18,6 +18,22 @@
             <artifactId>zhijian-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.zhijian</groupId>
+            <artifactId>zhijian-user</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.zhijian</groupId>
+            <artifactId>zhijian-medicine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.zhijian</groupId>
+            <artifactId>zhijian-order</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.zhijian</groupId>
+            <artifactId>zhijian-delivery</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>

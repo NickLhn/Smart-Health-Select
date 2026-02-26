@@ -1,0 +1,16 @@
+$env:TOOLS_MYSQL_HOST='localhost'
+$env:TOOLS_MYSQL_PORT='3306'
+$env:TOOLS_MYSQL_USER='root'
+$env:TOOLS_MYSQL_PASSWORD='root'
+$env:TOOLS_MYSQL_DB='zhijian_db'
+python -m uvicorn tools_service.app:app --host 127.0.0.1 --port 18080
+
+
+$env:AGENT_TOOLS_BASE_URL='http://127.0.0.1:18080'
+$env:AGENT_REDIS_HOST='localhost'
+$env:AGENT_REDIS_PORT='6379'
+$env:AGENT_REDIS_DB='0'
+python -m uvicorn agent.app:app --host 127.0.0.1 --port 18081
+
+
+langgraph dev

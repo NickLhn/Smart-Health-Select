@@ -100,7 +100,9 @@ const Cart: React.FC = () => {
         </div>
 
         <div className="bg-white/60 backdrop-blur-xl p-4 sticky top-0 md:hidden flex items-center border-b border-white/50 z-10">
-            <LeftOutlined className="mr-4 text-gray-600" onClick={() => navigate(-1)} />
+            <button type="button" className="bg-transparent border-0 p-0 mr-4 text-gray-600" onClick={() => navigate(-1)} aria-label="返回">
+              <LeftOutlined />
+            </button>
             <h1 className="text-lg font-bold flex-1 text-center pr-6 text-gray-800">购物车</h1>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center py-20 px-4 relative z-10">
@@ -132,11 +134,11 @@ const Cart: React.FC = () => {
 
       {/* Mobile Header */}
       <div className="bg-white/70 backdrop-blur-xl p-4 sticky top-0 z-10 md:hidden shadow-sm border-b border-white/50 flex items-center justify-between">
-         <div className="flex items-center w-10 h-10 justify-center -ml-2 rounded-full active:bg-gray-100 transition-colors" onClick={() => navigate(-1)}>
+         <button type="button" className="bg-transparent border-0 p-0 flex items-center w-10 h-10 justify-center -ml-2 rounded-full active:bg-gray-100 transition-colors" onClick={() => navigate(-1)} aria-label="返回">
              <LeftOutlined className="text-gray-600 text-lg" />
-         </div>
+         </button>
          <h1 className="text-lg font-bold text-gray-800">购物车 ({cartItems.length})</h1>
-         <div className="text-sm text-gray-500 active:text-gray-800 px-2 py-1" onClick={clearCart}>清空</div>
+         <button type="button" className="bg-transparent border-0 p-0 text-sm text-gray-500 active:text-gray-800 px-2 py-1" onClick={clearCart}>清空</button>
       </div>
 
       <div className="max-w-6xl mx-auto md:mt-8 px-4 pt-4 md:pt-0 relative z-10">

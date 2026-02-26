@@ -21,11 +21,6 @@
             <groupId>com.zhijian</groupId>
             <artifactId>zhijian-user</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.zhijian</groupId>
-            <artifactId>zhijian-ai</artifactId>
-            <version>0.0.1-beta-SNAPSHOT</version>
-        </dependency>
 
         <!-- Web -->
         <dependency>

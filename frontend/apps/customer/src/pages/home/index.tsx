@@ -7,8 +7,6 @@ import {
   RightOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useAI } from '../../context/AIContext';
 import { getHomeIndex } from '../../services/home';
 import type { HomeIndexVO, Banner } from '../../services/home';
 import CategoryMenu from './components/CategoryMenu';
@@ -31,15 +29,18 @@ const Home: React.FC = () => {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const res = await getHomeIndex();
       if (res.code === 200) {
         setData(res.data);
       } else {
         message.error(res.message);
+        setData(null);
       }
     } catch (error) {
-      console.error('Failed to fetch home data:', error);
+      message.error('获取首页数据失败，请稍后重试');
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -57,7 +58,7 @@ const Home: React.FC = () => {
     return (
       <div className="flex flex-col gap-6 p-6 min-h-screen bg-slate-50 relative overflow-hidden">
         {/* Background Elements */}
-        <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0 hidden sm:block">
           <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary-200/20 blur-3xl" />
           <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-secondary-200/20 blur-3xl" />
         </div>
@@ -74,10 +75,23 @@ const Home: React.FC = () => {
     );
   }
 
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-surface-subtle flex items-center justify-center px-4 py-16">
+        <div className="glass-panel !bg-white/70 rounded-3xl p-10 w-full max-w-lg text-center">
+          <Empty description="首页数据加载失败" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          <Button type="primary" className="mt-6 bg-primary border-primary hover:bg-primary-600" onClick={fetchData}>
+            重新加载
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-surface-subtle relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-surface-subtle via-primary-50/30 to-cyan-50/30 relative overflow-hidden">
       {/* Background Elements */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0 hidden sm:block">
         <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary-200/20 blur-3xl" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-secondary-200/20 blur-3xl" />
         <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] rounded-full bg-cyan-200/20 blur-3xl" />
@@ -90,6 +104,7 @@ const Home: React.FC = () => {
           <Search 
             placeholder="搜索药品名称、症状..." 
             onSearch={onSearch} 
+            aria-label="搜索药品"
             enterButton={
               <Button type="primary" className="bg-primary border-primary hover:bg-primary-600 shadow-md shadow-primary/20">
                 搜索
@@ -112,22 +127,57 @@ const Home: React.FC = () => {
             {/* Center: Banner */}
             <Col xs={24} md={14} className="h-full">
               <div className="rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 h-[200px] md:h-full relative group glass-panel !bg-white/60 !border-0 p-0">
-                {data?.banners && data.banners.length > 0 ? (
+                {data.banners && data.banners.length > 0 ? (
                   <Carousel autoplay effect="fade" className="h-full [&_.slick-dots-bottom]:bottom-4">
-                    {data.banners.map((banner: Banner) => (
-                      <div key={banner.id} className="h-full">
-                         <a href={banner.linkUrl || '#'} target={banner.linkUrl ? "_blank" : "_self"} rel="noreferrer" className="block h-[200px] md:h-[420px] relative bg-gray-100">
-                            {banner.imageUrl ? (
-                              <img src={banner.imageUrl} alt="banner" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-primary-600 to-primary-800 text-white p-8">
-                                <h1 className="text-3xl md:text-5xl font-bold mb-4 font-display">智健优选</h1>
-                                <p className="text-lg md:text-xl opacity-90">您的专属健康管家</p>
-                              </div>
-                            )}
-                         </a>
-                      </div>
-                    ))}
+                    {data.banners.map((banner: Banner) => {
+                      const link = (banner.linkUrl || '').trim();
+                      const isExternal = /^https?:\/\//i.test(link);
+                      const isInternal = link.startsWith('/');
+
+                      const content = banner.imageUrl ? (
+                        <img
+                          src={banner.imageUrl}
+                          alt="首页轮播图"
+                          className="w-full h-full object-cover"
+                          loading="eager"
+                          decoding="async"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-primary-600 to-primary-800 text-white p-8">
+                          <h1 className="text-3xl md:text-5xl font-bold mb-4 font-display">智健优选</h1>
+                          <p className="text-lg md:text-xl opacity-90">您的专属健康管家</p>
+                        </div>
+                      );
+
+                      return (
+                        <div key={banner.id} className="h-full">
+                          {isExternal ? (
+                            <a
+                              href={link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block h-[200px] md:h-[420px] relative bg-gray-100"
+                              aria-label="打开活动"
+                            >
+                              {content}
+                            </a>
+                          ) : isInternal ? (
+                            <button
+                              type="button"
+                              className="block w-full text-left h-[200px] md:h-[420px] relative bg-gray-100 border-0 p-0 cursor-pointer"
+                              onClick={() => navigate(link)}
+                              aria-label="打开活动"
+                            >
+                              {content}
+                            </button>
+                          ) : (
+                            <div className="block h-[200px] md:h-[420px] relative bg-gray-100" aria-label="活动">
+                              {content}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </Carousel>
                 ) : (
                   <div className="bg-gradient-to-br from-primary to-primary-700 h-full flex items-center justify-between p-8 md:p-12 text-white relative overflow-hidden h-[200px] md:h-full">
@@ -171,7 +221,7 @@ const Home: React.FC = () => {
               查看更多 <RightOutlined />
             </Button>
           </div>
-          {data?.hotMedicines && data.hotMedicines.length > 0 ? (
+          {data.hotMedicines && data.hotMedicines.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
                 {data.hotMedicines.map(item => (
                   <ProductCard key={item.id} product={item} />
@@ -184,15 +234,15 @@ const Home: React.FC = () => {
 
       {/* Recommend Medicines */}
       <div className="mb-12">
-         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-800 m-0 flex items-center gap-2">
+         <div className="flex items-center justify-between mb-6 px-1">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-800 m-0 flex items-center gap-3 font-display">
             <ThunderboltOutlined className="text-blue-500" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-500">新品上市</span>
           </h2>
-          <span className="text-sm text-gray-400">每日上新 品质优选</span>
+          <span className="text-xs md:text-sm text-gray-400">每日上新 品质优选</span>
          </div>
-        {data?.recommendMedicines && data.recommendMedicines.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {data.recommendMedicines && data.recommendMedicines.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
               {data.recommendMedicines.map(item => (
                 <ProductCard key={item.id} product={item} />
               ))}

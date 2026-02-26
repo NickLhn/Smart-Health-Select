@@ -1,7 +1,7 @@
 import React from 'react';
 import { ConfigProvider, App as AntdApp } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { antdTheme } from './theme/antdTheme';
 import MainLayout from './layouts/MainLayout';
 import RequireAuth from './components/auth/RequireAuth';
@@ -12,7 +12,6 @@ import { AIProvider } from './context/AIContext';
 
 import Home from './pages/home';
 import MedicineList from './pages/medicine';
-import CategoryBrowse from './pages/category';
 import HealthPage from './pages/health';
 import HealthArticleDetail from '@/pages/health/detail/index';
 import ProductDetail from '@/pages/product/detail/index';
@@ -52,7 +51,7 @@ const App: React.FC = () => {
                   <Route path="/" element={<MainLayout />}>
                     <Route index element={<Home />} />
                     <Route path="medicine" element={<MedicineList />} />
-                    <Route path="category" element={<CategoryBrowse />} />
+                    <Route path="category" element={<Navigate to="/medicine" replace />} />
                     <Route path="health" element={<HealthPage />} />
                     <Route path="health/article/:id" element={<HealthArticleDetail />} />
                     <Route path="product/:id" element={<ProductDetail />} />

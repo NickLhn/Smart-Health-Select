@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
-import { MedicineBoxOutlined, MenuOutlined, ShoppingCartOutlined, UserOutlined } from '@ant-design/icons';
+import { MedicineBoxOutlined, ShoppingCartOutlined, UserOutlined } from '@ant-design/icons';
 import { getCustomerBottomNavKey, shouldHideCustomerBottomNav } from '../../utils/navigation';
 
 const BottomNav: React.FC = () => {
@@ -15,7 +15,6 @@ const BottomNav: React.FC = () => {
 
   const navItems = [
     { key: '/', icon: <MedicineBoxOutlined />, label: '首页' },
-    { key: '/category', icon: <MenuOutlined />, label: '分类' },
     { key: '/cart', icon: <ShoppingCartOutlined />, label: '购物车', badge: totalItems },
     { key: '/profile', icon: <UserOutlined />, label: '我的' },
   ];
@@ -25,12 +24,14 @@ const BottomNav: React.FC = () => {
       {navItems.map((item) => {
         const isActive = getCustomerBottomNavKey(location.pathname) === item.key;
         return (
-          <div
+          <button
             key={item.key}
-            className={`flex flex-col items-center justify-center space-y-1 cursor-pointer w-16 transition-all duration-300 ${
+            type="button"
+            className={`bg-transparent border-0 p-0 flex flex-col items-center justify-center space-y-1 cursor-pointer w-16 transition-all duration-300 ${
               isActive ? 'text-primary' : 'text-gray-400 hover:text-gray-600'
             }`}
             onClick={() => navigate(item.key)}
+            aria-current={isActive ? 'page' : undefined}
           >
             <div className="relative group">
               <span className={`text-2xl mb-0.5 block transition-transform duration-300 ${isActive ? 'scale-110 -translate-y-0.5' : 'group-hover:scale-105'}`}>
@@ -45,7 +46,7 @@ const BottomNav: React.FC = () => {
             <span className={`text-[10px] font-medium transition-colors duration-300 ${isActive ? 'text-primary font-bold' : ''}`}>
               {item.label}
             </span>
-          </div>
+          </button>
         );
       })}
     </div>

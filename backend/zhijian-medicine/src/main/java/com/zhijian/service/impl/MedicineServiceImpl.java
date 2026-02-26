@@ -75,6 +75,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         medicine.setCategoryId(dto.getCategoryId());
         medicine.setStatus(1); // 默认上架
         medicine.setSales(0); // 默认销量为0
+        medicine.setDeleted(0);
         boolean success = medicineMapper.insert(medicine) > 0;
         if (success) {
             // 虽然是新增，但为了保险起见，如果之前有缓存穿透留下的空值，删掉它
@@ -88,7 +89,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
     @Override
     public boolean updateMedicine(Long id, MedicineDTO dto, Long sellerId) {
         Medicine medicine = medicineMapper.selectById(id);
-        if (medicine == null || !medicine.getSellerId().equals(sellerId)) {
+        if (medicine == null || !medicine.getSellerId().equals(sellerId) || Integer.valueOf(1).equals(medicine.getDeleted())) {
             throw new RuntimeException("药品不存在或无权操作");
         }
         BeanUtil.copyProperties(dto, medicine);
@@ -109,6 +110,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         Page<Medicine> page = new Page<>(query.getPage(), query.getSize());
         LambdaQueryWrapper<Medicine> wrapper = new LambdaQueryWrapper<>();
         
+        wrapper.eq(Medicine::getDeleted, 0);
         if (StrUtil.isNotBlank(query.getKeyword())) {
             wrapper.and(w -> w.like(Medicine::getName, query.getKeyword())
                     .or()
@@ -169,7 +171,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         // 2. 缓存未命中，查询数据库
         Medicine medicine = medicineMapper.selectById(id);
         
-        if (medicine != null) {
+        if (medicine != null && !Integer.valueOf(1).equals(medicine.getDeleted())) {
             Category category = categoryMapper.selectById(medicine.getCategoryId());
             if (category != null) {
                 medicine.setCategoryName(category.getName());
@@ -205,7 +207,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
     @Override
     public boolean updateStatus(Long id, Integer status, Long sellerId) {
         Medicine medicine = medicineMapper.selectById(id);
-        if (medicine == null || !medicine.getSellerId().equals(sellerId)) {
+        if (medicine == null || !medicine.getSellerId().equals(sellerId) || Integer.valueOf(1).equals(medicine.getDeleted())) {
             throw new RuntimeException("药品不存在或无权操作");
         }
         medicine.setStatus(status);
@@ -220,6 +222,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
     public IPage<Medicine> pageListAdmin(MedicineQueryDTO query) {
         Page<Medicine> page = new Page<>(query.getPage(), query.getSize());
         LambdaQueryWrapper<Medicine> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Medicine::getDeleted, 0);
         
         if (StrUtil.isNotBlank(query.getKeyword())) {
             wrapper.and(w -> w.like(Medicine::getName, query.getKeyword())
@@ -253,7 +256,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
     @Override
     public boolean updateStatusByAdmin(Long id, Integer status) {
         Medicine medicine = medicineMapper.selectById(id);
-        if (medicine == null) {
+        if (medicine == null || Integer.valueOf(1).equals(medicine.getDeleted())) {
             throw new RuntimeException("药品不存在");
         }
         medicine.setStatus(status);
@@ -271,14 +274,38 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         }
         return update(new LambdaUpdateWrapper<Medicine>()
                 .in(Medicine::getId, ids)
+                .eq(Medicine::getDeleted, 0)
                 .set(Medicine::getStatus, status));
     }
 
     @Override
     public boolean deleteByAdmin(Long id) {
-        boolean success = removeById(id);
+        Medicine medicine = medicineMapper.selectById(id);
+        if (medicine == null || Integer.valueOf(1).equals(medicine.getDeleted())) {
+            return false;
+        }
+        medicine.setStatus(0);
+        medicine.setDeleted(1);
+        boolean success = medicineMapper.updateById(medicine) > 0;
         if (success) {
             deleteCache(id);
+            deleteStockCache(id);
+        }
+        return success;
+    }
+
+    @Override
+    public boolean deleteBySeller(Long id, Long sellerId) {
+        Medicine medicine = medicineMapper.selectById(id);
+        if (medicine == null || !medicine.getSellerId().equals(sellerId) || Integer.valueOf(1).equals(medicine.getDeleted())) {
+            throw new RuntimeException("药品不存在或无权操作");
+        }
+        medicine.setStatus(0);
+        medicine.setDeleted(1);
+        boolean success = medicineMapper.updateById(medicine) > 0;
+        if (success) {
+            deleteCache(id);
+            deleteStockCache(id);
         }
         return success;
     }
@@ -288,6 +315,11 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
      */
     private void deleteCache(Long id) {
         String key = CACHE_KEY_PREFIX + id;
+        stringRedisTemplate.delete(key);
+    }
+
+    private void deleteStockCache(Long id) {
+        String key = STOCK_KEY_PREFIX + id;
         stringRedisTemplate.delete(key);
     }
 

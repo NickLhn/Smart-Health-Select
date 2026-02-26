@@ -31,10 +31,24 @@ const HealthNews: React.FC<HealthNewsProps> = ({ articles }) => {
             key={article.id}
             className="glass-panel !bg-white/70 p-3 flex md:flex-col gap-4 cursor-pointer hover:-translate-y-1 hover:shadow-xl transition-all duration-300 border-0 group"
             onClick={() => navigate(`/health/article/${article.id}`)}
+            role="link"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate(`/health/article/${article.id}`);
+              }
+            }}
           >
             <div className="w-28 h-24 md:w-full md:h-48 shrink-0 rounded-xl overflow-hidden bg-gray-100 relative">
               {article.coverImage ? (
-                <img src={article.coverImage} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <img
+                  src={article.coverImage}
+                  alt={article.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  loading="lazy"
+                  decoding="async"
+                />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50">
                   <ReadOutlined style={{ fontSize: 32 }} />

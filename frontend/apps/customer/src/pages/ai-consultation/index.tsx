@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Input, Button, Avatar } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined, ArrowLeftOutlined, RightOutlined, DeleteOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
@@ -10,6 +10,67 @@ interface AIConsultationProps {
   isPopup?: boolean;
   onClose?: () => void;
 }
+
+type QuickReplyVariant = 'primary' | 'danger' | 'default';
+
+type QuickReply = {
+  key: string;
+  label: string;
+  sendText: string;
+  variant?: QuickReplyVariant;
+};
+
+const compactCandidateLabel = (raw: string) => {
+  const cleaned = raw.replace(/\s+/g, ' ').trim();
+  if (cleaned.length <= 18) return cleaned;
+  return `${cleaned.slice(0, 18)}…`;
+};
+
+const buildQuickReplies = (text: string): QuickReply[] => {
+  const t = (text ?? '').replace(/\r\n/g, '\n').trim();
+  if (!t) return [];
+
+  const hasOrderConfirm = /回复\s*1\s*确认下单/.test(t) && /回复\s*0\s*取消/.test(t);
+
+  if (hasOrderConfirm) {
+    return [
+      { key: 'confirm', label: '确认下单', sendText: '1', variant: 'primary' },
+      { key: 'cancel', label: '取消', sendText: '0', variant: 'danger' },
+    ];
+  }
+
+  const hasPickHint =
+    /回复\s*序号/.test(t) ||
+    /回复\s*数字/.test(t) ||
+    /序号即可/.test(t) ||
+    /我需要你选择/.test(t) ||
+    /请选择/.test(t);
+  if (!hasPickHint) return [];
+
+  const lines = t.split('\n').map((l) => l.trim()).filter(Boolean);
+  const candidates: QuickReply[] = [];
+
+  for (const line of lines) {
+    const m = line.match(/^(\d{1,2})[)）]\s*(.+)$/);
+    if (!m) continue;
+    const idx = Number(m[1]);
+    if (!Number.isFinite(idx) || idx <= 0) continue;
+    const label = compactCandidateLabel(m[2]);
+    candidates.push({
+      key: `pick_${idx}`,
+      label: `${idx} · ${label}`,
+      sendText: String(idx),
+      variant: 'default',
+    });
+  }
+
+  const hasCancel = /回复\s*0\s*取消/.test(t) || /回复\s*0\s*取消下单/.test(t) || /0\s*取消/.test(t);
+  const result = candidates.slice(0, 6);
+  if (result.length > 0 && hasCancel) {
+    result.push({ key: 'cancel', label: '取消', sendText: '0', variant: 'danger' });
+  }
+  return result;
+};
 
 const AIConsultation: React.FC<AIConsultationProps> = ({ isPopup = false, onClose }) => {
   const navigate = useNavigate();
@@ -35,49 +96,103 @@ const AIConsultation: React.FC<AIConsultationProps> = ({ isPopup = false, onClos
     await clearMessages();
   };
 
-  const handleSend = async () => {
-    if (!inputValue.trim()) return;
+  const sendMessage = useCallback(async (rawText: string) => {
+    const text = (rawText ?? '').trim();
+    if (!text) return;
+    if (loading) return;
+
+    const now = Date.now();
+    const idBase = `${now}_${Math.random().toString(16).slice(2)}`;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
-      text: inputValue,
+      id: `user_${idBase}`,
+      text,
       sender: 'user',
-      timestamp: Date.now(),
+      timestamp: now,
     };
 
     addMessage(userMessage);
     setInputValue('');
     setLoading(true);
 
-    // Placeholder for AI message
-    const aiMessageId = (Date.now() + 1).toString();
+    const aiMessageId = `ai_${idBase}`;
     const initialAiMessage: Message = {
       id: aiMessageId,
       text: '',
       sender: 'ai',
-      timestamp: Date.now(),
+      timestamp: now + 1,
     };
     addMessage(initialAiMessage);
 
     let currentText = '';
-    await streamChatMessage(inputValue, {
+    let navigated = false;
+    await streamChatMessage(text, {
       onMessage: (content) => {
         currentText += content;
         updateMessage(aiMessageId, { text: currentText });
       },
       onCards: (cards) => {
-         updateMessage(aiMessageId, { recommendations: cards });
+        updateMessage(aiMessageId, { recommendations: cards });
+      },
+      onAction: (action) => {
+        if (!action) return;
+        const type = (action && (action.type || action.actionType)) as string | undefined;
+        if (type !== 'NAVIGATE') return;
+        const url = (action && (action.url || action.path)) as string | undefined;
+        if (!url || typeof url !== 'string') return;
+        const replace = Boolean(action && action.replace);
+        navigated = true;
+        if (isPopup && onClose) onClose();
+        navigate(url, { replace });
       },
       onDone: () => {
+        if (!navigated && /跳转到.*结算页/.test(currentText)) {
+          if (isPopup && onClose) onClose();
+          navigate('/order/checkout');
+        }
         setLoading(false);
       },
       onError: (error) => {
         console.error('AI chat failed', error);
-        updateMessage(aiMessageId, { text: 'AI服务暂时繁忙，请稍后再试。' });
+        const type = (error && (error.type || error.error?.type)) as string | undefined;
+        const raw = (error && (error.message || error.error?.message)) as string | undefined;
+        let text = 'AI服务暂时繁忙，请稍后再试。';
+        if (type === 'AUTH') {
+          text = '登录已过期，请重新登录后再试。';
+        } else if (type === 'TIMEOUT') {
+          text = 'AI响应超时，请稍后再试。';
+        } else if (type === 'UNAVAILABLE') {
+          text = 'AI服务未启动或不可用，请稍后再试。';
+        } else if (type === 'NETWORK') {
+          if (typeof raw === 'string' && /status:\s*401/.test(raw)) {
+            text = '登录已过期，请重新登录后再试。';
+          } else {
+            text = '网络异常，请检查网络后重试。';
+          }
+        } else if (typeof raw === 'string' && /status:\s*401/.test(raw)) {
+          text = '登录已过期，请重新登录后再试。';
+        }
+        updateMessage(aiMessageId, { text });
         setLoading(false);
       },
     });
-  };
+  }, [addMessage, isPopup, loading, navigate, onClose, updateMessage]);
+
+  const handleSend = useCallback(async () => {
+    await sendMessage(inputValue);
+  }, [inputValue, sendMessage]);
+
+  const lastAiText = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const m = messages[i];
+      if (m?.sender === 'ai') {
+        return m.text ?? '';
+      }
+    }
+    return '';
+  }, [messages]);
+
+  const quickReplies = useMemo(() => buildQuickReplies(lastAiText), [lastAiText]);
 
   return (
     <div className={isPopup ? "h-full flex flex-col bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50" : "flex flex-col h-[calc(100vh-64px)] md:h-[calc(100vh-140px)] w-full bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 md:rounded-2xl md:shadow-lg overflow-hidden border border-white/50"}>
@@ -134,7 +249,7 @@ const AIConsultation: React.FC<AIConsultationProps> = ({ isPopup = false, onClos
               >
                 {msg.sender === 'ai' ? (
                   msg.text.trim() ? (
-                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-a:text-emerald-600">
+                    <div className="prose prose-sm max-w-none whitespace-pre-wrap prose-p:my-1 prose-headings:my-2 prose-a:text-emerald-600">
                       <ReactMarkdown>{msg.text}</ReactMarkdown>
                       {msg.recommendations && msg.recommendations.length > 0 && (
                         <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
@@ -197,28 +312,58 @@ const AIConsultation: React.FC<AIConsultationProps> = ({ isPopup = false, onClos
 
       {/* Input Area */}
       <div className="glass-panel !bg-white/80 p-4 border-t border-emerald-100/50 flex-shrink-0 pb-safe backdrop-blur-md !rounded-none">
-        <div className="max-w-[1200px] mx-auto flex gap-3 items-end">
-            <Input.TextArea
-              placeholder="请输入您的问题..."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => {
-                  if(e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                  }
-              }}
-              autoSize={{ minRows: 1, maxRows: 4 }}
-              className="rounded-2xl resize-none py-2.5 px-4 bg-white/50 border-emerald-100 focus:border-emerald-400 hover:border-emerald-300 focus:bg-white transition-all shadow-inner"
-            />
-            <Button 
-              type="primary" 
-              shape="circle" 
-              icon={<SendOutlined />} 
-              size="large" 
-              onClick={handleSend}
-              className="flex-shrink-0 bg-gradient-to-r from-emerald-500 to-teal-500 border-none shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all"
-            />
+        <div className="max-w-[1200px] mx-auto flex flex-col gap-3">
+            {quickReplies.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {quickReplies.map((qr) => {
+                  const base =
+                    "h-10 px-4 rounded-full border transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80 cursor-pointer disabled:cursor-not-allowed";
+
+                  const cls =
+                    qr.variant === 'primary'
+                      ? `${base} text-white border-transparent bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0`
+                      : qr.variant === 'danger'
+                        ? `${base} text-red-600 border-red-200 bg-white/70 hover:bg-red-50 disabled:opacity-60`
+                        : `${base} text-gray-800 border-emerald-100 bg-white/70 hover:bg-emerald-50/60 disabled:opacity-60`;
+
+                  return (
+                    <button
+                      key={qr.key}
+                      type="button"
+                      className={cls}
+                      disabled={loading}
+                      onClick={() => sendMessage(qr.sendText)}
+                      aria-label={qr.label}
+                    >
+                      {qr.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="flex gap-3 items-end">
+              <Input.TextArea
+                placeholder="请输入您的问题..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                    if(e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                    }
+                }}
+                autoSize={{ minRows: 1, maxRows: 4 }}
+                className="rounded-2xl resize-none py-2.5 px-4 bg-white/50 border-emerald-100 focus:border-emerald-400 hover:border-emerald-300 focus:bg-white transition-all shadow-inner"
+              />
+              <Button 
+                type="primary" 
+                shape="circle" 
+                icon={<SendOutlined />} 
+                size="large" 
+                onClick={handleSend}
+                className="flex-shrink-0 bg-gradient-to-r from-emerald-500 to-teal-500 border-none shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all"
+              />
+            </div>
         </div>
       </div>
     </div>

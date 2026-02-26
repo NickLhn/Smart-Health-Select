@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Input, List, Card, Row, Col, Select, Empty, Pagination, Spin, Button, Breadcrumb, Menu, Rate, Tag, Divider, Drawer } from 'antd';
-import { SearchOutlined, FilterOutlined, AppstoreOutlined, BarsOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { Layout, Input, Select, Empty, Pagination, Button, Breadcrumb, Menu, Drawer, App } from 'antd';
+import { SearchOutlined, FilterOutlined, AppstoreOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getMedicineList, getCategoryList } from '../../services/medicine';
 import type { Medicine, Category } from '../../services/medicine';
@@ -11,14 +11,17 @@ const { Option } = Select;
 
 const MedicineList: React.FC = () => {
   const navigate = useNavigate();
+  const { message } = App.useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // State
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [total, setTotal] = useState(0);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Query Params
   const keyword = searchParams.get('keyword') || '';
@@ -36,7 +39,7 @@ const MedicineList: React.FC = () => {
           setCategories(res.data);
         }
       } catch (error) {
-        console.error('Failed to fetch categories:', error);
+        message.error('获取分类失败');
       }
     };
     fetchCategories();
@@ -46,6 +49,7 @@ const MedicineList: React.FC = () => {
   useEffect(() => {
     const fetchMedicines = async () => {
       setLoading(true);
+      setLoadError(false);
       try {
         const res = await getMedicineList({
           page,
@@ -57,15 +61,23 @@ const MedicineList: React.FC = () => {
         if (res.code === 200) {
           setMedicines(res.data.records);
           setTotal(res.data.total);
+          return;
         }
+        message.error(res.message || '获取商品列表失败');
+        setMedicines([]);
+        setTotal(0);
+        setLoadError(true);
       } catch (error) {
-        console.error('Failed to fetch medicines:', error);
+        message.error('获取商品列表失败，请稍后重试');
+        setMedicines([]);
+        setTotal(0);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
     };
     fetchMedicines();
-  }, [keyword, categoryId, page, size, sort]);
+  }, [keyword, categoryId, page, size, sort, refreshKey]);
 
   // Handlers
   const handleSearch = (value: string) => {
@@ -87,6 +99,7 @@ const MedicineList: React.FC = () => {
 
   const clearFilters = () => {
     setSearchParams({ page: '1', size: String(size) });
+    setMobileFilterOpen(false);
   };
 
   // Render Category Menu
@@ -141,6 +154,7 @@ const MedicineList: React.FC = () => {
                     className="md:hidden border-emerald-200 text-emerald-600" 
                     icon={<FilterOutlined />} 
                     onClick={() => setMobileFilterOpen(true)}
+                    aria-label="打开筛选"
                  >
                    分类
                  </Button>
@@ -168,11 +182,13 @@ const MedicineList: React.FC = () => {
                   <Option value="sales_desc">销量从高到低</Option>
                 </Select>
                 <Search
+                  key={keyword}
                   placeholder="搜索药品..."
                   onSearch={handleSearch}
                   defaultValue={keyword}
                   style={{ width: 200 }}
                   allowClear
+                  aria-label="搜索药品"
                   className="rounded-full"
                 />
               </div>
@@ -195,13 +211,29 @@ const MedicineList: React.FC = () => {
                    </div>
                  ))}
                </div>
-            ) : medicines.length > 0 ? (
+            ) : loadError ? (
+                <div className="glass-panel !bg-white/60 rounded-2xl p-12 text-center">
+                  <Empty description="加载失败，请重试" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  <Button type="primary" className="mt-6 bg-emerald-600 border-emerald-600 hover:bg-emerald-700" onClick={() => setRefreshKey((k) => k + 1)}>
+                    重新加载
+                  </Button>
+                </div>
+              ) : medicines.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {medicines.map(item => (
                     <div 
                       key={item.id} 
                       className="glass-panel !bg-white/70 rounded-2xl border-0 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer group flex flex-col h-full relative"
                       onClick={() => navigate(`/product/${item.id}`)}
+                      role="link"
+                      tabIndex={0}
+                      aria-label={`查看商品 ${item.name}`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          navigate(`/product/${item.id}`);
+                        }
+                      }}
                     >
                       <div className="h-48 bg-gray-50 relative overflow-hidden">
                         {item.mainImage ? (
@@ -209,6 +241,8 @@ const MedicineList: React.FC = () => {
                             src={item.mainImage} 
                             alt={item.name} 
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                            decoding="async"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50/50">
@@ -249,6 +283,7 @@ const MedicineList: React.FC = () => {
                               e.stopPropagation();
                               navigate(`/product/${item.id}`);
                             }}
+                            aria-label="查看商品"
                           />
                         </div>
                       </div>
@@ -271,6 +306,7 @@ const MedicineList: React.FC = () => {
                     onChange={handlePageChange}
                     showSizeChanger
                     showQuickJumper
+                    showTotal={(t) => `共 ${t} 件`}
                     className="glass-panel !bg-white/50 px-4 py-2 rounded-full"
                   />
                 </div>
@@ -288,7 +324,41 @@ const MedicineList: React.FC = () => {
           headerStyle={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
           bodyStyle={{ padding: 0 }}
         >
-          {renderCategoryMenu('inline')}
+          <div className="p-4 border-b border-gray-100 bg-white/70 backdrop-blur">
+            <Search
+              key={`${keyword}-m`}
+              placeholder="搜索药品..."
+              onSearch={handleSearch}
+              defaultValue={keyword}
+              allowClear
+              aria-label="搜索药品"
+              className="w-full"
+            />
+            <div className="mt-3">
+              <Select
+                value={sort}
+                style={{ width: '100%' }}
+                onChange={handleSortChange}
+                options={[
+                  { value: 'default', label: '默认排序' },
+                  { value: 'price_asc', label: '价格从低到高' },
+                  { value: 'price_desc', label: '价格从高到低' },
+                  { value: 'sales_desc', label: '销量从高到低' },
+                ]}
+              />
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button onClick={clearFilters} className="flex-1">
+                清空
+              </Button>
+              <Button type="primary" className="flex-1 bg-emerald-600 border-emerald-600 hover:bg-emerald-700" onClick={() => setMobileFilterOpen(false)}>
+                完成
+              </Button>
+            </div>
+          </div>
+          <div className="p-2">
+            {renderCategoryMenu('inline')}
+          </div>
         </Drawer>
       </div>
     </div>

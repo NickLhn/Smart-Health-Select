@@ -4,6 +4,35 @@ export interface ChatRequest {
     message: string;
 }
 
+export interface AIChatResponse {
+    text: string;
+    recommendations?: any;
+    action?: any;
+}
+
+export interface ChatHistoryMessage {
+    id: string;
+    text: string;
+    sender: 'user' | 'ai';
+    timestamp: number;
+    recommendations?: any;
+}
+
+export const sendChatMessage = async (message: string): Promise<AIChatResponse> => {
+    const res = await request.post<AIChatResponse>('/merchant/ai/chat', { message }, { timeout: 60000 });
+    return res.data;
+};
+
+export const getChatHistory = async (): Promise<ChatHistoryMessage[]> => {
+    const res = await request.get<ChatHistoryMessage[]>('/merchant/ai/history', { timeout: 20000 });
+    return res.data;
+};
+
+export const clearChatHistory = async (): Promise<boolean> => {
+    const res = await request.delete<boolean>('/merchant/ai/history', { timeout: 20000 });
+    return res.data;
+};
+
 // SSE 不需要普通的 request 方法，而是直接通过 EventSource 连接
 // 但如果需要发送初始消息来建立连接（有些实现是 POST 后返回 stream），可以使用 fetch
 // 这里我们复用后端的 SSE 接口: /merchant/ai/stream

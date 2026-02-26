@@ -122,6 +122,9 @@ const OrderDetail: React.FC = () => {
   // Special handling for audit status
   if (order.status === 7) currentStep = 0; // 待审核 viewed as step 0 for now
   
+  const couponAmount = order.couponAmount ?? 0;
+  const freightAmount = Math.max(0, (order.payAmount ?? 0) + couponAmount - (order.totalAmount ?? 0));
+
   const stepItems = [
     { 
       title: '提交订单', 
@@ -301,11 +304,11 @@ const OrderDetail: React.FC = () => {
              </div>
              <div className="flex justify-between text-gray-500">
                  <span>运费</span>
-                 <span>¥0.00</span>
+                 <span>¥{freightAmount.toFixed(2)}</span>
              </div>
              <div className="flex justify-between text-gray-500">
                  <span>优惠券</span>
-                 <span>-¥{order.couponAmount?.toFixed(2) || '0.00'}</span>
+                 <span>-¥{couponAmount.toFixed(2)}</span>
              </div>
              <div className="flex justify-between items-center pt-2">
                  <span className="font-bold text-gray-900">实付款</span>
@@ -363,33 +366,6 @@ const OrderDetail: React.FC = () => {
              <Button icon={<MessageOutlined />} onClick={() => navigate('/profile/comment')} className="rounded-full px-6 border-emerald-500 text-emerald-600 hover:bg-emerald-50">去评价</Button>
          )}
       </div>
-
-      <style>{`
-        .custom-steps .ant-steps-item-process .ant-steps-item-icon {
-            background-color: #10b981;
-            border-color: #10b981;
-        }
-        .custom-steps .ant-steps-item-finish .ant-steps-item-icon {
-            border-color: #10b981;
-        }
-        .custom-steps .ant-steps-item-finish .ant-steps-item-icon > .ant-steps-icon {
-            color: #10b981;
-        }
-        .custom-steps .ant-steps-item-finish > .ant-steps-item-container > .ant-steps-item-tail::after {
-            background-color: #10b981;
-        }
-        .custom-table .ant-table-thead > tr > th {
-            background: transparent;
-            color: #6b7280;
-            font-weight: 500;
-        }
-        .custom-table .ant-table-tbody > tr > td {
-            border-bottom-color: #f3f4f6;
-        }
-        .custom-table .ant-table-tbody > tr:last-child > td {
-            border-bottom: none;
-        }
-      `}</style>
     </div>
   );
 };

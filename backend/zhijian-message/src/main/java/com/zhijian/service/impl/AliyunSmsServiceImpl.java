@@ -26,7 +26,6 @@ public class AliyunSmsServiceImpl implements SmsService {
             Config config = new Config()
                     .setAccessKeyId(smsProperties.getAccessKeyId())
                     .setAccessKeySecret(smsProperties.getAccessKeySecret());
-            // 切换为 dypnsapi 端点，因为使用 SendSmsVerifyCodeRequest
             config.endpoint = "dypnsapi.aliyuncs.com";
             this.client = new Client(config);
             log.info("阿里云短信服务(Dypnsapi)初始化成功");

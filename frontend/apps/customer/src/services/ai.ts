@@ -32,17 +32,27 @@ export const clearChatHistory = async (): Promise<boolean> => {
 export interface StreamCallbacks {
   onMessage: (content: string) => void;
   onCards: (cards: Medicine[]) => void;
+  onAction?: (action: any) => void;
   onDone: () => void;
   onError: (error: any) => void;
 }
 
+const buildRequestId = () => {
+  if (typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function') {
+    return (crypto as any).randomUUID();
+  }
+  return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+};
+
 export const streamChatMessage = async (message: string, callbacks: StreamCallbacks) => {
   const token = localStorage.getItem('token');
+  const requestId = buildRequestId();
   try {
     const response = await fetch('/api/ai/stream', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Request-ID': requestId,
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       },
       body: JSON.stringify({ message }),
@@ -57,28 +67,36 @@ export const streamChatMessage = async (message: string, callbacks: StreamCallba
 
     const decoder = new TextDecoder();
     let buffer = '';
+    let streamEnded = false;
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
+      buffer = buffer.replace(/\r\n/g, '\n');
       
       // SSE events are separated by double newlines
       const parts = buffer.split('\n\n');
       buffer = parts.pop() || ''; // Keep the last incomplete part
 
       for (const part of parts) {
-        processPart(part, callbacks);
+        if (streamEnded) break;
+        streamEnded = processPart(part, callbacks) || streamEnded;
       }
     }
 
     // Process any remaining buffer when stream ends
-    if (buffer.trim()) {
+    if (!streamEnded && buffer.trim()) {
+      buffer = buffer.replace(/\r\n/g, '\n');
       processPart(buffer, callbacks);
     }
+
+    if (!streamEnded) {
+      callbacks.onDone();
+    }
   } catch (error) {
-    callbacks.onError(error);
+    callbacks.onError({ type: 'NETWORK', requestId, error });
   }
 };
 
@@ -88,10 +106,11 @@ const processPart = (part: string, callbacks: StreamCallbacks) => {
     let data = '';
   
     for (const line of lines) {
-      if (line.startsWith('event:')) {
-        eventType = line.substring(6).trim();
-      } else if (line.startsWith('data:')) {
-        const lineData = line.substring(5).trim();
+      const normalizedLine = line.endsWith('\r') ? line.slice(0, -1) : line;
+      if (normalizedLine.startsWith('event:')) {
+        eventType = normalizedLine.substring(6).trim();
+      } else if (normalizedLine.startsWith('data:')) {
+        const lineData = normalizedLine.substring(5).trim();
         data = data ? data + '\n' + lineData : lineData;
       }
     }
@@ -99,7 +118,17 @@ const processPart = (part: string, callbacks: StreamCallbacks) => {
     if (data) {
     if (data === '[DONE]') {
       callbacks.onDone();
-      return;
+      return true;
+    }
+
+    if (eventType === 'error') {
+      try {
+        callbacks.onError(JSON.parse(data));
+      } catch (e) {
+        callbacks.onError({ type: 'UNKNOWN', message: data });
+      }
+      callbacks.onDone();
+      return true;
     }
 
     if (eventType === 'cards') {
@@ -109,8 +138,17 @@ const processPart = (part: string, callbacks: StreamCallbacks) => {
       } catch (e) {
         console.error('Failed to parse cards JSON', e);
       }
+    } else if (eventType === 'action') {
+      if (typeof callbacks.onAction === 'function') {
+        try {
+          callbacks.onAction(JSON.parse(data));
+        } catch (e) {
+          callbacks.onAction(data);
+        }
+      }
     } else if (eventType === 'message') {
       callbacks.onMessage(data);
     }
   }
+  return false;
 };

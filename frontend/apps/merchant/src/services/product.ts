@@ -10,7 +10,7 @@ export interface Medicine {
   price: number;
   stock: number;
   sales: number;
-  isPrescription: boolean; // 0/1 -> boolean
+  isPrescription: boolean | number;
   indication?: string;
   usageMethod?: string;
   contraindication?: string;
@@ -29,7 +29,7 @@ export interface MedicineDTO {
   mainImage: string;
   price: number;
   stock: number;
-  isPrescription: boolean;
+  isPrescription: number;
   indication?: string;
   usageMethod?: string;
   contraindication?: string;

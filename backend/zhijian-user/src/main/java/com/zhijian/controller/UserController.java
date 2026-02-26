@@ -77,6 +77,21 @@ public class UserController {
         return Result.success(userService.pageList(query));
     }
 
+    @Operation(summary = "管理端-用户详情")
+    @GetMapping("/admin/{id}")
+    public Result<SysUser> adminDetail(@PathVariable Long id) {
+        String role = UserContext.getRole();
+        if (!"ADMIN".equals(role)) {
+            return Result.failed("无权访问");
+        }
+        SysUser user = userService.getById(id);
+        if (user == null) {
+            return Result.failed("用户不存在");
+        }
+        user.setPassword(null);
+        return Result.success(user);
+    }
+
     /**
      * 管理端-更新用户状态
      *

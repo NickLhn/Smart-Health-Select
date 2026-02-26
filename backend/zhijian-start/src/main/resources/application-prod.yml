@@ -2,6 +2,10 @@ server:
   port: 8080
   servlet:
     context-path: /api
+    encoding:
+      enabled: true
+      charset: UTF-8
+      force: true
 
 spring:
   datasource:
@@ -26,14 +30,20 @@ logging:
     com.zhijian: INFO
 
 knife4j:
-  production: true # 生产环境是否开启文档，建议关闭
+  production: false # 生产环境是否开启文档，建议关闭
 
 zhijian:
   ai:
+    coze:
+      api-token: ${COZE_API_TOKEN:}
+      bot-id: ${COZE_BOT_ID:}
+      merchant-bot-id: ${COZE_MERCHANT_BOT_ID:}
     openai:
       # 生产环境 API Key
       api-key: ${OPENAI_API_KEY:sk-a56903ddc505472a8a2c615250254bdc}
       base-url: https://api.deepseek.com
+    langgraph:
+      agent-base-url: ${LANGGRAPH_AGENT_BASE_URL:http://127.0.0.1:18081}
 
 # Aliyun Config
 aliyun:
@@ -46,4 +56,4 @@ aliyun:
     access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID:LTAI5tSTd2GqJr5arV97zEyP}
     access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:KiuDxERbeH2XFxp6igTKsMZe0SJ99c}
     sign-name: ${ALIYUN_SMS_SIGN_NAME:速通互联验证平台}
-    template-code: ${ALIYUN_SMS_TEMPLATE_CODE:SMS_329195922}
+    template-code: ${ALIYUN_SMS_TEMPLATE_CODE:100001}

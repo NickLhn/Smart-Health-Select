@@ -31,10 +31,12 @@ const ServiceGrid: React.FC = () => {
     <div className="glass-panel !bg-white/60 !border-0 rounded-2xl p-5 md:p-8 shadow-lg mb-8">
       <div className="grid grid-cols-4 md:grid-cols-8 gap-y-6 gap-x-4">
         {services.map((item, index) => (
-          <div 
+          <button 
             key={index}
-            className="flex flex-col items-center justify-center cursor-pointer group"
+            type="button"
+            className="bg-transparent border-0 p-0 flex flex-col items-center justify-center cursor-pointer group"
             onClick={() => item.path === '/ai-consultation' ? openAI() : navigate(item.path)}
+            aria-label={item.name}
           >
             <div 
               className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1 shadow-sm group-hover:shadow-md bg-opacity-10 backdrop-blur-sm"
@@ -45,7 +47,7 @@ const ServiceGrid: React.FC = () => {
             <span className="text-xs md:text-sm text-gray-600 font-medium group-hover:text-gray-900 transition-colors">
               {item.name}
             </span>
-          </div>
+          </button>
         ))}
       </div>
     </div>

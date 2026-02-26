@@ -55,6 +55,7 @@ public class OrderItem implements Serializable {
     /**
      * 总价格
      */
+    @TableField("total_price")
     private BigDecimal totalPrice;
 
     @TableField(fill = FieldFill.INSERT)

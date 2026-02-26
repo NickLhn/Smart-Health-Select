@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, theme, ConfigProvider, Avatar, Breadcrumb, Dropdown, App as AntdApp } from 'antd';
+import { Layout, Menu, theme, ConfigProvider, Avatar, Breadcrumb, Dropdown, App as AntdApp, Button } from 'antd';
 import {
   DesktopOutlined,
   ShopOutlined,
   UserOutlined,
   FileTextOutlined,
+  CommentOutlined,
   LogoutOutlined,
   KeyOutlined,
   MessageOutlined,
-  RobotOutlined
+  RobotOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
@@ -60,7 +63,7 @@ const items: MenuItem[] = [
     getItem('待发货', '/order/pending'),
     getItem('全部订单', '/order/list'),
   ]),
-  getItem('评价管理', '/review', <FileTextOutlined />, [
+  getItem('评价管理', '/review', <CommentOutlined />, [
       getItem('全部评价', '/review/list'),
   ]),
   getItem('消息中心', '/im', <MessageOutlined />),
@@ -122,41 +125,63 @@ const MainLayout: React.FC = () => {
   const selectedKey = location.pathname === '/' ? '/dashboard' : location.pathname;
   const openKey = '/' + selectedKey.split('/')[1];
 
+  const currentTitle = (() => {
+    if (selectedKey.startsWith('/product/edit')) return '编辑商品';
+    const map: Record<string, string> = {
+      '/dashboard': '商家工作台',
+      '/product/list': '商品列表',
+      '/product/add': '添加商品',
+      '/order/pending': '待发货',
+      '/order/list': '全部订单',
+      '/review/list': '全部评价',
+      '/im': '消息中心',
+      '/ai/advisor': 'AI助手',
+      '/store/setting': '店铺设置',
+      '/password': '修改密码',
+    };
+    return map[selectedKey] || '商家中心';
+  })();
+
+  const breadcrumbItems = [
+    {
+      title: (
+        <button
+          type="button"
+          className="bg-transparent border-0 p-0 cursor-pointer hover:text-emerald-700 transition-colors"
+          onClick={() => navigate('/dashboard')}
+        >
+          首页
+        </button>
+      ),
+    },
+    { title: currentTitle },
+  ];
+
   return (
     <Layout style={{ minHeight: '100vh', background: '#ECFDF5' }}>
       <Sider
-        collapsible
         collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
+        trigger={null}
+        width={264}
+        collapsedWidth={84}
+        className="m-sider"
         style={{
           background: 'linear-gradient(180deg, #022c22 0%, #064e3b 45%, #047857 100%)',
           borderRight: 'none',
         }}
       >
         <div
-          className="demo-logo-vertical"
-          style={{
-            height: 64,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: 16,
-          }}
+          className="m-siderLogo"
         >
-          <h1
-            style={{
-              color: '#ECFDF5',
-              margin: 0,
-              fontSize: collapsed ? '12px' : '18px',
-              fontWeight: 600,
-              letterSpacing: '0.08em',
-              transition: 'all 0.2s',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-            }}
+          <button
+            type="button"
+            className="m-siderLogoBtn"
+            onClick={() => navigate('/dashboard')}
+            aria-label="返回商家工作台"
           >
-            {collapsed ? '智健' : '智健商家端'}
-          </h1>
+            <span className="m-siderLogoMark" aria-hidden="true" />
+            <span className="m-siderLogoText">{collapsed ? '智健' : '智健商家端'}</span>
+          </button>
         </div>
         <Menu
           theme="dark"
@@ -166,6 +191,7 @@ const MainLayout: React.FC = () => {
           mode="inline"
           items={items}
           onClick={onClick}
+          className="m-menu"
           style={{
             background: 'transparent',
             borderInlineEnd: 'none',
@@ -174,6 +200,7 @@ const MainLayout: React.FC = () => {
       </Sider>
       <Layout>
         <Header
+          className="m-header"
           style={{
             padding: '0 24px',
             background: 'rgba(255,255,255,0.92)',
@@ -184,12 +211,26 @@ const MainLayout: React.FC = () => {
             justifyContent: 'space-between',
           }}
         >
-          <Breadcrumb items={[{ title: '首页' }, { title: '商家中心' }]} />
-          <Dropdown menu={{ items: userMenuItems }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+          <div className="m-headerLeft">
+            <Button
+              type="text"
+              className="m-collapseBtn"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed((v) => !v)}
+              aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}
+            />
+
+            <div className="m-headerMeta">
+              <div className="m-pageTitle">{currentTitle}</div>
+              <Breadcrumb items={breadcrumbItems} />
+            </div>
+          </div>
+
+          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>
+            <button type="button" className="m-userBtn" aria-label="用户菜单">
               <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#00B96B' }} src={user?.avatar} />
               <span style={{ fontWeight: 500 }}>{user?.nickname || user?.username || '商家用户'}</span>
-            </div>
+            </button>
           </Dropdown>
         </Header>
         <Content style={{ margin: '16px 16px' }}>

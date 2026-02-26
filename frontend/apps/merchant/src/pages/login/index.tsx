@@ -122,6 +122,7 @@ const Login: React.FC = () => {
                       <Input
                         prefix={<UserOutlined className="text-emerald-500 text-lg mr-2" />}
                         placeholder="用户名 / 手机号"
+                        aria-label="用户名或手机号"
                         className="rounded-2xl h-14 bg-white/60 border-gray-200 hover:bg-white focus:bg-white focus:border-emerald-500 focus:shadow-sm transition-all pl-4 backdrop-blur-sm"
                       />
                     </Form.Item>
@@ -133,6 +134,7 @@ const Login: React.FC = () => {
                         prefix={<LockOutlined className="text-emerald-500 text-lg mr-2" />}
                         type="password"
                         placeholder="密码"
+                        aria-label="密码"
                         className="rounded-2xl h-14 bg-white/60 border-gray-200 hover:bg-white focus:bg-white focus:border-emerald-500 focus:shadow-sm transition-all pl-4 backdrop-blur-sm"
                       />
                     </Form.Item>
@@ -181,6 +183,7 @@ const Login: React.FC = () => {
                       <Input
                         prefix={<MobileOutlined className="text-emerald-500 text-lg mr-2" />}
                         placeholder="手机号"
+                        aria-label="手机号"
                         className="rounded-2xl h-14 bg-white/60 border-gray-200 hover:bg-white focus:bg-white focus:border-emerald-500 focus:shadow-sm transition-all pl-4 backdrop-blur-sm"
                       />
                     </Form.Item>
@@ -192,12 +195,14 @@ const Login: React.FC = () => {
                         <Input
                           prefix={<SafetyCertificateOutlined className="text-emerald-500 text-lg mr-2" />}
                           placeholder="验证码"
+                          aria-label="验证码"
                           className="rounded-2xl h-14 bg-white/60 border-gray-200 hover:bg-white focus:bg-white focus:border-emerald-500 focus:shadow-sm transition-all pl-4 backdrop-blur-sm flex-1"
                         />
                         <Button 
                           className="rounded-2xl h-14 px-5 font-semibold transition-all border border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 hover:text-emerald-800 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
                           disabled={countdown > 0}
                           onClick={handleSendCode}
+                          aria-label="获取验证码"
                         >
                           {countdown > 0 ? `${countdown}s后重新获取` : '获取验证码'}
                         </Button>

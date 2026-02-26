@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Menu, Button, Badge, Dropdown, Avatar, Drawer } from 'antd';
+import { Layout, Menu, Button, Badge, Dropdown, Avatar, Drawer, Input } from 'antd';
 import {
   MedicineBoxOutlined,
   MenuOutlined,
@@ -16,6 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getCustomerTopNavKey } from '../../utils/navigation';
 
 const { Header: AntHeader } = Layout;
+const { Search } = Input;
 
 const CartBadge = () => {
   const { totalItems } = useCart();
@@ -123,30 +124,46 @@ const Header: React.FC = () => {
   const menuItems = [
     { key: '/', label: '首页' },
     { key: '/medicine', label: '全部药品' },
-    { key: '/category', label: '分类浏览' },
     { key: '/health', label: '健康资讯' },
     { key: '/orders', label: '我的订单' },
   ];
 
+  const handleSearch = (value: string) => {
+    const keyword = value.trim();
+    if (keyword) {
+      navigate(`/medicine?keyword=${encodeURIComponent(keyword)}`);
+      return;
+    }
+    navigate('/medicine');
+  };
+
   return (
     <AntHeader className="bg-white/80 backdrop-blur-md sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between shadow-sm h-16 border-b border-gray-100/50 transition-all duration-300">
-        <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('/')}>
+        <button type="button" className="bg-transparent border-0 p-0 flex items-center gap-3 cursor-pointer group" onClick={() => navigate('/')} aria-label="返回首页">
           <div className="bg-gradient-to-br from-primary to-primary-600 p-2 rounded-xl shadow-lg shadow-primary/20 group-hover:shadow-primary/30 group-hover:scale-105 transition-all duration-300">
              <MedicineBoxOutlined style={{ fontSize: '20px', color: '#fff' }} />
           </div>
           <span className="text-xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 tracking-tight">
             智健优选
           </span>
-        </div>
+        </button>
         
         {/* Desktop Menu */}
-        <Menu
-          mode="horizontal"
-          selectedKeys={[getCustomerTopNavKey(location.pathname)]}
-          items={menuItems}
-          onClick={(e) => navigate(e.key)}
-          className="hidden md:flex flex-1 border-none bg-transparent ml-12 text-[15px] font-medium [&_.ant-menu-item]:text-gray-600 [&_.ant-menu-item-selected]:text-primary [&_.ant-menu-item-selected]:bg-primary/5 [&_.ant-menu-item-selected]:font-bold [&_.ant-menu-item]:rounded-lg [&_.ant-menu-item]:px-4"
-        />
+        <div className="hidden md:flex flex-1 items-center ml-10 gap-6 min-w-0">
+          <Menu
+            mode="horizontal"
+            selectedKeys={[getCustomerTopNavKey(location.pathname)]}
+            items={menuItems}
+            onClick={(e) => navigate(e.key)}
+            className="flex-1 min-w-0 border-none bg-transparent text-[15px] font-medium [&_.ant-menu-item]:text-gray-600 [&_.ant-menu-item-selected]:text-primary [&_.ant-menu-item-selected]:bg-primary/5 [&_.ant-menu-item-selected]:font-bold [&_.ant-menu-item]:rounded-lg [&_.ant-menu-item]:px-4"
+          />
+          <Search
+            placeholder="搜索药品名称、症状..."
+            allowClear
+            onSearch={handleSearch}
+            className="w-[320px] max-w-[34vw]"
+          />
+        </div>
 
         <div className="flex items-center gap-3 md:gap-6">
            <div className="hidden md:block transform hover:scale-105 transition-transform duration-200">

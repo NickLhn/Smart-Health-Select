@@ -2,6 +2,10 @@ server:
   port: 8080
   servlet:
     context-path: /api
+    encoding:
+      enabled: true
+      charset: UTF-8
+      force: true
 
 spring:
   application:
@@ -33,14 +37,17 @@ knife4j:
 zhijian:
   ai:
     coze:
-      api-token: ${COZE_API_TOKEN:sat_QgCl82pNnvtYPDHHTeBW2o5m0ZGqQmzjlyM7cDtIhV9CeT2bUZsK5Sq9GaFwlLqr}
-      bot-id: 7600249533683417134
-      merchant-bot-id: 7600650240622231578
+      api-token: ${COZE_API_TOKEN:}
+      bot-id: ${COZE_BOT_ID:}
+      merchant-bot-id: ${COZE_MERCHANT_BOT_ID:}
     openai:
+      # 生产环境 API Key
       api-key: ${OPENAI_API_KEY:sk-a56903ddc505472a8a2c615250254bdc}
       base-url: https://api.deepseek.com
-      
-# Aliyun OSS Config
+    langgraph:
+      agent-base-url: ${LANGGRAPH_AGENT_BASE_URL:http://127.0.0.1:18081}
+
+# Aliyun Config
 aliyun:
   oss:
     endpoint: ${ALIYUN_OSS_ENDPOINT:oss-cn-shenzhen.aliyuncs.com}
@@ -50,6 +57,5 @@ aliyun:
   sms:
     access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID:LTAI5tSTd2GqJr5arV97zEyP}
     access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:KiuDxERbeH2XFxp6igTKsMZe0SJ99c}
-    sign-name: ${ALIYUN_SMS_SIGN_NAME:速通互联验证码}
+    sign-name: ${ALIYUN_SMS_SIGN_NAME:速通互联验证平台}
     template-code: ${ALIYUN_SMS_TEMPLATE_CODE:100001}
-

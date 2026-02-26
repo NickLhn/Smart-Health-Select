@@ -22,6 +22,7 @@ public class MedicineDbMigration {
         createCommentTable();
         createImMessageTable();
         addColumn("pms_medicine", "specs", "varchar(100) DEFAULT NULL COMMENT '规格'");
+        addColumn("pms_medicine", "deleted", "tinyint(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除'");
         updateDefaultSpecs();
         log.info("Medicine module database schema checked.");
     }

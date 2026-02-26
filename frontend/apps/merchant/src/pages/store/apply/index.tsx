@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Form, Input, Button, Upload, message, Card, Steps, Alert } from 'antd';
 import { UploadOutlined, ShopOutlined, IdcardOutlined, FileProtectOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
@@ -19,11 +19,7 @@ const StoreApply: React.FC = () => {
   const [idCardFrontList, setIdCardFrontList] = useState<UploadFile[]>([]);
   const [idCardBackList, setIdCardBackList] = useState<UploadFile[]>([]);
 
-  useEffect(() => {
-    fetchStoreInfo();
-  }, []);
-
-  const fetchStoreInfo = async () => {
+  const fetchStoreInfo = useCallback(async () => {
     try {
       const res = await getMyStore();
       if (res.code === 200 && res.data) {
@@ -46,7 +42,11 @@ const StoreApply: React.FC = () => {
     } catch (error) {
       // 忽略错误，可能是第一次填写
     }
-  };
+  }, [form]);
+
+  useEffect(() => {
+    fetchStoreInfo();
+  }, [fetchStoreInfo]);
 
   const onFinish = async (values: any) => {
     setLoading(true);

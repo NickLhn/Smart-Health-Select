@@ -32,6 +32,13 @@ public class MerchantController {
     @Operation(summary = "商家列表 (管理端)")
     @GetMapping("/list")
     public Result<IPage<Merchant>> list(MerchantQueryDTO query) {
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            return Result.failed("请先登录");
+        }
+        if (!UserContext.isAdmin()) {
+            return Result.failed("无权访问");
+        }
         return Result.success(merchantService.pageList(query));
     }
 
@@ -59,6 +66,13 @@ public class MerchantController {
     @Operation(summary = "获取商家详情 (管理端)")
     @GetMapping("/{id}")
     public Result<Merchant> getDetail(@PathVariable Long id) {
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            return Result.failed("请先登录");
+        }
+        if (!UserContext.isAdmin()) {
+            return Result.failed("无权访问");
+        }
         return Result.success(merchantService.getById(id));
     }
     
@@ -71,6 +85,13 @@ public class MerchantController {
     @Operation(summary = "商家审核 (管理端)")
     @PutMapping("/audit")
     public Result audit(@RequestBody @Valid MerchantAuditDTO auditDTO) {
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            return Result.failed("请先登录");
+        }
+        if (!UserContext.isAdmin()) {
+            return Result.failed("无权访问");
+        }
         return merchantService.audit(auditDTO);
     }
 

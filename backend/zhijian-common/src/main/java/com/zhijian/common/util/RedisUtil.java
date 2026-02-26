@@ -25,7 +25,10 @@ public class RedisUtil {
      * @param value 值
      */
     public void set(String key, String value) {
-        stringRedisTemplate.opsForValue().set(key, value);
+        try {
+            stringRedisTemplate.opsForValue().set(key, value);
+        } catch (Exception ignored) {
+        }
     }
 
     /**
@@ -37,7 +40,10 @@ public class RedisUtil {
      * @param unit     时间单位
      */
     public void set(String key, String value, long timeout, TimeUnit unit) {
-        stringRedisTemplate.opsForValue().set(key, value, timeout, unit);
+        try {
+            stringRedisTemplate.opsForValue().set(key, value, timeout, unit);
+        } catch (Exception ignored) {
+        }
     }
 
     /**
@@ -47,7 +53,11 @@ public class RedisUtil {
      * @return 值
      */
     public String get(String key) {
-        return stringRedisTemplate.opsForValue().get(key);
+        try {
+            return stringRedisTemplate.opsForValue().get(key);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     /**
@@ -57,7 +67,11 @@ public class RedisUtil {
      * @return 是否成功
      */
     public Boolean delete(String key) {
-        return stringRedisTemplate.delete(key);
+        try {
+            return stringRedisTemplate.delete(key);
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     /**
@@ -67,6 +81,10 @@ public class RedisUtil {
      * @return 是否存在
      */
     public Boolean hasKey(String key) {
-        return stringRedisTemplate.hasKey(key);
+        try {
+            return stringRedisTemplate.hasKey(key);
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 }

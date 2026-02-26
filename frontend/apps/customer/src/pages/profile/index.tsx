@@ -166,10 +166,12 @@ const Profile: React.FC = () => {
                 {/* Desktop Menu */}
                 <div className="hidden md:block px-3 pb-6 space-y-1">
                      {menuItems.map(item => (
-                         <div 
+                         <button 
                             key={item.key}
+                            type="button"
                             onClick={() => setActiveTab(item.key)}
                             className={`
+                                w-full text-left bg-transparent border-0
                                 flex items-center gap-4 px-6 py-4 rounded-2xl cursor-pointer transition-all duration-300
                                 ${activeTab === item.key 
                                     ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 translate-x-1' 
@@ -179,16 +181,17 @@ const Profile: React.FC = () => {
                              <span className="text-xl">{item.icon}</span>
                              <span className="font-bold">{item.label}</span>
                              {activeTab === item.key && <RightOutlined className="ml-auto text-xs opacity-60" />}
-                         </div>
+                         </button>
                      ))}
                      <div className="h-px bg-gray-200/50 my-4 mx-6" />
-                     <div 
+                     <button 
+                        type="button"
                         onClick={handleLogout}
-                        className="flex items-center gap-4 px-6 py-4 rounded-2xl cursor-pointer transition-all text-gray-500 hover:bg-red-50 hover:text-red-500 hover:pl-7"
+                        className="w-full text-left bg-transparent border-0 flex items-center gap-4 px-6 py-4 rounded-2xl cursor-pointer transition-all text-gray-500 hover:bg-red-50 hover:text-red-500 hover:pl-7"
                      >
                          <LogoutOutlined className="text-xl" />
                          <span className="font-bold">退出登录</span>
-                     </div>
+                     </button>
                 </div>
             </div>
           </div>
@@ -198,14 +201,16 @@ const Profile: React.FC = () => {
              {/* Mobile Tabs */}
              <div className="md:hidden glass-panel !bg-white/80 rounded-2xl shadow-sm mb-6 p-2 flex justify-between mx-0 mt-4 border border-white/60">
                  {menuItems.map(item => (
-                     <div 
+                     <button 
                         key={item.key}
+                        type="button"
                         onClick={() => setActiveTab(item.key)}
-                        className={`flex-1 flex flex-col items-center py-3 rounded-xl transition-all duration-300 ${activeTab === item.key ? 'text-emerald-600 bg-emerald-50 font-bold scale-105 shadow-sm' : 'text-gray-400'}`}
+                        className={`bg-transparent border-0 p-0 flex-1 flex flex-col items-center py-3 rounded-xl transition-all duration-300 ${activeTab === item.key ? 'text-emerald-600 bg-emerald-50 font-bold scale-105 shadow-sm' : 'text-gray-400'}`}
+                        aria-current={activeTab === item.key ? 'page' : undefined}
                      >
                          <span className="text-xl mb-1.5">{item.icon}</span>
                          <span className="text-xs">{item.label}</span>
-                     </div>
+                     </button>
                  ))}
              </div>
 

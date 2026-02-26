@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Button, Tabs, Empty, List, Tag, Spin, App as AntdApp, Pagination, Modal, Form, Input, Rate } from 'antd';
+import { Button, Tabs, Empty, Tag, App as AntdApp, Pagination, Modal, Form, Input, Rate, Skeleton } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingOutlined, ClockCircleOutlined, CheckCircleOutlined, CarOutlined, FormOutlined, WalletOutlined, InboxOutlined, MedicineBoxOutlined } from '@ant-design/icons';
-import { getOrderList, payOrder, confirmReceipt, commentOrder } from '../../../services/order';
+import { ShoppingOutlined, FormOutlined, WalletOutlined, InboxOutlined, MedicineBoxOutlined } from '@ant-design/icons';
+import { getOrderList, confirmReceipt, commentOrder } from '../../../services/order';
 import type { Order } from '../../../services/order';
 
 const OrderList: React.FC = () => {
@@ -11,6 +11,8 @@ const OrderList: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -25,6 +27,7 @@ const OrderList: React.FC = () => {
 
   const fetchOrders = async (status?: number, page = 1) => {
     setLoading(true);
+    setLoadError(false);
     try {
       const res = await getOrderList({
         page: page,
@@ -38,10 +41,17 @@ const OrderList: React.FC = () => {
             current: res.data.current,
             total: res.data.total
         }));
+        return;
       }
+      message.error(res.message || '获取订单列表失败');
+      setOrders([]);
+      setPagination((prev) => ({ ...prev, current: page, total: 0 }));
+      setLoadError(true);
     } catch (error) {
-      console.error(error);
       message.error('获取订单列表失败');
+      setOrders([]);
+      setPagination((prev) => ({ ...prev, current: page, total: 0 }));
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -66,19 +76,32 @@ const OrderList: React.FC = () => {
   };
 
   const handleConfirmReceipt = async (orderId: number) => {
-    try {
-      const res = await confirmReceipt(orderId);
-      if (res.code === 200) {
-        message.success('收货成功');
-        // Refresh current page
-        const status = getStatusFromTab(activeTab);
-        fetchOrders(status, pagination.current);
-      } else {
-        message.error(res.message || '收货失败');
+    Modal.confirm({
+      title: '确认收货',
+      content: '确认已收到商品后，将完成订单。',
+      okText: '确认',
+      cancelText: '取消',
+      okButtonProps: { className: 'bg-emerald-600 border-emerald-600 hover:!bg-emerald-700' },
+      async onOk() {
+        setActionLoadingId(orderId);
+        try {
+          const res = await confirmReceipt(orderId);
+          if (res.code === 200) {
+            message.success('收货成功');
+            const status = getStatusFromTab(activeTab);
+            fetchOrders(status, pagination.current);
+            return;
+          }
+          message.error(res.message || '收货失败');
+          throw new Error(res.message || 'confirmReceipt failed');
+        } catch (error) {
+          message.error('收货失败');
+          throw error;
+        } finally {
+          setActionLoadingId(null);
+        }
       }
-    } catch (error) {
-      message.error('收货失败');
-    }
+    });
   };
 
   const handleReview = (orderId: number) => {
@@ -150,7 +173,43 @@ const OrderList: React.FC = () => {
 
   const renderOrderList = () => {
     if (loading) {
-      return <div className="text-center py-20"><Spin size="large" /></div>;
+      return (
+        <div className="space-y-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="glass-panel p-4 rounded-2xl border border-white/60 bg-white/60 backdrop-blur-md">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-3">
+                <Skeleton active title={{ width: 220 }} paragraph={false} />
+                <Skeleton.Button active size="small" />
+              </div>
+              <div className="flex items-start gap-4">
+                <Skeleton.Image active className="!w-20 !h-20 rounded-xl overflow-hidden" />
+                <div className="flex-1">
+                  <Skeleton active title={{ width: '70%' }} paragraph={{ rows: 2, width: ['50%', '35%'] }} />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
+                <Skeleton.Button active size="small" />
+                <Skeleton.Button active size="small" />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (loadError) {
+      return (
+        <div className="glass-panel p-10 rounded-2xl border border-white/60 bg-white/60 backdrop-blur-md text-center">
+          <Empty description="加载失败，请重试" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          <Button
+            type="primary"
+            onClick={() => fetchOrders(getStatusFromTab(activeTab), pagination.current)}
+            className="mt-6 bg-emerald-600 hover:bg-emerald-700 border-none rounded-full px-8"
+          >
+            重新加载
+          </Button>
+        </div>
+      );
     }
 
     if (orders.length === 0) {
@@ -170,13 +229,13 @@ const OrderList: React.FC = () => {
         {orders.map((order, index) => (
           <div 
             key={order.id} 
-            className="glass-panel p-4 rounded-2xl hover:shadow-lg transition-all duration-300 border border-white/60 bg-white/60 backdrop-blur-md"
+            className="glass-panel p-4 rounded-2xl hover:shadow-lg transition-all duration-300 border border-white/60 bg-white/60 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:ring-offset-2"
             style={{ animationDelay: `${index * 0.05}s` }}
           >
             <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-3">
               <div className="text-xs text-gray-500 flex items-center gap-2">
                 <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md">订单号: {order.orderNo}</span>
-                <span>{order.createTime}</span>
+                <span>{String(order.createTime || '').includes('T') ? String(order.createTime).split('T')[0] : order.createTime}</span>
               </div>
               <div>{renderOrderStatus(order.status, order.auditStatus)}</div>
             </div>
@@ -184,10 +243,25 @@ const OrderList: React.FC = () => {
             <div 
               className="flex items-start gap-4 cursor-pointer"
               onClick={() => navigate(`/order/${order.id}`)}
+              role="link"
+              tabIndex={0}
+              aria-label={`查看订单 ${order.orderNo}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate(`/order/${order.id}`);
+                }
+              }}
             >
               <div className="w-20 h-20 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100 shadow-sm group">
                 {order.medicineImage ? (
-                  <img src={order.medicineImage} alt={order.medicineName} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <img
+                    src={order.medicineImage}
+                    alt={order.medicineName}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-300">
                     <ShoppingOutlined className="text-2xl" />
@@ -212,6 +286,7 @@ const OrderList: React.FC = () => {
                   onClick={() => handlePay(order.id)}
                   className="bg-gradient-to-r from-emerald-500 to-teal-500 border-none rounded-full px-4 hover:shadow-md hover:scale-105 transition-all"
                   icon={<WalletOutlined />}
+                  aria-label="立即支付"
                 >
                   立即支付
                 </Button>
@@ -224,6 +299,8 @@ const OrderList: React.FC = () => {
                   onClick={() => handleConfirmReceipt(order.id)}
                   className="border-emerald-500 text-emerald-600 hover:text-emerald-500 hover:border-emerald-400 rounded-full px-4"
                   icon={<InboxOutlined />}
+                  loading={actionLoadingId === order.id}
+                  aria-label="确认收货"
                 >
                   确认收货
                 </Button>
@@ -234,6 +311,7 @@ const OrderList: React.FC = () => {
                   onClick={() => handleReview(order.id)}
                   className="rounded-full px-4 border-gray-300 hover:border-emerald-500 hover:text-emerald-500"
                   icon={<FormOutlined />}
+                  aria-label="评价订单"
                 >
                   评价
                 </Button>
@@ -242,6 +320,7 @@ const OrderList: React.FC = () => {
                 size="small" 
                 onClick={() => navigate(`/order/${order.id}`)}
                 className="rounded-full px-4 border-gray-300 hover:border-emerald-500 hover:text-emerald-500"
+                aria-label="查看详情"
               >
                 查看详情
               </Button>
@@ -305,6 +384,7 @@ const OrderList: React.FC = () => {
         confirmLoading={submittingReview}
         centered
         className="rounded-2xl overflow-hidden"
+        okButtonProps={{ className: 'bg-emerald-600 border-emerald-600 hover:!bg-emerald-700' }}
       >
         <Form form={reviewForm} layout="vertical" className="pt-4">
           <Form.Item name="star" label="评分" rules={[{ required: true, message: '请打分' }]} initialValue={5}>
@@ -315,36 +395,11 @@ const OrderList: React.FC = () => {
               rows={4} 
               placeholder="请输入您的使用体验，帮助更多小伙伴..." 
               className="rounded-xl border-gray-200 focus:border-emerald-500 hover:border-emerald-300"
+              aria-label="评价内容"
             />
           </Form.Item>
         </Form>
       </Modal>
-      
-      <style>{`
-        .custom-tabs .ant-tabs-nav .ant-tabs-tab {
-            background: transparent;
-            border: none;
-            font-size: 15px;
-            color: #666;
-            transition: all 0.3s;
-        }
-        .custom-tabs .ant-tabs-nav .ant-tabs-tab-active {
-            color: #10b981 !important;
-            font-weight: 600;
-        }
-        .custom-tabs .ant-tabs-nav::before {
-            border-bottom: none;
-        }
-        .custom-tabs .ant-tabs-ink-bar {
-            background: #10b981;
-            height: 3px;
-            border-radius: 3px;
-        }
-        /* Mobile optimization for tabs scrolling */
-        .custom-tabs .ant-tabs-nav-list {
-            padding-bottom: 4px;
-        }
-      `}</style>
     </div>
   );
 };

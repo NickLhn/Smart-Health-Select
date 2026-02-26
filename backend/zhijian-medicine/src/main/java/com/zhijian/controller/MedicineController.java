@@ -109,12 +109,32 @@ public class MedicineController {
     @Operation(summary = "获取药品详情")
     @GetMapping("/{id}")
     public Result<Medicine> detail(@PathVariable Long id) {
-        // 记录足迹
-        Long userId = UserContext.getUserId();
-        if (userId != null) {
-            footprintService.record(userId, id);
+        Medicine medicine = medicineService.getDetail(id);
+        String role = UserContext.getRole();
+        if (role == null) {
+            role = "USER";
         }
-        return Result.success(medicineService.getDetail(id));
+
+        if ("SELLER".equalsIgnoreCase(role)) {
+            Long sellerId = UserContext.getUserId();
+            if (sellerId == null || medicine == null || !sellerId.equals(medicine.getSellerId())) {
+                return Result.failed("药品不存在或无权查看");
+            }
+            return Result.success(medicine);
+        }
+
+        if (!"ADMIN".equalsIgnoreCase(role) && !"PHARMACIST".equalsIgnoreCase(role)) {
+            if (medicine == null || medicine.getStatus() == null || medicine.getStatus() != 1) {
+                return Result.failed("药品不存在");
+            }
+            Long userId = UserContext.getUserId();
+            if (userId != null) {
+                footprintService.record(userId, id);
+            }
+            return Result.success(medicine);
+        }
+
+        return Result.success(medicine);
     }
     
     @Operation(summary = "获取我的足迹")
@@ -147,6 +167,20 @@ public class MedicineController {
             return Result.failed("无权操作");
         }
         medicineService.deleteByAdmin(id);
+        return Result.success(null, "删除成功");
+    }
+
+    @Operation(summary = "删除药品 (商家/逻辑删除)")
+    @DeleteMapping("/{id}")
+    public Result deleteSeller(@PathVariable Long id) {
+        Long sellerId = UserContext.getUserId();
+        if (sellerId == null) {
+            return Result.failed("请先登录");
+        }
+        if (!"SELLER".equals(UserContext.getRole())) {
+            return Result.failed("只有商家才能操作药品");
+        }
+        medicineService.deleteBySeller(id, sellerId);
         return Result.success(null, "删除成功");
     }
 

@@ -118,5 +118,16 @@ public class Medicine implements Serializable {
      */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
+
+    /**
+     * 更新时间
+     */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
+
+    /**
+     * 逻辑删除: 0否 1是
+     */
+    private Integer deleted;
 }
 

@@ -235,6 +235,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         item.setMedicineImage(medicine.getMainImage());
         item.setMedicinePrice(medicine.getPrice());
         item.setCount(createDTO.getQuantity());
+        item.setTotalPrice(medicine.getPrice().multiply(BigDecimal.valueOf(createDTO.getQuantity())));
         orderItemMapper.insert(item);
         
         // 6. 核销优惠券

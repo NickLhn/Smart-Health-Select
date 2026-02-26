@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MedicineBoxOutlined, ShoppingCartOutlined } from '@ant-design/icons';
-import { Button } from 'antd';
+import { Button, App } from 'antd';
 import type { Medicine } from '../../../services/home';
+import { useCart } from '../../../context/CartContext';
 
 interface ProductCardProps {
   product: Medicine;
@@ -10,11 +11,33 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const navigate = useNavigate();
+  const { message } = App.useApp();
+  const { addToCart } = useCart();
+
+  const handleOpenDetail = () => {
+    navigate(`/product/${product.id}`);
+  };
+
+  const handleQuickAdd = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const success = await addToCart(product.id, 1);
+    if (success) {
+      message.success('已加入购物车');
+    }
+  };
 
   return (
     <div 
       className="glass-panel !bg-white/70 rounded-2xl p-3 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col group relative border-0 overflow-hidden"
-      onClick={() => navigate(`/product/${product.id}`)}
+      onClick={handleOpenDetail}
+      role="link"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleOpenDetail();
+        }
+      }}
     >
       <div className="relative aspect-square bg-gray-50 rounded-xl mb-3 overflow-hidden group-hover:bg-gray-100/50 transition-colors">
         {product.mainImage ? (
@@ -22,6 +45,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             src={product.mainImage} 
             alt={product.name} 
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out mix-blend-multiply" 
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
@@ -36,10 +61,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
              size="middle"
              className="bg-primary border-none shadow-lg hover:bg-primary-600 hover:scale-110 transition-all"
              icon={<ShoppingCartOutlined />}
-             onClick={(e) => {
-               e.stopPropagation();
-               navigate(`/product/${product.id}`);
-             }}
+             aria-label="加入购物车"
+             onClick={handleQuickAdd}
            />
         </div>
       </div>
@@ -67,10 +90,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             size="small" 
             shape="circle"
             icon={<ShoppingCartOutlined />} 
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/product/${product.id}`);
-            }}
+            aria-label="加入购物车"
+            onClick={handleQuickAdd}
           />
         </div>
       </div>

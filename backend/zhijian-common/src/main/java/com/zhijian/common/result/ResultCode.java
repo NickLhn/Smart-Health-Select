@@ -22,7 +22,11 @@ public enum ResultCode {
     UNAUTHORIZED(401, "暂无登录或token已经过期"),
 
     /** 权限不足 */
-    FORBIDDEN(403, "没有相关权限");
+    FORBIDDEN(403, "没有相关权限"),
+
+    AI_BAD_GATEWAY(502, "AI服务异常，请稍后再试"),
+    AI_UNAVAILABLE(503, "AI服务未启动或不可用"),
+    AI_TIMEOUT(504, "AI响应超时，请稍后再试");
 
     /** 状态码 */
     private long code;

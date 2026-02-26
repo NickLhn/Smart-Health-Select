@@ -87,6 +87,15 @@ public interface MedicineService extends IService<Medicine> {
     boolean deleteByAdmin(Long id);
 
     /**
+     * 商家删除药品（逻辑删除）
+     *
+     * @param id 药品ID
+     * @param sellerId 商家ID (用于鉴权)
+     * @return 成功/失败
+     */
+    boolean deleteBySeller(Long id, Long sellerId);
+
+    /**
      * 扣减库存 (Redis Lua 脚本原子操作)
      * @param medicineId 药品ID
      * @param count 扣减数量
