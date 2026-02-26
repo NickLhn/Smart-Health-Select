@@ -13,6 +13,13 @@ export interface Merchant {
   contactName: string;
   contactPhone: string;
   creditCode: string;
+  legalPersonIdLast4?: string;
+  legalPersonIdHash?: string;
+  legalPersonAddress?: string;
+  idCardAuthority?: string;
+  idCardValidFrom?: string;
+  idCardValidTo?: string;
+  idCardValidLongTerm?: number;
   auditStatus: number; // 0待审核 1审核通过 2审核驳回
   auditRemark: string;
   createTime: string;
@@ -37,6 +44,13 @@ export interface MerchantApplyDTO {
   creditCode: string;
   idCardFront?: string;
   idCardBack?: string;
+  legalPersonIdLast4?: string;
+  legalPersonIdHash?: string;
+  legalPersonAddress?: string;
+  idCardAuthority?: string;
+  idCardValidFrom?: string;
+  idCardValidTo?: string;
+  idCardValidLongTerm?: number;
 }
 
 export interface MerchantSettingDTO {

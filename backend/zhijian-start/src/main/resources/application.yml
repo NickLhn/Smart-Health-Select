@@ -42,7 +42,7 @@ zhijian:
       merchant-bot-id: ${COZE_MERCHANT_BOT_ID:}
     openai:
       # 生产环境 API Key
-      api-key: ${OPENAI_API_KEY:sk-a56903ddc505472a8a2c615250254bdc}
+      api-key: ${OPENAI_API_KEY:}
       base-url: https://api.deepseek.com
     langgraph:
       agent-base-url: ${LANGGRAPH_AGENT_BASE_URL:http://127.0.0.1:18081}
@@ -51,12 +51,12 @@ zhijian:
 aliyun:
   oss:
     endpoint: ${ALIYUN_OSS_ENDPOINT:oss-cn-shenzhen.aliyuncs.com}
-    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:LTAI5tGnTGWVBnWNYacoCEAZ}
-    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:GIXZ2JHxaYxzQJeaByZoFfgblFN1wd}
+    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:}
+    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:}
     bucket-name: ${ALIYUN_OSS_BUCKET_NAME:liuhaonan-java-ai}
   sms:
-    access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID:LTAI5tSTd2GqJr5arV97zEyP}
-    access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:KiuDxERbeH2XFxp6igTKsMZe0SJ99c}
+    access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID:}
+    access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:}
     sign-name: ${ALIYUN_SMS_SIGN_NAME:速通互联验证平台}
     template-code: ${ALIYUN_SMS_TEMPLATE_CODE:100001}
   ocr:

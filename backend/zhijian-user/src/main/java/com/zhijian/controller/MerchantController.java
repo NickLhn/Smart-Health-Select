@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/merchant")
 @RequiredArgsConstructor
+@Slf4j
 public class MerchantController {
 
     private final MerchantService merchantService;
@@ -76,11 +78,36 @@ public class MerchantController {
         if (userId == null) {
             return Result.failed("请先登录");
         }
-        BusinessLicenseOcrResponseDTO data = ocrService.recognizeBusinessLicense(req.getImageUrl());
-        if (data == null || (data.getCreditCode() == null && data.getAddress() == null && data.getEntityName() == null)) {
-            return Result.failed("识别失败");
+        try {
+            BusinessLicenseOcrResponseDTO data = ocrService.recognizeBusinessLicense(req.getImageUrl());
+            if (data == null || (data.getCreditCode() == null && data.getAddress() == null && data.getEntityName() == null)) {
+                return Result.failed("识别失败");
+            }
+            return Result.success(data);
+        } catch (Exception e) {
+            return Result.failed(e.getMessage() == null || e.getMessage().isBlank() ? "识别失败" : e.getMessage());
         }
-        return Result.success(data);
+    }
+
+    @Operation(summary = "营业执照OCR识别(用于自动填表)")
+    @GetMapping("/ocr/business-license")
+    public Result<BusinessLicenseOcrResponseDTO> ocrBusinessLicenseGet(@RequestParam(value = "imageUrl", required = false) String imageUrl) {
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            return Result.failed("请先登录");
+        }
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return Result.failed("imageUrl不能为空");
+        }
+        try {
+            BusinessLicenseOcrResponseDTO data = ocrService.recognizeBusinessLicense(imageUrl);
+            if (data == null || (data.getCreditCode() == null && data.getAddress() == null && data.getEntityName() == null)) {
+                return Result.failed("识别失败");
+            }
+            return Result.success(data);
+        } catch (Exception e) {
+            return Result.failed(e.getMessage() == null || e.getMessage().isBlank() ? "识别失败" : e.getMessage());
+        }
     }
 
     @Operation(summary = "身份证OCR识别(正反面合并弹窗)")
@@ -90,11 +117,44 @@ public class MerchantController {
         if (userId == null) {
             return Result.failed("请先登录");
         }
-        IdCardOcrResponseDTO data = ocrService.recognizeIdCardBundle(req.getFrontImageUrl(), req.getBackImageUrl());
-        if (data == null || (data.getName() == null && data.getIdNumber() == null && data.getAddress() == null && data.getAuthority() == null && data.getValidDate() == null)) {
-            return Result.failed("识别失败");
+        try {
+            IdCardOcrResponseDTO data = ocrService.recognizeIdCardBundle(req.getFrontImageUrl(), req.getBackImageUrl());
+            if (data == null || (data.getName() == null && data.getIdNumber() == null && data.getAddress() == null && data.getAuthority() == null && data.getValidDate() == null)) {
+                log.warn("身份证OCR识别结果为空: frontUrl={}, backUrl={}", req.getFrontImageUrl(), req.getBackImageUrl());
+                return Result.failed("识别结果为空，请确认上传的是身份证正反面且图片清晰");
+            }
+            return Result.success(data);
+        } catch (Exception e) {
+            return Result.failed(e.getMessage() == null || e.getMessage().isBlank() ? "识别失败" : e.getMessage());
         }
-        return Result.success(data);
+    }
+
+    @Operation(summary = "身份证OCR识别(正反面合并弹窗)")
+    @GetMapping("/ocr/idcard-bundle")
+    public Result<IdCardOcrResponseDTO> ocrIdCardBundleGet(
+            @RequestParam(value = "frontImageUrl", required = false) String frontImageUrl,
+            @RequestParam(value = "backImageUrl", required = false) String backImageUrl
+    ) {
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            return Result.failed("请先登录");
+        }
+        if (frontImageUrl == null || frontImageUrl.isBlank()) {
+            return Result.failed("frontImageUrl不能为空");
+        }
+        if (backImageUrl == null || backImageUrl.isBlank()) {
+            return Result.failed("backImageUrl不能为空");
+        }
+        try {
+            IdCardOcrResponseDTO data = ocrService.recognizeIdCardBundle(frontImageUrl, backImageUrl);
+            if (data == null || (data.getName() == null && data.getIdNumber() == null && data.getAddress() == null && data.getAuthority() == null && data.getValidDate() == null)) {
+                log.warn("身份证OCR识别结果为空: frontUrl={}, backUrl={}", frontImageUrl, backImageUrl);
+                return Result.failed("识别结果为空，请确认上传的是身份证正反面且图片清晰");
+            }
+            return Result.success(data);
+        } catch (Exception e) {
+            return Result.failed(e.getMessage() == null || e.getMessage().isBlank() ? "识别失败" : e.getMessage());
+        }
     }
 
     @Operation(summary = "获取商家详情 (管理端)")

@@ -1,112 +1,139 @@
-# Zhijian System (智健优选医疗服务平台)
+# Zhijian System（智健优选）
 
-## 项目概览
-智健优选是一个多端协同的医药健康服务平台，覆盖用户购药、商家经营、平台运营与骑手配送全流程，融合 AI 问诊与智能客服能力，支持线上医药电商与即时配送的闭环业务。
+智健优选是一个多端协同的医药健康服务平台，覆盖用户购药、商家经营、平台运营与骑手配送全流程，并集成 AI 问诊/智能客服与阿里云能力（OSS/短信/OCR）。
 
-## 核心功能
-* **用户端**：AI 问诊、药品搜索、购物车与支付、订单追踪、个人中心
-* **商家端**：商品与库存管理、订单处理、退款审核、经营数据统计
-* **管理端**：商家入驻审核、用户管理、内容与活动运营、权限与审计
-* **骑手端**：抢单派单、路线导航、配送结算
+## 仓库结构
 
-## 技术栈
-* **后端**：Java 17、Spring Boot 3、MyBatis-Plus、MySQL 8、Redis、WebSocket
-* **前端**：React 18、TypeScript、Vite、pnpm、TailwindCSS
-* **小程序/跨端**：Taro
-* **AI 服务**：DeepSeek/OpenAI API + LangGraph
-* **云服务**：阿里云 OSS、阿里云短信
-
-## 目录结构
 ```
 Zhijian-System/
-├── backend/                # 后端工程 (Maven 多模块)
-│   ├── zhijian-start       # 启动入口 & 全局配置
-│   ├── zhijian-user        # 用户与权限模块
-│   ├── zhijian-medicine    # 药品与库存模块
-│   ├── zhijian-order       # 订单与支付模块
-│   ├── zhijian-delivery    # 配送模块
-│   └── ...
-├── frontend/               # 前端工程 (pnpm Monorepo)
-│   ├── apps/
-│   │   ├── customer        # 用户端 (React + Vite)
-│   │   ├── merchant        # 商家端 (React + Vite)
-│   │   ├── admin           # 管理端 (React + Vite)
-│   │   └── rider           # 骑手端 (Taro)
-│   └── ...
-├── zhijian_langgraph/      # AI 智能体服务 (FastAPI + LangGraph)
-└── docs/                   # 项目文档与 SQL 脚本
+├─ backend/                 后端（Spring Boot + Maven 多模块）
+│  ├─ zhijian-start/        启动入口（server.servlet.context-path=/api）
+│  ├─ zhijian-user/         用户/商家/入驻/OCR
+│  ├─ zhijian-order/        订单/支付
+│  ├─ zhijian-medicine/     药品/库存
+│  ├─ zhijian-delivery/     配送
+│  └─ sql/                  数据库初始化与补丁
+├─ frontend/                前端（pnpm monorepo）
+│  └─ apps/
+│     ├─ customer/          用户端（React + Vite，默认 3000）
+│     ├─ merchant/          商家端（React + Vite，默认 3001）
+│     ├─ admin/             管理端（React + Vite，默认 3002）
+│     └─ rider/             骑手端（Taro）
+└─ zhijian_langgraph/       AI 智能体服务（FastAPI + LangGraph）
 ```
 
-## 快速开始
-### 1. 环境准备
-* JDK 17+
-* Node.js 18+ 与 pnpm
-* MySQL 8.0
-* Redis
+## 快速开始（本地开发）
 
-### 2. 后端启动
+### 1) 环境准备
+
+- JDK 17+
+- Maven 3.9+
+- Node.js 18+ / pnpm 9+
+- MySQL 8.x
+- Redis
+
+### 2) 初始化数据库
+
+- 导入初始化结构与数据：[zhijian_db.sql](file:///e:/Code/Zhijian-System/backend/sql/zhijian_db.sql)
+- 若你的数据库已有 `sys_merchant` 表，需要增加身份证相关字段，执行补丁：[20260226_add_sys_merchant_idcard_fields.sql](file:///e:/Code/Zhijian-System/backend/sql/patches/20260226_add_sys_merchant_idcard_fields.sql)
+
+### 3) 启动后端
+
+后端统一 API 前缀为 `/api`（由 `server.servlet.context-path` 提供）。
+
 ```bash
 cd backend
 mvn clean package -DskipTests
 java -jar zhijian-start/target/zhijian-start-0.0.1-beta-SNAPSHOT.jar
 ```
-* 服务端口：`8080`
-* API 文档：`http://localhost:8080/doc.html`
 
-### 3. 前端启动
+- 后端地址：`http://127.0.0.1:8080/api`
+- 接口文档：`http://127.0.0.1:8080/api/doc.html`
+
+### 4) 启动前端
+
+前端使用 Vite 代理 `/api` 到 `http://127.0.0.1:8080`，不需要额外配置即可联调。
+
 ```bash
 cd frontend
 pnpm install
 
-pnpm dev:customer  # 用户端 3000
-pnpm dev:merchant  # 商家端 3002
-pnpm dev:admin     # 管理端 3001
+pnpm dev:customer
+pnpm dev:merchant
+pnpm dev:admin
 ```
 
-### 4. AI 智能体服务启动
+默认端口：
+- 用户端：http://127.0.0.1:3000
+- 商家端：http://127.0.0.1:3001
+- 管理端：http://127.0.0.1:3002
+
+### 5) 启动 AI 智能体服务（可选）
+
 ```bash
 cd zhijian_langgraph
 python -m uvicorn tools_service.app:app --host 127.0.0.1 --port 18080
 python -m uvicorn agent.app:app --host 127.0.0.1 --port 18081
 ```
 
-## 配置说明
-### 1. 环境变量
-| 变量名 | 描述 | 示例 |
-| :--- | :--- | :--- |
-| `DB_PASSWORD` | MySQL 密码 | `root` |
-| `REDIS_PASSWORD` | Redis 密码 | (空) |
-| `OPENAI_API_KEY` | AI 服务 API Key | `sk-...` |
-| `LANGGRAPH_AGENT_BASE_URL` | AI 智能体服务地址 | `http://127.0.0.1:18081` |
-| `ALIYUN_OSS_ACCESS_KEY_ID` | OSS Key ID | - |
-| `ALIYUN_OSS_ACCESS_KEY_SECRET` | OSS Secret | - |
-| `ALIYUN_SMS_ACCESS_KEY_ID` | 短信 Key ID | - |
-| `ALIYUN_SMS_ACCESS_KEY_SECRET` | 短信 Secret | - |
-| `ALIYUN_SMS_SIGN_NAME` | 短信签名 | - |
-| `ALIYUN_SMS_TEMPLATE_CODE` | 短信模板 Code | - |
+## 配置（环境变量）
 
-### 2. 短信验证码说明
-当前短信验证码采用阿里云号码认证服务的系统模板，模板变量使用 `code` 与 `min`，请确保模板与签名为同一账号下的已审核配置。
+仓库不存放任何真实密钥，请通过环境变量注入（本地可用系统环境变量或运行配置）。
 
-## 部署指南
-### 1. 后端部署
-1. 在 `backend` 目录执行 `mvn clean package -DskipTests`
-2. 运行：
+### 数据库与缓存
+
+- `SPRING_DATASOURCE_URL`（示例：`jdbc:mysql://localhost:3306/zhijian_db?...`）
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+- `SPRING_DATA_REDIS_HOST`
+- `SPRING_DATA_REDIS_PORT`
+
+### AI
+
+- `OPENAI_API_KEY`（或 DeepSeek 兼容 Key）
+- `LANGGRAPH_AGENT_BASE_URL`（默认 `http://127.0.0.1:18081`）
+
+### 阿里云 OSS（文件上传）
+
+- `ALIYUN_OSS_ENDPOINT`
+- `ALIYUN_OSS_ACCESS_KEY_ID`
+- `ALIYUN_OSS_ACCESS_KEY_SECRET`
+- `ALIYUN_OSS_BUCKET_NAME`
+
+### 阿里云短信
+
+- `ALIYUN_SMS_ACCESS_KEY_ID`
+- `ALIYUN_SMS_ACCESS_KEY_SECRET`
+- `ALIYUN_SMS_SIGN_NAME`
+- `ALIYUN_SMS_TEMPLATE_CODE`
+
+### 阿里云 OCR（商家入驻自动填表）
+
+- `ALIYUN_OCR_ENDPOINT`（建议 `ocr-api.cn-hangzhou.aliyuncs.com`）
+- `ALIYUN_OCR_ACCESS_KEY_ID`
+- `ALIYUN_OCR_ACCESS_KEY_SECRET`
+- `ALIYUN_OCR_CONFIDENCE_THRESHOLD`（默认 `0.8`）
+
+商家端入驻页上传后会自动触发 OCR，并弹窗确认回填（营业执照 / 身份证正反面合并）。
+
+## 常用命令
+
+### 后端
+
 ```bash
-java -jar -Dspring.profiles.active=prod zhijian-backend.jar
+cd backend
+mvn -q clean package -DskipTests
 ```
 
-### 2. 前端部署
-1. 在 `frontend` 目录执行 `pnpm build:all`
-2. 产物目录：
-* 管理端：`deploy/frontend/admin/`
-* 商家端：`deploy/frontend/merchant/`
-* 用户端：`deploy/frontend/customer/`
+### 前端
 
-### 3. 骑手端小程序
-* 使用微信开发者工具导入 `frontend/apps/rider`
-* 配置 AppID 后上传审核
-* 在小程序后台配置后端 HTTPS 域名
+```bash
+cd frontend
+pnpm lint
+pnpm build:all
+```
 
-## License
-This project is licensed under the MIT License.
+## 安全说明
+
+- 不要把任何 AccessKey/Secret/API Key 写入 yml 或提交到仓库。
+- 建议定期轮换密钥，并使用最小权限策略。

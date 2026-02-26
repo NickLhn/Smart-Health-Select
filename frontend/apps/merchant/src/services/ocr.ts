@@ -14,9 +14,14 @@ export interface BusinessLicenseOcrResult {
 export interface IdCardOcrResult {
   name?: OcrField
   idNumber?: OcrField
+  idNumberLast4?: string
+  idNumberHash?: string
   address?: OcrField
   authority?: OcrField
   validDate?: OcrField
+  validFrom?: string
+  validTo?: string
+  validLongTerm?: boolean
 }
 
 export async function ocrBusinessLicense(imageUrl: string) {
@@ -24,6 +29,7 @@ export async function ocrBusinessLicense(imageUrl: string) {
 }
 
 export async function ocrIdCardBundle(frontImageUrl: string, backImageUrl: string) {
-  return request.post<IdCardOcrResult>('/merchant/ocr/idcard-bundle', { frontImageUrl, backImageUrl })
+  return request.get<IdCardOcrResult>('/merchant/ocr/idcard-bundle', {
+    params: { frontImageUrl, backImageUrl },
+  })
 }
-

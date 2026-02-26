@@ -87,8 +87,16 @@ const StoreApply: React.FC = () => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
+      const normalizedValues = { ...values };
+      if (normalizedValues.idCardValidFrom === '') normalizedValues.idCardValidFrom = undefined;
+      if (normalizedValues.idCardValidTo === '') normalizedValues.idCardValidTo = undefined;
+      if (normalizedValues.idCardValidLongTerm === '') normalizedValues.idCardValidLongTerm = undefined;
+      if (normalizedValues.idCardValidLongTerm != null) {
+        const num = Number(normalizedValues.idCardValidLongTerm);
+        normalizedValues.idCardValidLongTerm = Number.isNaN(num) ? undefined : num;
+      }
       const payload = {
-        ...values,
+        ...normalizedValues,
         shopLogo: getFileUrl(fileList[0]),
         licenseUrl: getFileUrl(licenseList[0]),
         idCardFront: getFileUrl(idCardFrontList[0]),
@@ -125,8 +133,35 @@ const StoreApply: React.FC = () => {
     }
   };
 
+  const runIdCardOcr = useCallback(
+    async (frontUrl: string, backUrl: string) => {
+      setIdCardOcrLoading(true);
+      try {
+        const res = await ocrIdCardBundle(frontUrl, backUrl);
+        if (res.code !== 200) {
+          message.warning(res.message || '身份证识别失败，可手动填写');
+          return;
+        }
+        setIdCardOcrResult(res.data || null);
+        const nameConf = res.data?.name?.confidence;
+        setIdCardOcrSelected({
+          name: nameConf == null ? true : nameConf >= confidenceThreshold,
+        });
+        setIdCardOcrOpen(true);
+      } catch (err) {
+        if (err instanceof Error && err.message) {
+          message.warning(err.message);
+          return;
+        }
+        message.warning('身份证识别失败，可手动填写');
+      } finally {
+        setIdCardOcrLoading(false);
+      }
+    },
+    [confidenceThreshold]
+  );
+
   useEffect(() => {
-    if (merchant?.auditStatus === 0) return;
     const file = licenseList[0];
     if (!isNewUploadFile(file)) return;
     const url = getFileUrl(file);
@@ -138,7 +173,10 @@ const StoreApply: React.FC = () => {
     setLicenseOcrLoading(true);
     ocrBusinessLicense(url)
       .then((res) => {
-        if (res.code !== 200) return;
+        if (res.code !== 200) {
+          message.warning(res.message || '营业执照识别失败，可手动填写');
+          return;
+        }
         setLicenseOcrResult(res.data || null);
         const creditConf = res.data?.creditCode?.confidence;
         setLicenseOcrSelected({
@@ -148,19 +186,22 @@ const StoreApply: React.FC = () => {
         });
         setLicenseOcrOpen(true);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err instanceof Error && err.message) {
+          message.warning(err.message);
+          return;
+        }
         message.warning('营业执照识别失败，可手动填写');
       })
       .finally(() => {
         setLicenseOcrLoading(false);
       });
-  }, [confidenceThreshold, lastLicenseOcrKey, licenseList, merchant?.auditStatus]);
+  }, [confidenceThreshold, lastLicenseOcrKey, licenseList]);
 
   useEffect(() => {
-    if (merchant?.auditStatus === 0) return;
     const frontFile = idCardFrontList[0];
     const backFile = idCardBackList[0];
-    if (!isNewUploadFile(frontFile) || !isNewUploadFile(backFile)) return;
+    if (!isNewUploadFile(frontFile) && !isNewUploadFile(backFile)) return;
     const frontUrl = getFileUrl(frontFile);
     const backUrl = getFileUrl(backFile);
     if (!frontUrl || !backUrl) return;
@@ -169,24 +210,8 @@ const StoreApply: React.FC = () => {
     if (key === lastIdCardOcrKey) return;
 
     setLastIdCardOcrKey(key);
-    setIdCardOcrLoading(true);
-    ocrIdCardBundle(frontUrl, backUrl)
-      .then((res) => {
-        if (res.code !== 200) return;
-        setIdCardOcrResult(res.data || null);
-        const nameConf = res.data?.name?.confidence;
-        setIdCardOcrSelected({
-          name: nameConf == null ? true : nameConf >= confidenceThreshold,
-        });
-        setIdCardOcrOpen(true);
-      })
-      .catch(() => {
-        message.warning('身份证识别失败，可手动填写');
-      })
-      .finally(() => {
-        setIdCardOcrLoading(false);
-      });
-  }, [confidenceThreshold, idCardBackList, idCardFrontList, lastIdCardOcrKey, merchant?.auditStatus]);
+    runIdCardOcr(frontUrl, backUrl);
+  }, [idCardBackList, idCardFrontList, lastIdCardOcrKey, runIdCardOcr]);
 
   const renderStatus = () => {
     if (!merchant) return null;
@@ -353,12 +378,36 @@ const StoreApply: React.FC = () => {
             if (idCardOcrSelected.name && r?.name?.value) {
               form.setFieldValue('contactName', r.name.value);
             }
+            if (r?.idNumberLast4) {
+              form.setFieldValue('legalPersonIdLast4', r.idNumberLast4);
+            }
+            if (r?.idNumberHash) {
+              form.setFieldValue('legalPersonIdHash', r.idNumberHash);
+            }
+            if (r?.address?.value) {
+              form.setFieldValue('legalPersonAddress', r.address.value);
+            }
+            if (r?.authority?.value) {
+              form.setFieldValue('idCardAuthority', r.authority.value);
+            }
+            if (r?.validFrom) {
+              form.setFieldValue('idCardValidFrom', r.validFrom);
+            }
+            if (r?.validTo) {
+              form.setFieldValue('idCardValidTo', r.validTo);
+            }
+            if (typeof r?.validLongTerm === 'boolean') {
+              form.setFieldValue('idCardValidLongTerm', r.validLongTerm ? 1 : 0);
+              if (r.validLongTerm) {
+                form.setFieldValue('idCardValidTo', undefined);
+              }
+            }
             setIdCardOcrOpen(false);
           }}
         >
           <div style={{ display: 'grid', gap: 12 }}>
             <div style={{ color: '#6B7280', fontSize: 12 }}>
-              已合并识别身份证正反面信息（仅写入联系人姓名，其余字段作为候选展示）
+              已合并识别身份证正反面信息（写入联系人姓名、证件住址、签发机关、有效期与身份证后4位）
             </div>
             <div style={{ display: 'grid', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -553,6 +602,34 @@ const StoreApply: React.FC = () => {
               <Input placeholder="请输入统一社会信用代码" />
             </Form.Item>
 
+            <Form.Item name="legalPersonIdHash" hidden>
+              <Input />
+            </Form.Item>
+
+            <Form.Item name="legalPersonIdLast4" label="法人身份证号后4位">
+              <Input placeholder="自动识别后填写" disabled />
+            </Form.Item>
+
+            <Form.Item name="legalPersonAddress" label="法人证件住址">
+              <Input placeholder="身份证识别后可自动填充" />
+            </Form.Item>
+
+            <Form.Item name="idCardAuthority" label="身份证签发机关">
+              <Input placeholder="身份证识别后可自动填充" />
+            </Form.Item>
+
+            <Form.Item name="idCardValidFrom" label="身份证有效期开始">
+              <Input placeholder="YYYY-MM-DD" />
+            </Form.Item>
+
+            <Form.Item name="idCardValidTo" label="身份证有效期结束">
+              <Input placeholder="YYYY-MM-DD（长期有效可留空）" />
+            </Form.Item>
+
+            <Form.Item name="idCardValidLongTerm" label="身份证长期有效">
+              <Input placeholder="1=是 0=否" />
+            </Form.Item>
+
             <Form.Item label="法人身份证正面" required>
               <Upload
                 listType="picture-card"
@@ -575,6 +652,25 @@ const StoreApply: React.FC = () => {
               >
                 {idCardBackList.length < 1 && <div><IdcardOutlined /><div style={{ marginTop: 8 }}>上传背面</div></div>}
               </Upload>
+            </Form.Item>
+
+            <Form.Item>
+              <Button
+                onClick={() => {
+                  const frontUrl = getFileUrl(idCardFrontList[0]);
+                  const backUrl = getFileUrl(idCardBackList[0]);
+                  if (!frontUrl || !backUrl) {
+                    message.warning('请先上传身份证正反面');
+                    return;
+                  }
+                  setLastIdCardOcrKey(null);
+                  runIdCardOcr(frontUrl, backUrl);
+                }}
+                loading={idCardOcrLoading}
+                block
+              >
+                重新识别身份证
+              </Button>
             </Form.Item>
 
             <Form.Item label="店铺Logo">
