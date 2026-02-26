@@ -65,6 +65,7 @@ Zhijian-System/
 │   │   ├── admin           # 管理端 (React + Vite)
 │   │   └── rider           # 骑手端 (Taro)
 │   └── ...
+├── zhijian_langgraph/      # AI 智能体服务 (FastAPI + LangGraph)
 └── docs/                   # 项目文档与 SQL 脚本
 ```
 
@@ -100,7 +101,7 @@ pnpm dev:merchant
 pnpm dev:admin
 ```
 
-## � 部署指南 (Deployment)
+## 🚀 部署指南 (Deployment)
 
 ### 1. 生产环境配置 (Environment Variables)
 在生产环境（如宝塔面板）中，建议通过环境变量配置敏感信息，无需修改代码：
@@ -114,6 +115,8 @@ pnpm dev:admin
 | `ALIYUN_OSS_ACCESS_KEY_SECRET` | 阿里云 OSS Secret | - |
 | `ALIYUN_SMS_ACCESS_KEY_ID` | 阿里云短信 Key ID | - |
 | `ALIYUN_SMS_ACCESS_KEY_SECRET` | 阿里云短信 Secret | - |
+| `ALIYUN_SMS_SIGN_NAME` | 阿里云短信签名 | - |
+| `ALIYUN_SMS_TEMPLATE_CODE` | 阿里云短信模板 Code | - |
 
 ### 2. 后端部署 (Backend)
 1.  **打包**: 在 `backend` 目录下运行 `mvn clean package -DskipTests`。
@@ -124,7 +127,7 @@ pnpm dev:admin
     ```
 
 ### 3. 前端部署 (Frontend)
-1.  **构建**: 在 `frontend` 目录下运行 `npm run build:all`。
+1.  **构建**: 在 `frontend` 目录下运行 `pnpm build:all`。
 2.  **产物**: 
     *   管理端: `deploy/frontend/admin/`
     *   商家端: `deploy/frontend/merchant/`
@@ -136,5 +139,5 @@ pnpm dev:admin
 *   **部署**: 使用 **微信开发者工具** 导入 `frontend/apps/rider` 目录，配置 AppID 后上传审核。
 *   **注意**: 需在小程序后台配置服务器域名为您的后端 HTTPS 域名。
 
-## �📝 License
+## 📝 License
 This project is licensed under the MIT License.
