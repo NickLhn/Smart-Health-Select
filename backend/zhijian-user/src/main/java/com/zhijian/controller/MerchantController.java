@@ -9,6 +9,11 @@ import com.zhijian.dto.merchant.MerchantApplyDTO;
 import com.zhijian.dto.merchant.MerchantAuditDTO;
 import com.zhijian.dto.merchant.MerchantQueryDTO;
 import com.zhijian.dto.merchant.MerchantSettingDTO;
+import com.zhijian.dto.merchant.ocr.BusinessLicenseOcrRequestDTO;
+import com.zhijian.dto.merchant.ocr.BusinessLicenseOcrResponseDTO;
+import com.zhijian.dto.merchant.ocr.IdCardBundleOcrRequestDTO;
+import com.zhijian.dto.merchant.ocr.IdCardOcrResponseDTO;
+import com.zhijian.service.OcrService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -28,6 +33,7 @@ import org.springframework.web.bind.annotation.*;
 public class MerchantController {
 
     private final MerchantService merchantService;
+    private final OcrService ocrService;
 
     @Operation(summary = "商家列表 (管理端)")
     @GetMapping("/list")
@@ -61,6 +67,34 @@ public class MerchantController {
             return Result.failed("请先登录");
         }
         return merchantService.apply(userId, applyDTO);
+    }
+
+    @Operation(summary = "营业执照OCR识别(用于自动填表)")
+    @PostMapping("/ocr/business-license")
+    public Result<BusinessLicenseOcrResponseDTO> ocrBusinessLicense(@RequestBody @Valid BusinessLicenseOcrRequestDTO req) {
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            return Result.failed("请先登录");
+        }
+        BusinessLicenseOcrResponseDTO data = ocrService.recognizeBusinessLicense(req.getImageUrl());
+        if (data == null || (data.getCreditCode() == null && data.getAddress() == null && data.getEntityName() == null)) {
+            return Result.failed("识别失败");
+        }
+        return Result.success(data);
+    }
+
+    @Operation(summary = "身份证OCR识别(正反面合并弹窗)")
+    @PostMapping("/ocr/idcard-bundle")
+    public Result<IdCardOcrResponseDTO> ocrIdCardBundle(@RequestBody @Valid IdCardBundleOcrRequestDTO req) {
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            return Result.failed("请先登录");
+        }
+        IdCardOcrResponseDTO data = ocrService.recognizeIdCardBundle(req.getFrontImageUrl(), req.getBackImageUrl());
+        if (data == null || (data.getName() == null && data.getIdNumber() == null && data.getAddress() == null && data.getAuthority() == null && data.getValidDate() == null)) {
+            return Result.failed("识别失败");
+        }
+        return Result.success(data);
     }
 
     @Operation(summary = "获取商家详情 (管理端)")
@@ -105,4 +139,3 @@ public class MerchantController {
         return merchantService.updateSettings(userId, settingDTO);
     }
 }
-

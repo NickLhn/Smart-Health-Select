@@ -33,3 +33,4 @@ pnpm-debug.log
 build/
 out/
 *.jar
+customer_dist*.zip

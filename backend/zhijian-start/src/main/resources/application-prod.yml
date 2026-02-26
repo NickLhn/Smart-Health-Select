@@ -57,3 +57,8 @@ aliyun:
     access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:KiuDxERbeH2XFxp6igTKsMZe0SJ99c}
     sign-name: ${ALIYUN_SMS_SIGN_NAME:速通互联验证平台}
     template-code: ${ALIYUN_SMS_TEMPLATE_CODE:100001}
+  ocr:
+    endpoint: ${ALIYUN_OCR_ENDPOINT:ocr-api.cn-hangzhou.aliyuncs.com}
+    access-key-id: ${ALIYUN_OCR_ACCESS_KEY_ID:}
+    access-key-secret: ${ALIYUN_OCR_ACCESS_KEY_SECRET:}
+    confidence-threshold: ${ALIYUN_OCR_CONFIDENCE_THRESHOLD:0.8}

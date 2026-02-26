@@ -1,11 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Form, Input, Button, Upload, message, Card, Steps, Alert } from 'antd';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Button, Card, Checkbox, Form, Input, Modal, Steps, Tag, Upload, message } from 'antd';
 import { UploadOutlined, ShopOutlined, IdcardOutlined, FileProtectOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { useNavigate } from 'react-router-dom';
 import { getMyStore, applyStore } from '../../../services/store';
 import type { Merchant } from '../../../services/store';
 import { uploadFile } from '../../../services/file';
+import { ocrBusinessLicense, ocrIdCardBundle } from '../../../services/ocr';
+import type { BusinessLicenseOcrResult, IdCardOcrResult } from '../../../services/ocr';
 
 const { TextArea } = Input;
 
@@ -18,6 +20,40 @@ const StoreApply: React.FC = () => {
   const [licenseList, setLicenseList] = useState<UploadFile[]>([]);
   const [idCardFrontList, setIdCardFrontList] = useState<UploadFile[]>([]);
   const [idCardBackList, setIdCardBackList] = useState<UploadFile[]>([]);
+
+  const [licenseOcrOpen, setLicenseOcrOpen] = useState(false);
+  const [licenseOcrLoading, setLicenseOcrLoading] = useState(false);
+  const [licenseOcrResult, setLicenseOcrResult] = useState<BusinessLicenseOcrResult | null>(null);
+  const [licenseOcrSelected, setLicenseOcrSelected] = useState({
+    creditCode: true,
+    address: false,
+    entityName: false,
+  });
+  const [lastLicenseOcrKey, setLastLicenseOcrKey] = useState<string | null>(null);
+
+  const [idCardOcrOpen, setIdCardOcrOpen] = useState(false);
+  const [idCardOcrLoading, setIdCardOcrLoading] = useState(false);
+  const [idCardOcrResult, setIdCardOcrResult] = useState<IdCardOcrResult | null>(null);
+  const [idCardOcrSelected, setIdCardOcrSelected] = useState({
+    name: true,
+  });
+  const [lastIdCardOcrKey, setLastIdCardOcrKey] = useState<string | null>(null);
+
+  const confidenceThreshold = useMemo(() => 80, []);
+
+  const getFileUrl = (file: any) => {
+    if (!file) return '';
+    if (file.url) return file.url;
+    if (file.response && file.response.code === 200) return file.response.data;
+    return '';
+  };
+
+  const isNewUploadFile = (file?: UploadFile) => {
+    if (!file) return false;
+    if (file.uid === '-1') return false;
+    if (file.status !== 'done') return false;
+    return true;
+  };
 
   const fetchStoreInfo = useCallback(async () => {
     try {
@@ -51,12 +87,6 @@ const StoreApply: React.FC = () => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
-      const getFileUrl = (file: any) => {
-        if (file.url) return file.url;
-        if (file.response && file.response.code === 200) return file.response.data;
-        return '';
-      };
-
       const payload = {
         ...values,
         shopLogo: getFileUrl(fileList[0]),
@@ -78,13 +108,6 @@ const StoreApply: React.FC = () => {
     }
   };
 
-  const normFile = (e: any) => {
-    if (Array.isArray(e)) {
-      return e;
-    }
-    return e?.fileList;
-  };
-
   // 真实上传
   const customRequest = async (options: any) => {
     const { onSuccess, onError, file } = options;
@@ -101,6 +124,69 @@ const StoreApply: React.FC = () => {
       message.error('上传失败');
     }
   };
+
+  useEffect(() => {
+    if (merchant?.auditStatus === 0) return;
+    const file = licenseList[0];
+    if (!isNewUploadFile(file)) return;
+    const url = getFileUrl(file);
+    if (!url) return;
+    const key = `license:${url}`;
+    if (key === lastLicenseOcrKey) return;
+
+    setLastLicenseOcrKey(key);
+    setLicenseOcrLoading(true);
+    ocrBusinessLicense(url)
+      .then((res) => {
+        if (res.code !== 200) return;
+        setLicenseOcrResult(res.data || null);
+        const creditConf = res.data?.creditCode?.confidence;
+        setLicenseOcrSelected({
+          creditCode: creditConf == null ? true : creditConf >= confidenceThreshold,
+          address: false,
+          entityName: false,
+        });
+        setLicenseOcrOpen(true);
+      })
+      .catch(() => {
+        message.warning('营业执照识别失败，可手动填写');
+      })
+      .finally(() => {
+        setLicenseOcrLoading(false);
+      });
+  }, [confidenceThreshold, lastLicenseOcrKey, licenseList, merchant?.auditStatus]);
+
+  useEffect(() => {
+    if (merchant?.auditStatus === 0) return;
+    const frontFile = idCardFrontList[0];
+    const backFile = idCardBackList[0];
+    if (!isNewUploadFile(frontFile) || !isNewUploadFile(backFile)) return;
+    const frontUrl = getFileUrl(frontFile);
+    const backUrl = getFileUrl(backFile);
+    if (!frontUrl || !backUrl) return;
+
+    const key = `idcard:${frontUrl}::${backUrl}`;
+    if (key === lastIdCardOcrKey) return;
+
+    setLastIdCardOcrKey(key);
+    setIdCardOcrLoading(true);
+    ocrIdCardBundle(frontUrl, backUrl)
+      .then((res) => {
+        if (res.code !== 200) return;
+        setIdCardOcrResult(res.data || null);
+        const nameConf = res.data?.name?.confidence;
+        setIdCardOcrSelected({
+          name: nameConf == null ? true : nameConf >= confidenceThreshold,
+        });
+        setIdCardOcrOpen(true);
+      })
+      .catch(() => {
+        message.warning('身份证识别失败，可手动填写');
+      })
+      .finally(() => {
+        setIdCardOcrLoading(false);
+      });
+  }, [confidenceThreshold, idCardBackList, idCardFrontList, lastIdCardOcrKey, merchant?.auditStatus]);
 
   const renderStatus = () => {
     if (!merchant) return null;
@@ -149,85 +235,277 @@ const StoreApply: React.FC = () => {
   })();
 
   return (
-    <div>
-      <div
-        style={{
-          marginBottom: 16,
-          padding: '8px 12px 12px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-end',
-          gap: 16,
-          borderBottom: '1px solid #E5E7EB',
-        }}
-      >
-        <div>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: 20,
-              fontWeight: 600,
-              color: '#022c22',
-            }}
-          >
-            商家入驻信息完善
-          </h2>
-          <div
-            style={{
-              marginTop: 4,
-              fontSize: 12,
-              color: '#6B7280',
-            }}
-          >
-            请填写真实、完整的店铺及资质信息，以便平台审核
-          </div>
-        </div>
-        {merchant?.auditStatus === 1 && (
-          <Button
-            type="primary"
-            size="middle"
-            onClick={() => navigate('/dashboard')}
-            style={{
-              borderRadius: 999,
-              paddingInline: 18,
-              background: 'linear-gradient(90deg, #059669, #10B981)',
-              border: 'none',
-            }}
-          >
-            进入商家工作台
-          </Button>
-        )}
-      </div>
-
-      {renderStatus()}
-
-      <Card
-        variant="outlined"
-        style={{
-          borderRadius: 16,
-          borderColor: '#E5E7EB',
-        }}
-      >
-        <div style={{ marginBottom: 24 }}>
-          <Steps
-            current={currentStep}
-            responsive
-            items={[
-              { title: '填写基本信息' },
-              { title: '上传证件资料' },
-              { title: '等待平台审核' },
-              { title: '审核通过开始经营' },
-            ]}
-          />
-        </div>
-
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          disabled={merchant?.auditStatus === 0}
-          style={{ marginTop: 8 }}
+    <div style={{ padding: '16px 16px 40px' }}>
+      <div style={{ maxWidth: 1040, margin: '0 auto' }}>
+        <Modal
+          open={licenseOcrOpen}
+          title="识别结果（营业执照）"
+          okText="确认写入"
+          cancelText="暂不写入"
+          confirmLoading={licenseOcrLoading}
+          onCancel={() => setLicenseOcrOpen(false)}
+          onOk={() => {
+            const r = licenseOcrResult;
+            if (licenseOcrSelected.creditCode && r?.creditCode?.value) {
+              form.setFieldValue('creditCode', r.creditCode.value);
+            }
+            if (licenseOcrSelected.address && r?.address?.value) {
+              form.setFieldValue('address', r.address.value);
+            }
+            if (licenseOcrSelected.entityName && r?.entityName?.value) {
+              form.setFieldValue('shopName', r.entityName.value);
+            }
+            setLicenseOcrOpen(false);
+          }}
         >
+          <div style={{ display: 'grid', gap: 12 }}>
+            <div style={{ color: '#6B7280', fontSize: 12 }}>
+              已识别出以下候选信息，请确认是否写入到表单（可随时修改）
+            </div>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <Checkbox
+                  checked={licenseOcrSelected.creditCode}
+                  onChange={(e) =>
+                    setLicenseOcrSelected((s) => ({
+                      ...s,
+                      creditCode: e.target.checked,
+                    }))
+                  }
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ fontWeight: 600 }}>统一社会信用代码</div>
+                    {licenseOcrResult?.creditCode?.confidence != null && (
+                      <Tag color={licenseOcrResult.creditCode.confidence >= confidenceThreshold ? 'green' : 'gold'}>
+                        {licenseOcrResult.creditCode.confidence}%
+                      </Tag>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 4, color: '#111827' }}>
+                    {licenseOcrResult?.creditCode?.value || '-'}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <Checkbox
+                  checked={licenseOcrSelected.address}
+                  onChange={(e) =>
+                    setLicenseOcrSelected((s) => ({
+                      ...s,
+                      address: e.target.checked,
+                    }))
+                  }
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ fontWeight: 600 }}>营业/登记地址（候选）</div>
+                    {licenseOcrResult?.address?.confidence != null && (
+                      <Tag color={licenseOcrResult.address.confidence >= confidenceThreshold ? 'green' : 'gold'}>
+                        {licenseOcrResult.address.confidence}%
+                      </Tag>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 4, color: '#111827' }}>
+                    {licenseOcrResult?.address?.value || '-'}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <Checkbox
+                  checked={licenseOcrSelected.entityName}
+                  onChange={(e) =>
+                    setLicenseOcrSelected((s) => ({
+                      ...s,
+                      entityName: e.target.checked,
+                    }))
+                  }
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ fontWeight: 600 }}>主体名称（候选，可填到店铺名称）</div>
+                    {licenseOcrResult?.entityName?.confidence != null && (
+                      <Tag color={licenseOcrResult.entityName.confidence >= confidenceThreshold ? 'green' : 'gold'}>
+                        {licenseOcrResult.entityName.confidence}%
+                      </Tag>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 4, color: '#111827' }}>
+                    {licenseOcrResult?.entityName?.value || '-'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal
+          open={idCardOcrOpen}
+          title="识别结果（身份证）"
+          okText="确认写入"
+          cancelText="暂不写入"
+          confirmLoading={idCardOcrLoading}
+          onCancel={() => setIdCardOcrOpen(false)}
+          onOk={() => {
+            const r = idCardOcrResult;
+            if (idCardOcrSelected.name && r?.name?.value) {
+              form.setFieldValue('contactName', r.name.value);
+            }
+            setIdCardOcrOpen(false);
+          }}
+        >
+          <div style={{ display: 'grid', gap: 12 }}>
+            <div style={{ color: '#6B7280', fontSize: 12 }}>
+              已合并识别身份证正反面信息（仅写入联系人姓名，其余字段作为候选展示）
+            </div>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <Checkbox
+                  checked={idCardOcrSelected.name}
+                  onChange={(e) =>
+                    setIdCardOcrSelected({
+                      name: e.target.checked,
+                    })
+                  }
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ fontWeight: 600 }}>姓名（写入联系人姓名）</div>
+                    {idCardOcrResult?.name?.confidence != null && (
+                      <Tag color={idCardOcrResult.name.confidence >= confidenceThreshold ? 'green' : 'gold'}>
+                        {idCardOcrResult.name.confidence}%
+                      </Tag>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 4, color: '#111827' }}>{idCardOcrResult?.name?.value || '-'}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gap: 6, paddingLeft: 30 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ fontWeight: 600 }}>身份证号（候选）</div>
+                  {idCardOcrResult?.idNumber?.confidence != null && (
+                    <Tag color={idCardOcrResult.idNumber.confidence >= confidenceThreshold ? 'green' : 'gold'}>
+                      {idCardOcrResult.idNumber.confidence}%
+                    </Tag>
+                  )}
+                </div>
+                <div style={{ color: '#111827' }}>{idCardOcrResult?.idNumber?.value || '-'}</div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 8 }}>
+                  <div style={{ fontWeight: 600 }}>住址（候选）</div>
+                  {idCardOcrResult?.address?.confidence != null && (
+                    <Tag color={idCardOcrResult.address.confidence >= confidenceThreshold ? 'green' : 'gold'}>
+                      {idCardOcrResult.address.confidence}%
+                    </Tag>
+                  )}
+                </div>
+                <div style={{ color: '#111827' }}>{idCardOcrResult?.address?.value || '-'}</div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 8 }}>
+                  <div style={{ fontWeight: 600 }}>签发机关（候选）</div>
+                  {idCardOcrResult?.authority?.confidence != null && (
+                    <Tag color={idCardOcrResult.authority.confidence >= confidenceThreshold ? 'green' : 'gold'}>
+                      {idCardOcrResult.authority.confidence}%
+                    </Tag>
+                  )}
+                </div>
+                <div style={{ color: '#111827' }}>{idCardOcrResult?.authority?.value || '-'}</div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 8 }}>
+                  <div style={{ fontWeight: 600 }}>有效期（候选）</div>
+                  {idCardOcrResult?.validDate?.confidence != null && (
+                    <Tag color={idCardOcrResult.validDate.confidence >= confidenceThreshold ? 'green' : 'gold'}>
+                      {idCardOcrResult.validDate.confidence}%
+                    </Tag>
+                  )}
+                </div>
+                <div style={{ color: '#111827' }}>{idCardOcrResult?.validDate?.value || '-'}</div>
+              </div>
+            </div>
+          </div>
+        </Modal>
+
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '8px 12px 12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            gap: 16,
+            borderBottom: '1px solid #E5E7EB',
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 20,
+                fontWeight: 600,
+                color: '#022c22',
+              }}
+            >
+              商家入驻信息完善
+            </h2>
+            <div
+              style={{
+                marginTop: 4,
+                fontSize: 12,
+                color: '#6B7280',
+              }}
+            >
+              请填写真实、完整的店铺及资质信息，以便平台审核
+            </div>
+          </div>
+          {merchant?.auditStatus === 1 && (
+            <Button
+              type="primary"
+              size="middle"
+              onClick={() => navigate('/dashboard')}
+              style={{
+                borderRadius: 999,
+                paddingInline: 18,
+                background: 'linear-gradient(90deg, #059669, #10B981)',
+                border: 'none',
+              }}
+            >
+              进入商家工作台
+            </Button>
+          )}
+        </div>
+
+        {renderStatus()}
+
+        <Card
+          variant="outlined"
+          style={{
+            borderRadius: 16,
+            borderColor: '#E5E7EB',
+          }}
+        >
+          <div style={{ marginBottom: 24 }}>
+            <Steps
+              current={currentStep}
+              responsive
+              items={[
+                { title: '填写基本信息' },
+                { title: '上传证件资料' },
+                { title: '等待平台审核' },
+                { title: '审核通过开始经营' },
+              ]}
+            />
+          </div>
+
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            disabled={merchant?.auditStatus === 0}
+            style={{ marginTop: 8 }}
+          >
             <Form.Item
               name="shopName"
               label="店铺名称"
@@ -340,7 +618,8 @@ const StoreApply: React.FC = () => {
               </Button>
             </Form.Item>
           </Form>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 };
