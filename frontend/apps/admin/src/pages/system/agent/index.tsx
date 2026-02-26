@@ -137,10 +137,11 @@ const AdminAgent: React.FC = () => {
   const quickPrompts = useMemo(
     () => [
       '查用户 13100000000',
-      '查用户 user',
-      '查用户 13796323223',
       '禁用用户 id=14 原因：恶意注册',
-      '启用用户 id=14 原因：核实无误',
+      '待审核商家列表',
+      '商品列表',
+      '订单列表',
+      '售后订单',
     ],
     [],
   );
@@ -404,7 +405,7 @@ const AdminAgent: React.FC = () => {
                 <Typography.Text style={{ fontWeight: 900, color: 'rgba(2, 6, 23, 0.90)' }}>
                   管理端智能体
                 </Typography.Text>
-                <div style={{ fontSize: 12, color: 'rgba(15, 23, 42, 0.60)' }}>普通用户查询 / 启用禁用（软禁用）</div>
+                <div style={{ fontSize: 12, color: 'rgba(15, 23, 42, 0.60)' }}>用户 / 商家 / 商品 / 订单 / 售后（含二次确认）</div>
               </div>
             </div>
             <Tag color={needConfirm ? 'gold' : 'success'} style={{ borderRadius: 999, paddingInline: 10 }}>

@@ -128,14 +128,14 @@ const Dashboard: React.FC = () => {
         title: '总用户数',
         value: data?.totalUsers || 0,
         prefix: <UserOutlined />,
-        tone: '蓝色',
+        tone: '累计',
       },
       {
         key: 'todayOrders',
         title: '今日订单',
         value: data?.todayOrders || 0,
         prefix: <ShoppingOutlined />,
-        tone: '青色',
+        tone: '今日',
       },
       {
         key: 'todaySales',
@@ -143,7 +143,7 @@ const Dashboard: React.FC = () => {
         value: data?.todaySales || 0,
         precision: 2,
         prefix: <DollarOutlined />,
-        tone: '翡翠',
+        tone: '今日',
       },
       {
         key: 'totalSales',
@@ -151,7 +151,7 @@ const Dashboard: React.FC = () => {
         value: data?.totalSales || 0,
         precision: 2,
         prefix: <DollarOutlined />,
-        tone: '琥珀',
+        tone: '累计',
       },
     ] as const;
   }, [data]);
