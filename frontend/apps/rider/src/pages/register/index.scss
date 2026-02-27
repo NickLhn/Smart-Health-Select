@@ -12,7 +12,7 @@
     margin-bottom: 40px;
 
     .title {
-      font-size: 36px; // 32->36
+      font-size: 41px; // 32->36
       font-weight: 900;
       color: $text-primary;
       margin-bottom: 12px;
@@ -21,7 +21,7 @@
     }
     
     .subtitle {
-      font-size: 16px; // 14->16
+      font-size: 21px; // 14->16
       color: $text-secondary;
       font-weight: 500;
     }
@@ -38,7 +38,7 @@
       margin-bottom: 32px; // 24->32
       
       .label {
-        font-size: 14px; // 12->14
+        font-size: 19px; // 12->14
         color: $text-secondary;
         margin-bottom: 12px;
         display: block;
@@ -52,7 +52,7 @@
         height: 64px; // 56->64
         border-radius: $radius-md;
         padding: 0 20px;
-        font-size: 20px; // 18->20
+        font-size: 25px; // 18->20
         font-weight: 600;
         color: $text-primary;
         background: $input-bg;
@@ -80,7 +80,7 @@
       border-radius: $radius-md;
       height: 68px; // 60->68
       line-height: 68px;
-      font-size: 22px; // 18->22
+      font-size: 27px; // 18->22
       font-weight: 700;
       box-shadow: $shadow-sharp;
       border: 2px solid $text-primary;

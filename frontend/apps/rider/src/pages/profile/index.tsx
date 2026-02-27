@@ -60,11 +60,21 @@ const Profile: React.FC = () => {
 
       <View className='menu'>
         <View className='item' onClick={() => Taro.navigateTo({ url: '/pages/wallet/index' })}>
-          <Text>我的钱包</Text>
+          <View className='item-left'>
+            <View className='item-icon wallet'>
+              <Text className='item-icon-text'>￥</Text>
+            </View>
+            <Text className='item-text'>我的钱包</Text>
+          </View>
           <Text className='arrow'>›</Text>
         </View>
         <View className='item' onClick={() => Taro.makePhoneCall({ phoneNumber: '13796323223' })}>
-          <Text>联系客服</Text>
+          <View className='item-left'>
+            <View className='item-icon service'>
+              <Text className='item-icon-text'>客</Text>
+            </View>
+            <Text className='item-text'>联系客服</Text>
+          </View>
           <Text className='arrow'>›</Text>
         </View>
       </View>

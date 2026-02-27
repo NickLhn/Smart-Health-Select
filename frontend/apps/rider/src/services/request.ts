@@ -1,7 +1,5 @@
 import Taro from '@tarojs/taro'
 
-// H5 环境下使用 /api 走代理
-// 小程序环境下需要写完整的 URL
 export const getApiBaseUrl = () => {
   if (process.env.TARO_ENV === 'h5') {
     return '/api'

@@ -8,6 +8,50 @@ const Orders: React.FC = () => {
   const [activeTab, setActiveTab] = useState(1) // 1: 配送中, 2: 已送达
   const [list, setList] = useState<any[]>([])
 
+  const parseToMs = (value: any): number | null => {
+    if (value === null || typeof value === 'undefined' || value === '') return null
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) return null
+      return value > 10_000_000_000 ? value : value * 1000
+    }
+    if (typeof value === 'string') {
+      const s = value.trim()
+      if (!s) return null
+      if (/^\d+$/.test(s)) {
+        const n = Number(s)
+        if (!Number.isFinite(n)) return null
+        return n > 10_000_000_000 ? n : n * 1000
+      }
+      const iso = s.includes(' ') && !s.includes('T') ? s.replace(' ', 'T') : s
+      const ms = Date.parse(iso)
+      return Number.isFinite(ms) ? ms : null
+    }
+    return null
+  }
+
+  const formatHHmm = (ms: number | null): string => {
+    if (ms === null || !Number.isFinite(ms)) return '--:--'
+    const d = new Date(ms)
+    const hh = String(d.getHours()).padStart(2, '0')
+    const mm = String(d.getMinutes()).padStart(2, '0')
+    return `${hh}:${mm}`
+  }
+
+  const getTimeLabel = () => (activeTab === 1 ? '预计送达' : '送达时间')
+
+  const getTimeValue = (item: any) => {
+    const baseMs =
+      activeTab === 1
+        ? parseToMs(item.updateTime) ?? parseToMs(item.createTime)
+        : parseToMs(item.updateTime) ?? parseToMs(item.createTime)
+
+    if (activeTab === 1) {
+      const etaMs = baseMs === null ? null : baseMs + 30 * 60 * 1000
+      return formatHHmm(etaMs)
+    }
+    return formatHHmm(baseMs)
+  }
+
   useDidShow(() => {
     fetchList()
   })
@@ -87,14 +131,21 @@ const Orders: React.FC = () => {
                 </View>
 
                 <View className='card-footer'>
-                  <Text className='time'>预计 14:30 送达</Text>
+                  <View className='time'>
+                    <Text className='time-prefix'>{getTimeLabel()}</Text>
+                    <Text className='time-value'>{getTimeValue(item)}</Text>
+                  </View>
                   {activeTab === 1 && (
                     <Button className='btn-action' onClick={(e) => { e.stopPropagation(); handleCardClick(item.id) }}>
-                      查看详情
+                      <Text className='btn-text'>查看详情</Text>
+                      <Text className='btn-arrow'>›</Text>
                     </Button>
                   )}
                   {activeTab === 2 && (
-                    <Button className='btn-action outline'>查看评价</Button>
+                    <Button className='btn-action outline'>
+                      <Text className='btn-text'>查看评价</Text>
+                      <Text className='btn-arrow'>›</Text>
+                    </Button>
                   )}
                 </View>
               </View>

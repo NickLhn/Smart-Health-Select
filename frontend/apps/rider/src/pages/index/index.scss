@@ -6,6 +6,9 @@
   background-color: $bg-color;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 
   .header {
     background: $bg-color; // Transparent/Solid
@@ -35,7 +38,7 @@
           &.right { text-align: right; }
           
           .label {
-            font-size: 14px;
+            font-size: 24px;
             color: rgba(255, 255, 255, 0.6);
             font-weight: 700;
             letter-spacing: 1px;
@@ -69,6 +72,32 @@
           }
         }
       }
+
+      .online-switch {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .online-text {
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        color: rgba(255, 255, 255, 0.86);
+        white-space: nowrap;
+
+        &.online {
+          color: rgba(255, 255, 255, 0.92);
+        }
+
+        &.offline {
+          color: rgba(255, 255, 255, 0.72);
+        }
+      }
     }
   }
 
@@ -79,7 +108,7 @@
     align-items: center;
     
     .title {
-      font-size: 16px;
+      font-size: 24px;
       font-weight: 900;
       color: $text-secondary;
       letter-spacing: 1px;
@@ -90,7 +119,7 @@
       gap: 12px;
       
       .tag {
-        font-size: 14px;
+        font-size: 24px;
         font-weight: 700;
         color: $text-tertiary;
         padding: 6px 12px;
@@ -107,6 +136,9 @@
   .list {
     padding: 0 16px; // Reduced from 0 24px
     height: calc(100vh - 180px);
+    overflow-x: hidden;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .empty {
@@ -135,6 +167,17 @@
     display: flex;
     border: 1px solid $border-color;
     @include active-press;
+    width: 100%;
+    box-sizing: border-box;
+
+    &.offline {
+      border-color: rgba(15, 23, 42, 0.08);
+      box-shadow: none;
+
+      .status-bar {
+        background: $border-color;
+      }
+    }
     
     .status-bar {
       width: 8px;
@@ -145,6 +188,8 @@
     .card-content {
       flex: 1;
       padding: 16px; // Reduced from 24px
+      min-width: 0;
+      box-sizing: border-box;
     }
 
     .card-header {
@@ -156,24 +201,33 @@
       border-bottom: 1px solid $border-color;
 
       .shop-info {
+        flex: 1;
+        min-width: 0;
+
         .shop-name {
-          font-size: 24px; // Increased from 22px
+          font-size: 36px; // Increased from 22px
           font-weight: 800;
           color: $text-primary;
           display: block;
           margin-bottom: 10px;
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         
         .tags {
           display: flex;
           gap: 10px;
+          flex-wrap: wrap;
           
           .tag {
-            font-size: 14px; // Increased from 12px
+            font-size: 24px; // Increased from 12px
             font-weight: 700;
             padding: 4px 8px;
             border-radius: 4px;
             text-transform: uppercase;
+            white-space: nowrap;
             
             &.urgent {
               background: $error-color;
@@ -193,16 +247,18 @@
         display: flex;
         align-items: baseline;
         color: $primary-color;
+        flex-shrink: 0;
+        margin-left: 12px;
         
         .currency {
-          font-size: 18px; // Increased from 16px
+          font-size: 28px; // Increased from 16px
           font-weight: 600;
           margin-right: 2px;
         }
         
         .amount {
           font-family: $font-mono;
-          font-size: 36px;
+          font-size: 46px;
           font-weight: 700;
           letter-spacing: -1px;
         }
@@ -217,6 +273,7 @@
         align-items: flex-start;
         position: relative;
         padding-bottom: 20px;
+        min-width: 0;
         
         &:last-child { padding-bottom: 0; }
         
@@ -252,18 +309,21 @@
 
         .info {
           flex: 1;
+          min-width: 0;
           
           .address {
-            font-size: 18px; // Increased from 17px
+            font-size: 28px; // Increased from 17px
             font-weight: 600;
             color: $text-primary;
             display: block;
             margin-bottom: 4px;
             line-height: 1.4;
+            overflow-wrap: anywhere;
+            word-break: break-word;
           }
           
           .detail {
-            font-size: 14px; // Increased from 13px
+            font-size: 24px; // Increased from 13px
             color: $text-tertiary;
             font-weight: 700;
             letter-spacing: 0.5px;
@@ -281,7 +341,7 @@
         width: 100%;
         background: $primary-color;
         color: #FFFFFF;
-        font-size: 18px; // Increased from 16px
+        font-size: 28px; // Increased from 16px
         font-weight: 700;
         height: 56px;
         line-height: 56px;
@@ -291,6 +351,12 @@
         box-shadow: $shadow-sm;
         
         &::after { border: none; }
+
+        &[disabled] {
+          background: $border-color;
+          color: $text-tertiary;
+          box-shadow: none;
+        }
       }
     }
   }

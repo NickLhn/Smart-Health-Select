@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { View, Text, ScrollView, Button } from '@tarojs/components'
+import React, { useEffect, useState } from 'react'
+import { View, Text, ScrollView, Button, Switch } from '@tarojs/components'
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import request from '../../services/request'
 import './index.scss'
@@ -20,6 +20,30 @@ interface DeliveryOrder {
 const Index: React.FC = () => {
   const [list, setList] = useState<DeliveryOrder[]>([])
   const [loading, setLoading] = useState(false)
+  const [todayIncome, setTodayIncome] = useState<number>(0)
+  const [onlineMs, setOnlineMs] = useState<number>(0)
+  const [isOnline, setIsOnline] = useState(true)
+
+  function updateOnlineMs(online: boolean) {
+    const acc = Number(Taro.getStorageSync('rider_online_acc_ms') || 0)
+    const startedAt = Number(Taro.getStorageSync('rider_online_started_at') || 0)
+    const live = online && startedAt > 0 ? Math.max(0, Date.now() - startedAt) : 0
+    setOnlineMs(Math.max(0, acc + live))
+  }
+
+  function formatDuration(ms: number) {
+    const totalMinutes = Math.floor(ms / 60000)
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    return `${hours}h ${minutes}m`
+  }
+
+  useEffect(() => {
+    updateOnlineMs(isOnline)
+    if (!isOnline) return
+    const timer = setInterval(() => updateOnlineMs(true), 30000)
+    return () => clearInterval(timer)
+  }, [isOnline])
 
   useDidShow(() => {
     const token = Taro.getStorageSync('token')
@@ -27,12 +51,27 @@ const Index: React.FC = () => {
       Taro.reLaunch({ url: '/pages/login/index' })
       return
     }
-    fetchList()
+    const storedOnlineValue = Taro.getStorageSync('rider_online')
+    const storedIsOnline =
+      storedOnlineValue === '' || storedOnlineValue === null || typeof storedOnlineValue === 'undefined'
+        ? true
+        : Boolean(storedOnlineValue)
+    if (storedIsOnline && Number(Taro.getStorageSync('rider_online_started_at') || 0) <= 0) {
+      Taro.setStorageSync('rider_online_started_at', Date.now())
+    }
+    setIsOnline(storedIsOnline)
+    updateOnlineMs(storedIsOnline)
+    fetchAll()
   })
 
   usePullDownRefresh(() => {
-    fetchList()
+    fetchAll()
   })
+
+  const fetchAll = async () => {
+    await Promise.all([fetchList(), fetchStats()])
+    Taro.stopPullDownRefresh()
+  }
 
   const fetchList = async () => {
     setLoading(true)
@@ -41,14 +80,26 @@ const Index: React.FC = () => {
       setList(res.data.records || [])
     }
     setLoading(false)
-    Taro.stopPullDownRefresh()
+  }
+
+  const fetchStats = async () => {
+    const res = await request.get('/delivery/stats')
+    if (res.code === 200) {
+      const data = res.data || {}
+      const income = Number(data.todayIncome ?? 0)
+      setTodayIncome(Number.isFinite(income) ? income : 0)
+    }
   }
 
   const handleAccept = async (id: number) => {
+    if (!isOnline) {
+      Taro.showToast({ title: '当前休息中，切换到听单后才能接单', icon: 'none' })
+      return
+    }
     const res = await request.post(`/delivery/${id}/accept`)
     if (res.code === 200) {
       Taro.showToast({ title: '抢单成功', icon: 'success' })
-      fetchList()
+      fetchAll()
     } else {
       Taro.showToast({ title: res.msg || '抢单失败', icon: 'none' })
     }
@@ -62,10 +113,28 @@ const Index: React.FC = () => {
   const [scrollTop, setScrollTop] = useState(0)
   const onScroll = (e) => setScrollTop(e.detail.scrollTop)
 
-  const [isOnline, setIsOnline] = useState(true)
-  const toggleOnline = () => {
-    setIsOnline(!isOnline)
-    Taro.showToast({ title: !isOnline ? '开始听单' : '已休息', icon: 'none' })
+  const setOnline = (next: boolean) => {
+    if (next === isOnline) return
+    const now = Date.now()
+    const acc = Number(Taro.getStorageSync('rider_online_acc_ms') || 0)
+    const startedAt = Number(Taro.getStorageSync('rider_online_started_at') || 0)
+
+    if (next) {
+      Taro.setStorageSync('rider_online', true)
+      Taro.setStorageSync('rider_online_started_at', now)
+      setIsOnline(true)
+      updateOnlineMs(true)
+      Taro.showToast({ title: '开始听单', icon: 'none' })
+      return
+    }
+
+    const newAcc = acc + (startedAt > 0 ? Math.max(0, now - startedAt) : 0)
+    Taro.setStorageSync('rider_online', false)
+    Taro.setStorageSync('rider_online_started_at', 0)
+    Taro.setStorageSync('rider_online_acc_ms', newAcc)
+    setIsOnline(false)
+    setOnlineMs(newAcc)
+    Taro.showToast({ title: '已休息', icon: 'none' })
   }
 
   return (
@@ -78,7 +147,7 @@ const Index: React.FC = () => {
               <Text className='label'>今日收入</Text>
               <View className='value-group'>
                 <Text className='symbol'>¥</Text>
-                <Text className='value'>128.50</Text>
+                <Text className='value'>{todayIncome.toFixed(2)}</Text>
               </View>
             </View>
             <View className='col'>
@@ -93,11 +162,12 @@ const Index: React.FC = () => {
           <View className='row'>
             <View className='col'>
               <Text className='label'>在线时长</Text>
-              <Text className='sub-value'>4h 12m</Text>
+              <Text className='sub-value'>{formatDuration(onlineMs)}</Text>
             </View>
             <View className='col'>
-              <View className={`status-badge ${isOnline ? 'online' : 'offline'}`} onClick={toggleOnline}>
-                <Text>{isOnline ? '听单中' : '休息中'}</Text>
+              <View className='online-switch'>
+                <Text className={`online-text ${isOnline ? 'online' : 'offline'}`}>{isOnline ? '听单中' : '休息中'}</Text>
+                <Switch checked={isOnline} color='#2563EB' onChange={(e) => setOnline(e.detail.value)} />
               </View>
             </View>
           </View>
@@ -121,7 +191,7 @@ const Index: React.FC = () => {
           </View>
         ) : (
           list.map((item) => (
-            <View className='card' key={item.id} onClick={() => handleCardClick(item.id)}>
+            <View className={`card ${isOnline ? '' : 'offline'}`} key={item.id} onClick={() => handleCardClick(item.id)}>
               <View className='status-bar'></View>
               <View className='card-content'>
                 <View className='card-header'>
@@ -158,7 +228,9 @@ const Index: React.FC = () => {
                 </View>
 
                 <View className='card-footer'>
-                  <Button className='btn-accept' onClick={(e) => { e.stopPropagation(); handleAccept(item.id) }}>立即抢单</Button>
+                  <Button disabled={!isOnline} className='btn-accept' onClick={(e) => { e.stopPropagation(); handleAccept(item.id) }}>
+                    {isOnline ? '立即抢单' : '休息中'}
+                  </Button>
                 </View>
               </View>
             </View>

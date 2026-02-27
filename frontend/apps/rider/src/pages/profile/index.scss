@@ -4,13 +4,27 @@
   min-height: 100vh;
   background-color: $bg-color;
   padding-bottom: 48px; // Increased from 40px
+  overflow-x: hidden;
 
   .header {
-    background: $text-primary; // Dark header for contrast
+    background: linear-gradient(135deg, #0B1220 0%, #111827 55%, #0B1220 100%);
     padding: 48px 32px 96px; // Increased padding
     display: flex;
     align-items: center;
     color: $text-inverse;
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+      content: '';
+      position: absolute;
+      right: -80px;
+      top: -80px;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 60%);
+      pointer-events: none;
+    }
     
     .avatar {
       width: 80px; // Increased from 64px
@@ -20,9 +34,10 @@
       margin-right: 20px; // Increased from 16px
       border: 2px solid rgba(255, 255, 255, 0.4);
       @include flex-center;
-      font-size: 32px; // Increased from 24px
+      font-size: 42px; // Increased from 24px
       color: $text-inverse;
       font-weight: 700;
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.25);
     }
 
     .info {
@@ -31,17 +46,17 @@
       flex-direction: column;
 
       .name {
-        font-size: 24px; // Increased from 20px
+        font-size: 34px; // Increased from 20px
         font-weight: 700;
         margin-bottom: 6px; // Increased from 4px
         color: $text-inverse;
       }
 
       .role {
-        font-size: 14px; // Increased from 12px
-        background-color: rgba(255, 255, 255, 0.2);
-        padding: 4px 12px; // Increased padding
-        border-radius: $radius-sm;
+        font-size: 24px; // Increased from 12px
+        background-color: rgba(255, 255, 255, 0.14);
+        padding: 6px 14px;
+        border-radius: 999px;
         align-self: flex-start;
         font-weight: 600;
         color: rgba(255, 255, 255, 0.9);
@@ -56,6 +71,8 @@
     justify-content: space-around;
     padding: 32px 24px; // Increased padding
     z-index: 10;
+    border: 1px solid rgba(17, 24, 39, 0.06);
+    box-shadow: 0 12px 22px rgba(17, 24, 39, 0.06);
 
     .stat-item {
       display: flex;
@@ -76,13 +93,14 @@
 
       .num {
         font-family: $font-mono;
-        font-size: 28px; // Increased from 24px
+        font-size: 38px; // Increased from 24px
         font-weight: 700;
         color: $text-primary;
         margin-bottom: 6px; // Increased from 4px
+        letter-spacing: -0.5px;
       }
       .label {
-        font-size: 14px; // Increased from 12px
+        font-size: 24px; // Increased from 12px
         color: $text-tertiary;
         font-weight: 600;
       }
@@ -93,23 +111,69 @@
     @include card-base;
     margin: 0 24px 32px; // Increased margins
     padding: 0; // Remove padding for list items
+    border: 1px solid rgba(17, 24, 39, 0.06);
+    box-shadow: 0 10px 18px rgba(17, 24, 39, 0.05);
 
     .item {
       padding: 20px 24px; // Increased padding
       border-bottom: 1px solid $border-color;
-      font-size: 17px; // Increased from 15px
+      font-size: 27px; // Increased from 15px
       color: $text-primary;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-weight: 600;
       @include active-press;
+      gap: 14px;
+
+      .item-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+        flex: 1;
+      }
+
+      .item-text {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .item-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 8px 14px rgba(17, 24, 39, 0.08);
+        border: 1px solid rgba(17, 24, 39, 0.06);
+
+        &.wallet {
+          background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(37, 99, 235, 0.06));
+        }
+
+        &.service {
+          background: linear-gradient(135deg, rgba(5, 150, 105, 0.18), rgba(5, 150, 105, 0.06));
+        }
+      }
+
+      .item-icon-text {
+        font-size: 24px;
+        font-weight: 900;
+        color: $text-primary;
+        line-height: 1;
+      }
 
       .arrow {
         color: $text-tertiary;
-        font-size: 20px; // Increased from 18px
+        font-size: 30px; // Increased from 18px
         font-weight: 700;
         font-family: monospace;
+        flex-shrink: 0;
       }
 
       &:last-child {
@@ -120,15 +184,15 @@
 
   .btn-logout {
     margin: 0 24px; // Increased margin
-    background: #FFFFFF;
+    background: rgba(239, 68, 68, 0.1);
     color: $error-color;
-    border: 1px solid $error-color;
-    height: 56px; // Increased from 48px
-    line-height: 54px; // Account for border
-    border-radius: $radius-sm;
-    font-size: 16px; // Increased from 14px
+    border: 2px solid rgba(239, 68, 68, 0.4);
+    height: 64px;
+    line-height: 62px;
+    border-radius: 999px;
+    font-size: 26px; // Increased from 14px
     font-weight: 700;
-    box-shadow: $shadow-sm;
+    box-shadow: 0 10px 18px rgba(239, 68, 68, 0.12);
     @include active-press;
 
     &::after {
