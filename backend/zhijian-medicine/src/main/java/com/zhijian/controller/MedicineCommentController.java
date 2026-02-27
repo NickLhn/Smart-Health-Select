@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.zhijian.service.MedicineCommentService;
 import com.zhijian.common.result.Result;
 import com.zhijian.pojo.medicine.entity.MedicineComment;
+import com.zhijian.user.service.MerchantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,7 @@ import java.util.Map;
 public class MedicineCommentController {
 
     private final MedicineCommentService commentService;
-    private final com.zhijian.service.MerchantService merchantService;
+    private final MerchantService merchantService;
 
     /**
      * 查看药品评价

@@ -1,5 +1,6 @@
 package com.zhijian.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.server.standard.ServerEndpointExporter;
@@ -12,6 +13,7 @@ import org.springframework.web.socket.server.standard.ServerEndpointExporter;
  * @since 1.0.0
  */
 @Configuration
+@Slf4j
 public class WebSocketConfig {
 
     /**
@@ -25,7 +27,7 @@ public class WebSocketConfig {
         // 创建ServerEndpointExporter实例
         // 作用：扫描所有带有@ServerEndpoint注解的类，将其注册为WebSocket端点
         // 这样客户端就能通过WebSocket协议连接到这些端点
-        System.out.println("WebSocket已开启");
+        log.info("WebSocket已开启");
         return new ServerEndpointExporter();
     }
 }

@@ -5,11 +5,16 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zhijian.cart.service.CartService;
+import com.zhijian.delivery.service.DeliveryService;
+import com.zhijian.marketing.service.UserCouponService;
 import com.zhijian.service.*;
+import com.zhijian.user.service.UserAddressService;
+import com.zhijian.user.service.UserService;
 import com.zhijian.common.result.Result;
 import com.zhijian.dto.medicine.MedicineCommentCreateDTO;
-import com.zhijian.dto.delivery.DeliveryCreateDTO;
-import com.zhijian.pojo.cart.entity.CartItem;
+import com.zhijian.delivery.dto.DeliveryCreateDTO;
+import com.zhijian.cart.pojo.CartItem;
 import com.zhijian.pojo.medicine.entity.Medicine;
 import com.zhijian.pojo.Order;
 import com.zhijian.pojo.OrderItem;
@@ -40,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.zhijian.mapper.MerchantMapper;
+import com.zhijian.user.mapper.MerchantMapper;
 import com.zhijian.pojo.user.entity.Merchant;
 import lombok.extern.slf4j.Slf4j;
 

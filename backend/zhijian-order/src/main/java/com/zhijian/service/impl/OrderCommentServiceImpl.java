@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zhijian.service.OrderCommentService;
 import com.zhijian.service.OrderService;
-import com.zhijian.service.UserService;
+import com.zhijian.user.service.UserService;
 import com.zhijian.common.result.Result;
 import com.zhijian.pojo.Order;
 import com.zhijian.pojo.OrderComment;

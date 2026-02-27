@@ -1,9 +1,9 @@
-package com.zhijian.service;
+package com.zhijian.user.service;
 
 import com.zhijian.common.result.Result;
 import com.zhijian.pojo.user.entity.SysUser;
-import com.zhijian.mapper.SysUserMapper;
-import com.zhijian.service.impl.UserServiceImpl;
+import com.zhijian.user.mapper.SysUserMapper;
+import com.zhijian.user.service.impl.UserServiceImpl;
 import com.zhijian.dto.user.UserLoginDTO;
 import com.zhijian.dto.user.UserRegisterDTO;
 import org.junit.jupiter.api.BeforeEach;

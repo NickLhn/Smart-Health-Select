@@ -12,7 +12,7 @@ import com.zhijian.pojo.medicine.entity.Category;
 import com.zhijian.pojo.medicine.entity.Medicine;
 import com.zhijian.mapper.CategoryMapper;
 import com.zhijian.mapper.MedicineMapper;
-import com.zhijian.mapper.MerchantMapper;
+import com.zhijian.user.mapper.MerchantMapper;
 import com.zhijian.pojo.user.entity.Merchant;
 import com.zhijian.dto.medicine.MedicineDTO;
 import com.zhijian.dto.medicine.MedicineQueryDTO;
@@ -452,4 +452,3 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         });
     }
 }
-

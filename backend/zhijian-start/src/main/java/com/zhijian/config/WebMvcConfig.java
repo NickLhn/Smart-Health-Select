@@ -1,6 +1,7 @@
 package com.zhijian.config;
 
 import com.zhijian.common.interceptor.AuthenticationInterceptor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -13,6 +14,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * @since 1.0.0
  */
 @Configuration
+@Slf4j
 public class WebMvcConfig implements WebMvcConfigurer {
 
     /**
@@ -36,7 +38,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/swagger-resources/**", // Swagger资源配置
                         "/v3/api-docs/**"     // OpenAPI文档接口
                 );
-        System.out.println("配置拦截器已开启。。。");
+        log.info("配置拦截器已开启。。。");
     }
 
     /**
