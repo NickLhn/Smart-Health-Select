@@ -226,9 +226,11 @@ const OrderList: React.FC = () => {
 
     return (
       <div className="space-y-4 animate-fade-in">
-        {orders.map((order, index) => (
+        {orders.map((order, index) => {
+          const orderKey = order.id ?? `order-${index}-${order.orderNo}`;
+          return (
           <div 
-            key={order.id} 
+            key={orderKey} 
             className="glass-panel p-4 rounded-2xl hover:shadow-lg transition-all duration-300 border border-white/60 bg-white/60 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:ring-offset-2"
             style={{ animationDelay: `${index * 0.05}s` }}
           >
@@ -242,14 +244,14 @@ const OrderList: React.FC = () => {
             
             <div 
               className="flex items-start gap-4 cursor-pointer"
-              onClick={() => navigate(`/order/${order.id}`)}
+              onClick={() => order.id && navigate(`/order/${order.id}`)}
               role="link"
               tabIndex={0}
               aria-label={`查看订单 ${order.orderNo}`}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  navigate(`/order/${order.id}`);
+                  if (order.id) navigate(`/order/${order.id}`);
                 }
               }}
             >
@@ -318,7 +320,7 @@ const OrderList: React.FC = () => {
               )}
               <Button 
                 size="small" 
-                onClick={() => navigate(`/order/${order.id}`)}
+                onClick={() => order.id && navigate(`/order/${order.id}`)}
                 className="rounded-full px-4 border-gray-300 hover:border-emerald-500 hover:text-emerald-500"
                 aria-label="查看详情"
               >
@@ -326,7 +328,8 @@ const OrderList: React.FC = () => {
               </Button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     );
   };

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import Optional
-
+import logging
 import httpx
 from fastapi import Body, Depends, FastAPI, Header, HTTPException, Query
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 from tools_service.auth import AuthUser, authenticate_user
 from tools_service.db import get_conn
@@ -227,10 +229,12 @@ def _raise_on_backend_result(payload: dict) -> dict:
     try:
         code = int(payload.get("code"))
     except (TypeError, ValueError):
+        logger.error(f"Invalid code in response: {payload}")
         raise HTTPException(status_code=502, detail="Invalid backend response")
     if code == 200:
         return payload
     message = str(payload.get("message") or "Request failed")
+    logger.warning(f"Backend returned error: code={code}, message={message}")
     if code == 401:
         raise HTTPException(status_code=401, detail=message)
     raise HTTPException(status_code=400, detail=message)
@@ -1447,6 +1451,7 @@ def tools_orders_create_from_cart(
 ):
     _, token = user_and_token
     url = _backend_url(settings, "/orders/createFromCart")
+    logger.info(f"Creating order from cart with payload: {payload.model_dump(exclude_none=True)}")
     try:
         resp = httpx.post(
             url,
@@ -1455,15 +1460,28 @@ def tools_orders_create_from_cart(
             timeout=httpx.Timeout(12.0, connect=3.0),
             trust_env=False,
         )
-    except httpx.RequestError:
+    except httpx.RequestError as e:
+        logger.error(f"Backend unavailable: {e}")
         raise HTTPException(status_code=502, detail="Backend unavailable")
     try:
         backend_payload = resp.json()
-    except Exception:
+        logger.info(f"Backend response status: {resp.status_code}, body: {backend_payload}")
+    except Exception as e:
+        logger.error(f"Invalid backend response: {e}")
         raise HTTPException(status_code=502, detail="Invalid backend response")
-    backend_payload = _raise_on_backend_result(backend_payload)
+    
+    # Check if backend returned an error
+    code = backend_payload.get("code")
+    if code != 200:
+        err_msg = backend_payload.get("message", "Unknown error")
+        logger.error(f"Backend error: code={code}, message={err_msg}")
+        # 返回错误信息而不是抛出异常，让上层处理
+        return {"success": False, "error": err_msg, "code": code}
+    
     data = backend_payload.get("data")
+    logger.info(f"Order data from backend: {data}")
     if not isinstance(data, list):
+        logger.error(f"Invalid data format (not a list): {data}")
         raise HTTPException(status_code=502, detail="Invalid backend response")
     return ok({"orderIds": data})
 

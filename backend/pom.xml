@@ -12,7 +12,7 @@
     <artifactId>zhijian-backend</artifactId>
     <version>0.0.1-beta-SNAPSHOT</version>
     <name>zhijian-backend</name>
-    <description>智健优选后端服务 - DDD架构</description>
+    <description>智健优选后端服务</description>
     <packaging>pom</packaging>
 
     <modules>

@@ -31,6 +31,14 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * 阿里云OCR文字识别服务实现类
+ * 
+ * 提供营业执照和身份证的文字识别功能，支持从图片URL中提取关键信息
+ *
+ * @author Liu Haonan
+ * @since 1.0.0
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -38,17 +46,58 @@ public class AliyunOcrServiceImpl implements OcrService {
 
     private final OcrProperties ocrProperties;
     private final ObjectMapper objectMapper;
+
+    /**
+     * 阿里云OCR客户端，初始化时创建
+     */
     private Client client;
 
+    /**
+     * 统一社会信用代码正则表达式（18位）
+     */
     private static final Pattern CREDIT_CODE_PATTERN = Pattern.compile("\\b[0-9A-Z]{18}\\b");
+
+    /**
+     * 身份证号码正则表达式（18位）
+     */
     private static final Pattern ID_NUMBER_PATTERN = Pattern.compile("\\b\\d{17}[0-9Xx]\\b");
+
+    /**
+     * 姓名标签正则表达式，支持中英文标签
+     */
     private static final Pattern NAME_LABEL_PATTERN = Pattern.compile("(?:姓名|Name)[:：]?([\\p{IsHan}]{2,6})");
+
+    /**
+     * 地址标签正则表达式
+     */
     private static final Pattern ADDRESS_LABEL_PATTERN = Pattern.compile("(?:住址|地址|Address)[:：]?([^\\n]{4,80})");
+
+    /**
+     * 签发机关标签正则表达式
+     */
     private static final Pattern AUTHORITY_LABEL_PATTERN = Pattern.compile("(?:签发机关|签发机构|Authority)[:：]?([^\\n]{2,80})");
+
+    /**
+     * 有效期限标签正则表达式
+     */
     private static final Pattern VALID_LABEL_PATTERN = Pattern.compile("(?:有效期限|有效期|Valid)[:：]?([^\\n]{4,80})");
+
+    /**
+     * 日期格式正则表达式，支持多种分隔符（. - /）
+     */
     private static final Pattern DATE_PATTERN = Pattern.compile("(\\d{4})[\\.\\-/](\\d{2})[\\.\\-/](\\d{2})");
+
+    /**
+     * 日期格式化器
+     */
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
+    /**
+     * 初始化阿里云OCR客户端
+     * 
+     * 在Spring容器初始化后执行，检查AccessKey配置并创建OCR客户端
+     * 如果未配置AccessKey，则将client设为null，OCR功能将不可用
+     */
     @PostConstruct
     public void init() {
         try {
@@ -71,6 +120,18 @@ public class AliyunOcrServiceImpl implements OcrService {
         }
     }
 
+    /**
+     * 识别营业执照
+     * 
+     * 从图片URL中提取营业执照的关键信息，包括：
+     * - 统一社会信用代码
+     * - 地址
+     * - 企业名称
+     *
+     * @param imageUrl 营业执照图片的URL地址
+     * @return 营业执照OCR识别结果DTO，包含提取的字段信息
+     * @throws IllegalStateException 如果OCR服务未配置（AccessKey未设置）
+     */
     @Override
     public BusinessLicenseOcrResponseDTO recognizeBusinessLicense(String imageUrl) {
         if (client == null) {
@@ -105,6 +166,22 @@ public class AliyunOcrServiceImpl implements OcrService {
         return resp;
     }
 
+    /**
+     * 识别身份证（正反面）
+     * 
+     * 从身份证正面和背面图片中提取身份信息，包括：
+     * - 姓名
+     * - 身份证号码（脱敏处理）
+     * - 身份证号码哈希值（用于隐私保护）
+     * - 地址
+     * - 签发机关
+     * - 有效期（起始日期、结束日期、长期标识）
+     *
+     * @param frontImageUrl 身份证正面图片的URL地址
+     * @param backImageUrl 身份证背面图片的URL地址
+     * @return 身份证OCR识别结果DTO，包含提取的字段信息
+     * @throws IllegalStateException 如果OCR服务未配置（AccessKey未设置）
+     */
     @Override
     public IdCardOcrResponseDTO recognizeIdCardBundle(String frontImageUrl, String backImageUrl) {
         if (client == null) {
@@ -202,6 +279,15 @@ public class AliyunOcrServiceImpl implements OcrService {
         return a != null ? a : b;
     }
 
+    /**
+     * 调用阿里云通用OCR识别接口并解析KV结构数据
+     * 
+     * 使用阿里云的RecognizeAllText接口识别图片中的文字，并尝试提取结构化的KV键值对数据
+     *
+     * @param imageUrl 图片URL地址
+     * @param type 识别类型（如BusinessLicense、IdCard等）
+     * @return 包含KV数据、详细数据和原始文本内容的负载对象
+     */
     private KvPayload recognizeAllTextKvPayload(String imageUrl, String type) {
         if (client == null) {
             return new KvPayload(Collections.emptyMap(), Collections.emptyMap(), "");
@@ -254,6 +340,16 @@ public class AliyunOcrServiceImpl implements OcrService {
         return subImages.get(0);
     }
 
+    /**
+     * 从KV数据中提取指定键的值
+     * 
+     * 依次尝试每个键名，返回第一个找到的非空值，同时提取置信度信息
+     *
+     * @param kvData KV键值对数据
+     * @param kvDetails KV详细数据（包含置信度等信息）
+     * @param keys 要尝试的键名列表
+     * @return 包含值和置信度的OCR字段DTO，如果未找到返回null
+     */
     private OcrFieldDTO extract(Map<String, Object> kvData, Map<String, Map<String, Object>> kvDetails, String... keys) {
         if (kvData == null) kvData = Collections.emptyMap();
         if (kvDetails == null) kvDetails = Collections.emptyMap();
@@ -280,6 +376,14 @@ public class AliyunOcrServiceImpl implements OcrService {
         return null;
     }
 
+    /**
+     * 将任意对象解析为Map
+     * 
+     * 支持JSON字符串和Map类型的对象转换
+     *
+     * @param value 要转换的对象
+     * @return 解析后的Map，如果解析失败返回空Map
+     */
     private Map<String, Object> parseAnyToMap(Object value) {
         if (value == null) return Collections.emptyMap();
         try {
@@ -293,6 +397,14 @@ public class AliyunOcrServiceImpl implements OcrService {
         }
     }
 
+    /**
+     * 将任意对象解析为嵌套Map
+     * 
+     * 用于解析包含详细置信度信息的嵌套结构
+     *
+     * @param value 要转换的对象
+     * @return 解析后的嵌套Map，如果解析失败返回空Map
+     */
     private Map<String, Map<String, Object>> parseAnyToMapOfMap(Object value) {
         if (value == null) return Collections.emptyMap();
         try {
@@ -306,6 +418,14 @@ public class AliyunOcrServiceImpl implements OcrService {
         }
     }
 
+    /**
+     * 将任意对象解析为Map列表
+     * 
+     * 用于解析OCR返回的子图片列表等数据
+     *
+     * @param value 要转换的对象
+     * @return 解析后的Map列表，如果解析失败返回空列表
+     */
     private List<Map<String, Object>> parseAnyToListOfMap(Object value) {
         if (value == null) return Collections.emptyList();
         try {
@@ -319,6 +439,14 @@ public class AliyunOcrServiceImpl implements OcrService {
         }
     }
 
+    /**
+     * 从OCR识别的原始文本内容中提取统一社会信用代码
+     * 
+     * 使用正则表达式匹配18位统一社会信用代码（由数字和大写字母组成）
+     *
+     * @param content OCR识别的原始文本内容
+     * @return 提取的统一社会信用代码，如果未找到返回null
+     */
     private String tryExtractCreditCodeFromContent(String content) {
         if (content == null || content.isBlank()) return null;
         Matcher m = CREDIT_CODE_PATTERN.matcher(content.replace(" ", "").toUpperCase());
@@ -326,11 +454,27 @@ public class AliyunOcrServiceImpl implements OcrService {
         return null;
     }
 
+    /**
+     * 标准化OCR识别的文本内容
+     * 
+     * 统一换行符为\n，并去除首尾空白字符
+     *
+     * @param content 原始文本内容
+     * @return 标准化后的文本内容
+     */
     private String normalizeContent(String content) {
         if (content == null) return "";
         return content.replace("\r\n", "\n").replace("\r", "\n").trim();
     }
 
+    /**
+     * 从OCR识别的文本内容中提取姓名
+     * 
+     * 使用正则表达式匹配「姓名:XXX」格式的内容
+     *
+     * @param content OCR识别的文本内容
+     * @return 包含姓名和置信度的OCR字段DTO，如果未找到返回null
+     */
     private OcrFieldDTO tryExtractNameFromContent(String content) {
         if (content == null || content.isBlank()) return null;
         Matcher m = NAME_LABEL_PATTERN.matcher(content.replace(" ", ""));
@@ -341,6 +485,14 @@ public class AliyunOcrServiceImpl implements OcrService {
         return null;
     }
 
+    /**
+     * 从OCR识别的文本内容中提取身份证号码
+     * 
+     * 使用正则表达式匹配18位身份证号码
+     *
+     * @param content OCR识别的文本内容
+     * @return 提取的身份证号码，如果未找到返回null
+     */
     private String tryExtractIdNumberFromContent(String content) {
         if (content == null || content.isBlank()) return null;
         Matcher m = ID_NUMBER_PATTERN.matcher(content.replace(" ", ""));
@@ -348,6 +500,15 @@ public class AliyunOcrServiceImpl implements OcrService {
         return null;
     }
 
+    /**
+     * 从OCR识别的文本内容中提取带标签的值
+     * 
+     * 使用给定的正则表达式模式匹配标签和对应的值
+     *
+     * @param content OCR识别的文本内容
+     * @param p 匹配标签和值的正则表达式模式
+     * @return 包含提取值和置信度的OCR字段DTO，如果未找到返回null
+     */
     private OcrFieldDTO tryExtractLabeledValueFromContent(String content, Pattern p) {
         if (content == null || content.isBlank()) return null;
         Matcher m = p.matcher(content.replace(" ", ""));
@@ -361,6 +522,12 @@ public class AliyunOcrServiceImpl implements OcrService {
         return null;
     }
 
+    /**
+     * 提取身份证号码的后4位
+     *
+     * @param idNumber 完整的身份证号码
+     * @return 身份证号码的后4位，如果输入无效返回null
+     */
     private String extractLast4(String idNumber) {
         if (idNumber == null) return null;
         String s = idNumber.trim();
@@ -368,6 +535,14 @@ public class AliyunOcrServiceImpl implements OcrService {
         return s.substring(s.length() - 4);
     }
 
+    /**
+     * 脱敏身份证号码，只显示后4位
+     * 
+     * 将身份证号码大部分数字替换为*，保护用户隐私
+     *
+     * @param idNumber 原始身份证号码
+     * @return 脱敏后的身份证号码，如 ************1234
+     */
     private String maskIdNumber(String idNumber) {
         if (idNumber == null) return null;
         String s = idNumber.trim();
@@ -376,6 +551,14 @@ public class AliyunOcrServiceImpl implements OcrService {
         return "*".repeat(Math.max(0, s.length() - 4)) + last4;
     }
 
+    /**
+     * 计算输入字符串的SHA256哈希值
+     * 
+     * 用于对身份证号码进行哈希处理，实现隐私保护
+     *
+     * @param input 输入字符串
+     * @return 十六进制格式的SHA256哈希值，如果处理失败返回null
+     */
     private String sha256Hex(String input) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -386,6 +569,12 @@ public class AliyunOcrServiceImpl implements OcrService {
         }
     }
 
+    /**
+     * 将字节数组转换为十六进制字符串
+     *
+     * @param bytes 字节数组
+     * @return 十六进制字符串
+     */
     private String toHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder(bytes.length * 2);
         for (byte b : bytes) {
@@ -394,6 +583,14 @@ public class AliyunOcrServiceImpl implements OcrService {
         return sb.toString();
     }
 
+    /**
+     * 解析身份证有效期限字符串
+     * 
+     * 支持多种格式：YYYY.MM.DD-YYYY.MM.DD、YYYY-MM-DD至YYYY-MM-DD、长期等
+     *
+     * @param raw 原始有效期限字符串
+     * @return 解析后的有效期对象（包含起始日期、结束日期、长期标识）
+     */
     private ValidPeriod parseValidPeriod(String raw) {
         if (raw == null || raw.isBlank()) return new ValidPeriod(null, null, null);
         String normalized = raw.replace("至", "-").replace("—", "-").replace("－", "-").replace("~", "-").replace(" ", "");
@@ -411,6 +608,14 @@ public class AliyunOcrServiceImpl implements OcrService {
         return new ValidPeriod(first, longTerm ? null : second, longTerm);
     }
 
+    /**
+     * 解析日期字符串为LocalDate对象
+     *
+     * @param y 年份（四位）
+     * @param m 月份（两位）
+     * @param d 日（两位）
+     * @return 解析后的LocalDate对象，如果解析失败返回null
+     */
     private LocalDate parseLocalDate(String y, String m, String d) {
         try {
             return LocalDate.parse(y + "-" + m + "-" + d, DATE_FORMATTER);
@@ -419,6 +624,15 @@ public class AliyunOcrServiceImpl implements OcrService {
         }
     }
 
+    /**
+     * 使用专用营业执照API进行识别
+     * 
+     * 当通用OCR无法提取有效信息时的备用方案
+     * 使用阿里云专门的营业执照识别接口
+     *
+     * @param imageUrl 营业执照图片URL
+     * @return 营业执照识别结果，如果失败返回null
+     */
     private BusinessLicenseOcrResponseDTO recognizeBusinessLicenseByDedicatedApi(String imageUrl) {
         try {
             RecognizeBusinessLicenseRequest request = new RecognizeBusinessLicenseRequest().setUrl(imageUrl);
@@ -466,21 +680,53 @@ public class AliyunOcrServiceImpl implements OcrService {
         }
     }
 
+    /**
+     * 将任意对象转换为字符串
+     * 
+     * 包含null检查和空白字符trim处理
+     *
+     * @param v 要转换的对象
+     * @return 转换后的字符串，如果输入为null返回null
+     */
     private String toStr(Object v) {
         if (v == null) return null;
         String s = v.toString();
         return s == null ? null : s.trim();
     }
 
+    /**
+     * 返回第一个非空字符串
+     * 
+     * 依次检查参数列表，返回第一个不为null且不为空的值
+     *
+     * @param values 要检查的字符串数组
+     * @return 第一个非空字符串，如果都不为空返回null
+     */
     private String firstNonBlank(String... values) {
         if (values == null) return null;
         for (String v : values) {
-            if (v != null && !v.isBlank()) return v;
+            if (v != null && !v.isBlank()) {
+                return v;
+            }
         }
         return null;
     }
 
+    /**
+     * 身份证有效期限数据记录
+     * 
+     * @param validFrom 有效期起始日期
+     * @param validTo 有效期结束日期
+     * @param validLongTerm 是否长期有效
+     */
     private record ValidPeriod(LocalDate validFrom, LocalDate validTo, Boolean validLongTerm) {}
 
+    /**
+     * OCR识别结果负载数据记录
+     * 
+     * @param kvData 键值对数据
+     * @param kvDetails 键值对详细数据（包含置信度等）
+     * @param content 原始文本内容
+     */
     private record KvPayload(Map<String, Object> kvData, Map<String, Map<String, Object>> kvDetails, String content) {}
 }

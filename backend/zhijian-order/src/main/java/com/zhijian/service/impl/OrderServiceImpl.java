@@ -261,16 +261,22 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
      * @return 订单ID列表
      */
     public Result<List<Long>> createOrderFromCart(OrderCreateFromCartDTO createDTO, Long userId) {
+        log.info("createOrderFromCart called: userId={}, addressId={}, cartItemIds={}", userId, createDTO.getAddressId(), createDTO.getCartItemIds());
+        
         // 1. 获取地址
         UserAddress address = userAddressService.getById(createDTO.getAddressId());
+        log.info("Address found: {}", address);
         if (address == null || !address.getUserId().equals(userId)) {
+            log.warn("Address validation failed: address={}, userId={}", address, userId);
             return Result.failed("收货地址不存在");
         }
         String fullAddress = address.getProvince() + address.getCity() + address.getRegion() + address.getDetailAddress();
 
         // 2. 获取购物车项
         List<CartItem> cartItems = cartService.listByIds(createDTO.getCartItemIds());
+        log.info("Cart items found: {}", cartItems);
         if (cartItems == null || cartItems.isEmpty()) {
+            log.warn("Cart items empty or null");
             return Result.failed("未选择商品");
         }
 

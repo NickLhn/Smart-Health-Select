@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@pmmmwh/react-refresh-webpack-plugin": "0.5.10",
+    "@tarojs/components": "3.6.19",
     "@tarojs/helper": "3.6.19",
     "@tarojs/plugin-framework-react": "3.6.19",
     "@tarojs/plugin-platform-alipay": "3.6.19",
@@ -37,19 +38,18 @@
     "@tarojs/plugin-platform-qq": "3.6.19",
     "@tarojs/plugin-platform-swan": "3.6.19",
     "@tarojs/plugin-platform-tt": "3.6.19",
-    "@tarojs/plugin-platform-weapp": "3.6.19",
     "@tarojs/react": "3.6.19",
     "@tarojs/runtime": "3.6.19",
     "@tarojs/shared": "3.6.19",
     "@tarojs/taro": "3.6.19",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "react-refresh": "^0.18.0",
-    "@tarojs/components": "3.6.19"
+    "react-refresh": "^0.18.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.0",
     "@tarojs/cli": "3.6.19",
+    "@tarojs/plugin-platform-weapp": "^3.6.19",
     "@tarojs/webpack5-runner": "3.6.19",
     "@types/react": "^18.0.0",
     "@types/webpack-env": "^1.13.6",
