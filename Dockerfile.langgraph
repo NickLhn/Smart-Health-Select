@@ -1,0 +1,19 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -U pip
+
+COPY zhijian_langgraph/requirements.txt .
+RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+
+COPY zhijian_langgraph/agent/ ./agent/
+COPY zhijian_langgraph/tools_service/ ./tools_service/
+
+ENV AGENT_TOOLS_BASE_URL=http://host.docker.internal:18080
+ENV AGENT_REDIS_HOST=host.docker.internal
+ENV AGENT_REDIS_PORT=6379
+
+EXPOSE 18081
+
+CMD ["python", "-m", "uvicorn", "agent.app:app", "--host", "0.0.0.0", "--port", "18081"]

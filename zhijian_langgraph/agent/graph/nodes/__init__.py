@@ -9,6 +9,9 @@ from agent.graph.nodes.medicine import medicine_flow_node
 from agent.graph.nodes.purchase import purchase_flow_node
 from agent.graph.nodes.other import other_flow_node
 from agent.graph.nodes.intent import classify_intent
+from agent.graph.nodes.profile import profile_node
+from agent.graph.nodes.context import context_node
+from agent.graph.nodes.summary import summary_node
 
 __all__ = [
     "normalize_input_node",
@@ -21,4 +24,7 @@ __all__ = [
     "purchase_flow_node",
     "other_flow_node",
     "classify_intent",
+    "profile_node",
+    "context_node",
+    "summary_node",
 ]

@@ -24,6 +24,7 @@ class GraphState(TypedDict, total=False):
     Attributes:
         message: 用户消息
         token: 用户认证 token
+        user_id: 用户ID
         request_id: 请求追踪ID
         intent: 识别出的意图
         pending_action: 待处理动作
@@ -34,9 +35,12 @@ class GraphState(TypedDict, total=False):
         reply: 回复内容
         cards: 卡片数据
         action: 前端动作
+        history: 对话历史
+        user_profile: 用户画像
     """
     message: str
     token: str
+    user_id: Optional[str]
     request_id: Optional[str]
     intent: Intent
     pending_action: str | None
@@ -47,3 +51,6 @@ class GraphState(TypedDict, total=False):
     reply: str
     cards: list[dict[str, Any]]
     action: dict[str, Any] | None
+    history: list[dict[str, Any]]
+    user_profile: dict[str, Any] | None
+    conversation_summary: dict[str, Any] | None

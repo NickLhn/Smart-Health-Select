@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  tools-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.tools
+    container_name: zhijian-tools
+    ports:
+      - "18080:18080"
+    environment:
+      - TOOLS_JWT_SECRET=ZhijianSystemSecretKeyForJwtAuthentication2025LiuhaonanVersion
+      - TOOLS_MYSQL_HOST=127.0.0.1
+      - TOOLS_MYSQL_PORT=3306
+      - TOOLS_MYSQL_USER=zhijian_db
+      - TOOLS_MYSQL_PASSWORD=Lhnan0122..
+      - TOOLS_MYSQL_DB=zhijian_db
+      - TOOLS_BACKEND_BASE_URL=http://127.0.0.1:8080/api
+    restart: unless-stopped
+    network_mode: host
+
+  langgraph:
+    build:
+      context: .
+      dockerfile: Dockerfile.langgraph
+    container_name: zhijian-langgraph
+    ports:
+      - "18081:18081"
+    environment:
+      - AGENT_JWT_SECRET=ZhijianSystemSecretKeyForJwtAuthentication2025LiuhaonanVersion
+      - AGENT_TOOLS_BASE_URL=http://127.0.0.1:18080
+      - AGENT_REDIS_HOST=127.0.0.1
+      - AGENT_REDIS_PORT=6379
+      - AGENT_REDIS_DB=0
+    restart: unless-stopped
+    network_mode: host
