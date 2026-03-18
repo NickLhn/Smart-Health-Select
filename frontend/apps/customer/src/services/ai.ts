@@ -76,7 +76,7 @@ export const streamChatMessage = async (message: string, callbacks: StreamCallba
       buffer += decoder.decode(value, { stream: true });
       buffer = buffer.replace(/\r\n/g, '\n');
       
-      // SSE events are separated by double newlines
+      // 流式事件之间使用两个换行分隔
       const parts = buffer.split('\n\n');
       buffer = parts.pop() || ''; // Keep the last incomplete part
 
@@ -86,7 +86,7 @@ export const streamChatMessage = async (message: string, callbacks: StreamCallba
       }
     }
 
-    // Process any remaining buffer when stream ends
+    // 流结束时再处理最后一段未完整拆分的缓冲内容
     if (!streamEnded && buffer.trim()) {
       buffer = buffer.replace(/\r\n/g, '\n');
       processPart(buffer, callbacks);

@@ -30,7 +30,7 @@ const manualChunks = (id: string) => {
   return 'vendor-misc'
 }
 
-// https://vitejs.dev/config/
+// 构建配置
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {

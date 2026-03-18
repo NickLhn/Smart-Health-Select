@@ -94,7 +94,7 @@ const MainLayout: React.FC = () => {
     };
 
     // 简单做一个检查，实际项目可能需要更严谨的路由守卫
-    // 只有在访问非 apply 页面时才检查
+    // 仅在普通商家页面场景下检查店铺状态
     checkStoreStatus();
   }, [user, navigate]);
 

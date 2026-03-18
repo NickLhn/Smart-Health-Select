@@ -110,8 +110,7 @@ export const AIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         width={window.innerWidth > 768 ? 480 : '100%'}
         styles={{ body: { padding: 0 } }}
         closable={false}
-        // Remove destroyOnClose to keep state when just toggling visibility (though we now use global state anyway)
-        // destroyOnClose 
+        // 这里不在关闭抽屉时销毁内容，避免仅切换显示状态时把上下文里的消息清掉
         zIndex={1001} // Ensure it's above other elements
       >
         <Suspense fallback={<div className="p-6 text-center text-gray-500">AI 面板加载中...</div>}>

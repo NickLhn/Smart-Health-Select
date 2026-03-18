@@ -122,9 +122,9 @@ const MainLayout: React.FC = () => {
     },
   ];
 
-  // Find current selected key and open keys
+  // 计算当前菜单选中项和展开项
   const selectedKey = location.pathname === '/' ? '/dashboard' : location.pathname;
-  // Simple logic to find open key based on path structure like /user/user-list -> /user
+  // 按路径结构推导展开菜单，例如 /user/user-list -> /user
   const openKey = '/' + selectedKey.split('/')[1];
 
   const currentTitle = (() => {
