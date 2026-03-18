@@ -1,21 +1,17 @@
-version: '3.8'
-
 services:
   tools-service:
     build:
       context: .
       dockerfile: Dockerfile.tools
     container_name: zhijian-tools
-    ports:
-      - "18080:18080"
     environment:
-      - TOOLS_JWT_SECRET=ZhijianSystemSecretKeyForJwtAuthentication2025LiuhaonanVersion
-      - TOOLS_MYSQL_HOST=127.0.0.1
-      - TOOLS_MYSQL_PORT=3306
-      - TOOLS_MYSQL_USER=zhijian_db
-      - TOOLS_MYSQL_PASSWORD=Lhnan0122..
-      - TOOLS_MYSQL_DB=zhijian_db
-      - TOOLS_BACKEND_BASE_URL=http://127.0.0.1:8080/api
+      TOOLS_JWT_SECRET: ${ZHIJIAN_JWT_SECRET:?missing ZHIJIAN_JWT_SECRET}
+      TOOLS_MYSQL_HOST: ${LANGGRAPH_MYSQL_HOST:-127.0.0.1}
+      TOOLS_MYSQL_PORT: ${LANGGRAPH_MYSQL_PORT:-3306}
+      TOOLS_MYSQL_USER: ${LANGGRAPH_MYSQL_USER:?missing LANGGRAPH_MYSQL_USER}
+      TOOLS_MYSQL_PASSWORD: ${LANGGRAPH_MYSQL_PASSWORD:?missing LANGGRAPH_MYSQL_PASSWORD}
+      TOOLS_MYSQL_DB: ${LANGGRAPH_MYSQL_DB:?missing LANGGRAPH_MYSQL_DB}
+      TOOLS_BACKEND_BASE_URL: ${LANGGRAPH_BACKEND_BASE_URL:-http://127.0.0.1:8080/api}
     restart: unless-stopped
     network_mode: host
 
@@ -24,13 +20,12 @@ services:
       context: .
       dockerfile: Dockerfile.langgraph
     container_name: zhijian-langgraph
-    ports:
-      - "18081:18081"
     environment:
-      - AGENT_JWT_SECRET=ZhijianSystemSecretKeyForJwtAuthentication2025LiuhaonanVersion
-      - AGENT_TOOLS_BASE_URL=http://127.0.0.1:18080
-      - AGENT_REDIS_HOST=127.0.0.1
-      - AGENT_REDIS_PORT=6379
-      - AGENT_REDIS_DB=0
+      AGENT_JWT_SECRET: ${ZHIJIAN_JWT_SECRET:?missing ZHIJIAN_JWT_SECRET}
+      AGENT_TOOLS_BASE_URL: ${LANGGRAPH_TOOLS_BASE_URL:-http://127.0.0.1:18080}
+      AGENT_REDIS_HOST: ${LANGGRAPH_REDIS_HOST:-127.0.0.1}
+      AGENT_REDIS_PORT: ${LANGGRAPH_REDIS_PORT:-6379}
+      AGENT_REDIS_DB: ${LANGGRAPH_REDIS_DB:-0}
+      AGENT_REDIS_PASSWORD: ${LANGGRAPH_REDIS_PASSWORD:-}
     restart: unless-stopped
     network_mode: host

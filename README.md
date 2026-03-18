@@ -90,6 +90,7 @@ python -m uvicorn agent.app:app --host 127.0.0.1 --port 18081
 
 ### AI
 
+- `ZHIJIAN_JWT_SECRET`（建议生产环境显式配置，避免使用默认开发值）
 - `OPENAI_API_KEY`（或 DeepSeek 兼容 Key）
 - `LANGGRAPH_AGENT_BASE_URL`（默认 `http://127.0.0.1:18081`）
 

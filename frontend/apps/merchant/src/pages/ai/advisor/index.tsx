@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { App, Button, Divider, Input, Space, Tag, Typography } from 'antd';
 import { DeleteOutlined, EnterOutlined, LoadingOutlined, MessageOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { clearChatHistory, getChatHistory, sendChatMessage } from '../../../services/ai';
+import { useNavigate } from 'react-router-dom';
+import { clearChatHistory, getChatHistory, streamChat } from '../../../services/ai';
 
 type ChatRole = 'user' | 'assistant';
 
@@ -15,6 +16,7 @@ type ChatItem = {
 
 const MerchantAgent: React.FC = () => {
   const { message: messageApi, modal } = App.useApp();
+  const navigate = useNavigate();
   const [items, setItems] = useState<ChatItem[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -92,13 +94,43 @@ const MerchantAgent: React.FC = () => {
       setInput('');
 
       try {
-        const resp = await sendChatMessage(value);
-        const reply = resp?.text || '';
-        setItems((prev) =>
-          prev.map((it) => {
-            if (it.id !== placeholder.id) return it;
-            return { ...it, content: reply };
-          }),
+        let currentText = '';
+        await streamChat(
+          { message: value },
+          {
+            onMessage: (content) => {
+              currentText += content;
+              setItems((prev) =>
+                prev.map((it) => (it.id === placeholder.id ? { ...it, content: currentText } : it)),
+              );
+            },
+            onDone: () => {
+              setLoading(false);
+            },
+            onError: (error) => {
+              const type = error?.type || error?.error?.type;
+              const raw = error?.message || error?.error?.message;
+              let text = '请求失败，请稍后重试。';
+              if (type === 'AUTH' || (typeof raw === 'string' && /status:\s*401/.test(raw))) {
+                text = '登录已过期，请重新登录后再试。';
+              } else if (type === 'TIMEOUT') {
+                text = 'AI响应超时，请稍后再试。';
+              } else if (type === 'UNAVAILABLE') {
+                text = 'AI服务未启动或不可用，请稍后再试。';
+              }
+              setItems((prev) =>
+                prev.map((it) => (it.id === placeholder.id ? { ...it, content: text } : it)),
+              );
+              setLoading(false);
+            },
+            onAction: (action) => {
+              const type = action?.type || action?.actionType;
+              const url = action?.url || action?.path;
+              if (type === 'NAVIGATE' && typeof url === 'string' && url) {
+                navigate(url, { replace: Boolean(action?.replace) });
+              }
+            },
+          },
         );
       } catch (e: any) {
         setItems((prev) =>
@@ -112,7 +144,7 @@ const MerchantAgent: React.FC = () => {
         setLoading(false);
       }
     },
-    [loading, messageApi],
+    [loading, messageApi, navigate],
   );
 
   const handleClear = useCallback(() => {

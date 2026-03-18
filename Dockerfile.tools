@@ -2,21 +2,18 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -U pip
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+
+RUN pip install --no-cache-dir -i "${PIP_INDEX_URL}" -U pip
 
 COPY zhijian_langgraph/requirements.txt .
-RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+RUN pip install --no-cache-dir -i "${PIP_INDEX_URL}" -r requirements.txt
 
 COPY zhijian_langgraph/agent/ ./agent/
 COPY zhijian_langgraph/tools_service/ ./tools_service/
-
-ENV TOOLS_JWT_SECRET=ZhijianSystemSecretKeyForJwtAuthentication2025LiuhaonanVersion
-ENV TOOLS_MYSQL_HOST=host.docker.internal
-ENV TOOLS_MYSQL_PORT=3306
-ENV TOOLS_MYSQL_USER=zhijian_db
-ENV TOOLS_MYSQL_PASSWORD=Lhnan0122..
-ENV TOOLS_MYSQL_DB=zhijian_db
-ENV TOOLS_BACKEND_BASE_URL=http://host.docker.internal:8080/api
 
 EXPOSE 18080
 

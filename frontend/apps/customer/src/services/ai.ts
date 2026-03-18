@@ -116,7 +116,7 @@ const processPart = (part: string, callbacks: StreamCallbacks) => {
     }
   
     if (data) {
-    if (data === '[DONE]') {
+    if (eventType === 'done' || data === '[DONE]') {
       callbacks.onDone();
       return true;
     }

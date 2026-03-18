@@ -22,9 +22,8 @@
 - `MySQL 8`
 - `Redis`
 - `Java 17`
-- `Maven 3.9+`
-- `Node.js 18+`
 - `Python 3.11+`
+- `Docker` / `Docker Compose`（如果 AI 继续用容器方式）
 
 建议把仓库放到：
 
@@ -32,7 +31,41 @@
 /www/wwwroot/Smart-Health-Select
 ```
 
-## 2. 构建项目
+## 2. 推荐发布链路
+
+推荐改成：
+
+- CI 或本地机器负责编译
+- 服务器只接收发布包并部署
+- 服务器不再依赖 Maven / Node 现场构建
+
+发布包构建命令：
+
+```bash
+cd /path/to/Smart-Health-Select
+bash deploy/baota/scripts/create_release_bundle.sh
+```
+
+GitHub Actions 也已经提供：
+
+- `.github/workflows/release-artifact.yml`
+
+它会在 `main` 分支构建并上传 `release/*.tar.gz` 产物。
+
+服务器部署命令：
+
+```bash
+bash deploy/baota/scripts/deploy_release_bundle.sh /path/to/zhijian_release_xxx.tar.gz
+```
+
+这个脚本会：
+
+- 备份当前线上文件
+- 覆盖前端静态资源
+- 覆盖后端 JAR
+- 刷新 AI 源码并重启相关服务
+
+## 3. 本地/服务器源码构建（仅作为兜底）
 
 ### 后端
 
@@ -64,7 +97,7 @@ bash deploy/baota/scripts/build_frontends.sh customer merchant admin rider
 - `frontend/apps/admin/dist`
 - `frontend/apps/rider/dist`
 
-## 3. 准备环境变量
+## 4. 准备环境变量
 
 把模板复制到服务器上的实际配置文件，再填真实值：
 
@@ -73,11 +106,22 @@ mkdir -p /www/server/bt-env/smart-health
 cp deploy/baota/env/backend.env.example /www/server/bt-env/smart-health/backend.env
 cp deploy/baota/env/tools.env.example /www/server/bt-env/smart-health/tools.env
 cp deploy/baota/env/agent.env.example /www/server/bt-env/smart-health/agent.env
+cp deploy/baota/env/langgraph.compose.env.example /www/server/bt-env/smart-health/langgraph.compose.env
 ```
 
 如果你暂时不启用 AI，只需要配置 `backend.env`。
 
-## 4. 启动后端与 AI 服务
+关键项：
+
+- `ZHIJIAN_JWT_SECRET`
+- 数据库密码
+- Redis 密码
+- OpenAI / DeepSeek Key
+- 阿里云各项密钥
+
+不要把真实值提交到仓库。
+
+## 5. 启动后端与 AI 服务
 
 ### backend
 
@@ -101,7 +145,20 @@ cp deploy/baota/env/agent.env.example /www/server/bt-env/smart-health/agent.env
 
 建议把这三个进程都配置为开机自启。
 
-## 5. 配置网站和 Nginx
+### LangGraph Docker Compose
+
+如果 AI 仍使用 `docker-compose.langgraph.yml`，先加载环境变量再启动：
+
+```bash
+set -a
+source /www/server/bt-env/smart-health/langgraph.compose.env
+set +a
+docker compose -f docker-compose.langgraph.yml up -d
+```
+
+这套 Compose 已经统一按 `127.0.0.1` 的 host 网络模型运行，不再依赖 `host.docker.internal`。
+
+## 6. 配置网站和 Nginx
 
 在宝塔新建 3 个站点，对应 3 个前端域名，然后把各自 `dist` 目录上传或同步到站点根目录，例如：
 
@@ -127,7 +184,7 @@ cp deploy/baota/env/agent.env.example /www/server/bt-env/smart-health/agent.env
 
 - `deploy/baota/nginx/api-site.conf.example`
 
-## 6. 初始化数据库
+## 7. 初始化数据库
 
 当前仓库内可见的 SQL 只有：
 
@@ -135,7 +192,7 @@ cp deploy/baota/env/agent.env.example /www/server/bt-env/smart-health/agent.env
 
 如果你有完整业务库初始化脚本，需要在宝塔 MySQL 中先导入，再启动后端。
 
-## 7. 常见检查
+## 8. 常见检查
 
 后端接口：
 
@@ -156,3 +213,4 @@ curl http://127.0.0.1:18081/health
 - `backend` 进程是否正常监听 `127.0.0.1:8080`
 - 后端是否使用了 `prod` profile 启动
 - 数据库和 Redis 环境变量是否填写正确
+- `docker-compose.langgraph.yml` 是否使用了正确的 `127.0.0.1` 依赖地址

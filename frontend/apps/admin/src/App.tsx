@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Layout, Menu, Breadcrumb, theme, ConfigProvider, Avatar, Dropdown, App as AntdApp, Button } from 'antd';
 import {
   DesktopOutlined,
@@ -19,26 +19,26 @@ import {
 import type { MenuProps } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Outlet } from 'react-router-dom';
-import Dashboard from './pages/dashboard';
-import UserList from './pages/user';
-import MerchantAudit from './pages/user/audit';
-import CategoryList from './pages/medicine/category';
-import MedicineList from './pages/medicine/list';
-import Login from './pages/login';
-import Register from './pages/register';
-import ForgotPassword from './pages/forgot-password';
-import Password from './pages/password';
-import BannerList from './pages/operation/banner';
-import ArticleList from './pages/operation/article';
-import CouponList from './pages/marketing/coupon';
-import SystemSetting from './pages/system/setting';
-import AdminAgent from './pages/system/agent';
 import { AuthProvider, useAuth } from './context/AuthContext';
-
-import OrderList from './pages/order/list';
-import RefundList from './pages/order/refund';
+const Dashboard = lazy(() => import('./pages/dashboard'));
+const UserList = lazy(() => import('./pages/user'));
+const MerchantAudit = lazy(() => import('./pages/user/audit'));
+const CategoryList = lazy(() => import('./pages/medicine/category'));
+const MedicineList = lazy(() => import('./pages/medicine/list'));
+const Login = lazy(() => import('./pages/login'));
+const Register = lazy(() => import('./pages/register'));
+const ForgotPassword = lazy(() => import('./pages/forgot-password'));
+const Password = lazy(() => import('./pages/password'));
+const BannerList = lazy(() => import('./pages/operation/banner'));
+const ArticleList = lazy(() => import('./pages/operation/article'));
+const CouponList = lazy(() => import('./pages/marketing/coupon'));
+const SystemSetting = lazy(() => import('./pages/system/setting'));
+const AdminAgent = lazy(() => import('./pages/system/agent'));
+const OrderList = lazy(() => import('./pages/order/list'));
+const RefundList = lazy(() => import('./pages/order/refund'));
 
 const { Header, Content, Footer, Sider } = Layout;
+const RouteFallback = () => <div className="py-12 text-center text-gray-500">页面加载中...</div>;
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -264,29 +264,31 @@ const App: React.FC = () => {
       <AntdApp>
         <AuthProvider>
           <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/" element={<MainLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="user/user-list" element={<UserList />} />
-                <Route path="user/merchant-audit" element={<MerchantAudit />} />
-                <Route path="medicine/category" element={<CategoryList />} />
-                <Route path="medicine/list" element={<MedicineList />} />
-                <Route path="order/order-list" element={<OrderList />} />
-                <Route path="order/refund" element={<RefundList />} />
-                <Route path="marketing/coupon" element={<CouponList />} />
-                <Route path="operation/banner" element={<BannerList />} />
-                <Route path="operation/article" element={<ArticleList />} />
-                <Route path="system/setting" element={<SystemSetting />} />
-                <Route path="agent" element={<AdminAgent />} />
-                <Route path="system/agent" element={<AdminAgent />} />
-                <Route path="password" element={<Password />} />
-                <Route path="*" element={<div>页面开发中...</div>} />
-              </Route>
-            </Routes>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/" element={<MainLayout />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="user/user-list" element={<UserList />} />
+                  <Route path="user/merchant-audit" element={<MerchantAudit />} />
+                  <Route path="medicine/category" element={<CategoryList />} />
+                  <Route path="medicine/list" element={<MedicineList />} />
+                  <Route path="order/order-list" element={<OrderList />} />
+                  <Route path="order/refund" element={<RefundList />} />
+                  <Route path="marketing/coupon" element={<CouponList />} />
+                  <Route path="operation/banner" element={<BannerList />} />
+                  <Route path="operation/article" element={<ArticleList />} />
+                  <Route path="system/setting" element={<SystemSetting />} />
+                  <Route path="agent" element={<AdminAgent />} />
+                  <Route path="system/agent" element={<AdminAgent />} />
+                  <Route path="password" element={<Password />} />
+                  <Route path="*" element={<div>页面开发中...</div>} />
+                </Route>
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </AuthProvider>
       </AntdApp>

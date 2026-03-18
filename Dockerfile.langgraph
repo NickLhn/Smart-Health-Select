@@ -2,17 +2,18 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -U pip
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+
+RUN pip install --no-cache-dir -i "${PIP_INDEX_URL}" -U pip
 
 COPY zhijian_langgraph/requirements.txt .
-RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+RUN pip install --no-cache-dir -i "${PIP_INDEX_URL}" -r requirements.txt
 
 COPY zhijian_langgraph/agent/ ./agent/
 COPY zhijian_langgraph/tools_service/ ./tools_service/
-
-ENV AGENT_TOOLS_BASE_URL=http://host.docker.internal:18080
-ENV AGENT_REDIS_HOST=host.docker.internal
-ENV AGENT_REDIS_PORT=6379
 
 EXPOSE 18081
 

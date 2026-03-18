@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Drawer } from 'antd';
-import AIConsultation from '../pages/ai-consultation';
 import type { Medicine } from '../services/medicine';
 import { clearChatHistory, getChatHistory } from '../services/ai';
+
+const AIConsultation = lazy(() => import('../pages/ai-consultation'));
 
 export interface Message {
   id: string;
@@ -113,7 +114,9 @@ export const AIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         // destroyOnClose 
         zIndex={1001} // Ensure it's above other elements
       >
-        <AIConsultation isPopup={true} onClose={closeAI} />
+        <Suspense fallback={<div className="p-6 text-center text-gray-500">AI 面板加载中...</div>}>
+          <AIConsultation isPopup={true} onClose={closeAI} />
+        </Suspense>
       </Drawer>
     </AIContext.Provider>
   );

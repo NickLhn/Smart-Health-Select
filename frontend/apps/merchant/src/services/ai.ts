@@ -18,6 +18,14 @@ export interface ChatHistoryMessage {
     recommendations?: any;
 }
 
+export interface StreamCallbacks {
+    onMessage: (content: string) => void;
+    onCards?: (cards: any[]) => void;
+    onAction?: (action: any) => void;
+    onDone: () => void;
+    onError: (error: any) => void;
+}
+
 export const sendChatMessage = async (message: string): Promise<AIChatResponse> => {
     const res = await request.post<AIChatResponse>('/merchant/ai/chat', { message }, { timeout: 60000 });
     return res.data;
@@ -33,26 +41,26 @@ export const clearChatHistory = async (): Promise<boolean> => {
     return res.data;
 };
 
-// SSE 不需要普通的 request 方法，而是直接通过 EventSource 连接
-// 但如果需要发送初始消息来建立连接（有些实现是 POST 后返回 stream），可以使用 fetch
-// 这里我们复用后端的 SSE 接口: /merchant/ai/stream
-// 后端接口是 POST 请求，接收 JSON body，返回 text/event-stream
-// 由于 EventSource 原生不支持 POST，我们需要使用 fetch-event-source 库或者自行实现 fetch 读取流
-// 为了简化，我们先使用 fetch 读取 ReadableStream
+const buildRequestId = () => {
+    if (typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function') {
+        return (crypto as any).randomUUID();
+    }
+    return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+};
 
 export const streamChat = async (
     params: ChatRequest,
-    onMessage: (content: string) => void,
-    onError: (error: any) => void,
-    onComplete: () => void
+    callbacks: StreamCallbacks
 ) => {
+    const token = localStorage.getItem('token');
+    const requestId = buildRequestId();
     try {
-        const token = localStorage.getItem('token');
         const response = await fetch('/api/merchant/ai/stream', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'X-Request-ID': requestId,
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             },
             body: JSON.stringify(params)
         });
@@ -62,11 +70,13 @@ export const streamChat = async (
         }
 
         const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-
         if (!reader) {
             throw new Error('Response body is null');
         }
+
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let streamEnded = false;
 
         while (true) {
             const { done, value } = await reader.read();
@@ -74,20 +84,87 @@ export const streamChat = async (
                 break;
             }
 
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
+            buffer += decoder.decode(value, { stream: true });
+            buffer = buffer.replace(/\r\n/g, '\n');
 
-            for (const line of lines) {
-                if (line.startsWith('data:')) {
-                    const data = line.slice(5).trim();
-                    if (data) {
-                        onMessage(data);
-                    }
-                }
+            const parts = buffer.split('\n\n');
+            buffer = parts.pop() || '';
+
+            for (const part of parts) {
+                if (streamEnded) break;
+                streamEnded = processPart(part, callbacks) || streamEnded;
             }
         }
-        onComplete();
+
+        if (!streamEnded && buffer.trim()) {
+            buffer = buffer.replace(/\r\n/g, '\n');
+            processPart(buffer, callbacks);
+        }
+
+        if (!streamEnded) {
+            callbacks.onDone();
+        }
     } catch (error) {
-        onError(error);
+        callbacks.onError({ type: 'NETWORK', requestId, error });
     }
+};
+
+const processPart = (part: string, callbacks: StreamCallbacks) => {
+    const lines = part.split('\n');
+    let eventType = 'message';
+    let data = '';
+
+    for (const line of lines) {
+        const normalizedLine = line.endsWith('\r') ? line.slice(0, -1) : line;
+        if (normalizedLine.startsWith('event:')) {
+            eventType = normalizedLine.substring(6).trim();
+        } else if (normalizedLine.startsWith('data:')) {
+            const lineData = normalizedLine.substring(5).trim();
+            data = data ? `${data}\n${lineData}` : lineData;
+        }
+    }
+
+    if (!data) {
+        return false;
+    }
+
+    if (eventType === 'done' || data === '[DONE]') {
+        callbacks.onDone();
+        return true;
+    }
+
+    if (eventType === 'error') {
+        try {
+            callbacks.onError(JSON.parse(data));
+        } catch {
+            callbacks.onError({ type: 'UNKNOWN', message: data });
+        }
+        callbacks.onDone();
+        return true;
+    }
+
+    if (eventType === 'cards') {
+        if (typeof callbacks.onCards === 'function') {
+            try {
+                callbacks.onCards(JSON.parse(data));
+            } catch {
+                callbacks.onCards([]);
+            }
+        }
+        return false;
+    }
+
+    if (eventType === 'action') {
+        if (typeof callbacks.onAction === 'function') {
+            try {
+                callbacks.onAction(JSON.parse(data));
+            } catch {
+                callbacks.onAction(data);
+            }
+        }
+        return false;
+    }
+
+    callbacks.onMessage(data);
+    return false;
 };

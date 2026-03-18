@@ -95,6 +95,9 @@ public class MerchantAiServiceImpl implements MerchantAiService {
                 LangGraphAgentClient.AgentChatData agentData = agentClient.chat(conversationId, message.trim(), authorization, rid);
                 String reply = agentData == null || agentData.getReply() == null ? "" : agentData.getReply();
                 sendMessage(emitter, reply);
+                sendCards(emitter, extractCards(agentData));
+                sendAction(emitter, extractAction(agentData));
+                sendDone(emitter);
                 emitter.complete();
             } catch (Exception e) {
                 AiError err = classifyError(e, rid);
@@ -214,6 +217,13 @@ public class MerchantAiServiceImpl implements MerchantAiService {
             );
             emitter.send(SseEmitter.event().name("error").data(payload));
         } catch (Exception ignored) {
+        }
+    }
+
+    private void sendDone(SseEmitter emitter) {
+        try {
+            emitter.send(SseEmitter.event().name("done").data("[DONE]"));
+        } catch (IOException ignored) {
         }
     }
 

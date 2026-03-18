@@ -1,0 +1,37 @@
+name: Build Release Artifact
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build release bundle
+        run: bash deploy/baota/scripts/create_release_bundle.sh
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zhijian-release
+          path: |
+            release/*.tar.gz
+            release/*.sha256

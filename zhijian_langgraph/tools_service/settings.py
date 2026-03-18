@@ -1,7 +1,8 @@
 import os
-import re
 from dataclasses import dataclass
-from pathlib import Path
+
+
+DEFAULT_JWT_SECRET = "ZhijianDevOnlyJwtSecretChangeMeBeforeProduction2026"
 
 
 @dataclass(frozen=True)
@@ -17,21 +18,12 @@ class Settings:
 
     service_name: str = "tools-service"
 
-
-def _read_backend_jwt_secret() -> str:
-    project_root = Path(__file__).resolve().parents[2]
-    jwt_util = project_root / "backend" / "zhijian-common" / "src" / "main" / "java" / "com" / "zhijian" / "common" / "util" / "JwtUtil.java"
-    content = jwt_util.read_text(encoding="utf-8")
-    match = re.search(r'SECRET_STRING\s*=\s*"([^"]+)"', content)
-    if not match:
-        raise RuntimeError("JwtUtil SECRET_STRING not found")
-    return match.group(1).strip()
-
-
 def load_settings() -> Settings:
     jwt_secret = os.environ.get("TOOLS_JWT_SECRET", "").strip()
     if not jwt_secret:
-        jwt_secret = _read_backend_jwt_secret()
+        jwt_secret = os.environ.get("ZHIJIAN_JWT_SECRET", "").strip()
+    if not jwt_secret:
+        jwt_secret = DEFAULT_JWT_SECRET
 
     mysql_host = os.environ.get("TOOLS_MYSQL_HOST", "").strip()
     mysql_user = os.environ.get("TOOLS_MYSQL_USER", "").strip()

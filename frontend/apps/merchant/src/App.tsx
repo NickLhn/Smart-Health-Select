@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Layout, Menu, theme, ConfigProvider, Avatar, Breadcrumb, Dropdown, App as AntdApp, Button } from 'antd';
 import {
   DesktopOutlined,
@@ -16,26 +16,26 @@ import {
 import type { MenuProps } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Outlet } from 'react-router-dom';
-import Dashboard from './pages/dashboard';
-import ProductList from './pages/product/list';
-import ProductEdit from './pages/product/edit';
-import OrderList from './pages/order/list';
-import ReviewList from './pages/review/list';
-import ImPage from './pages/im';
-import Login from './pages/login';
-import Register from './pages/register';
-import ForgotPassword from './pages/forgot-password';
-import Password from './pages/password';
-import StoreApply from './pages/store/apply';
-import StoreSetting from './pages/store/setting';
-import NotFound from './pages/not-found';
-import AiAdvisorPage from './pages/ai/advisor';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { getMyStore } from './services/store';
 import PrivateRoute from './components/private-route';
-import LandingPage from './pages/landing';
+const Dashboard = lazy(() => import('./pages/dashboard'));
+const ProductList = lazy(() => import('./pages/product/list'));
+const ProductEdit = lazy(() => import('./pages/product/edit'));
+const OrderList = lazy(() => import('./pages/order/list'));
+const ReviewList = lazy(() => import('./pages/review/list'));
+const ImPage = lazy(() => import('./pages/im'));
+const Login = lazy(() => import('./pages/login'));
+const Register = lazy(() => import('./pages/register'));
+const ForgotPassword = lazy(() => import('./pages/forgot-password'));
+const Password = lazy(() => import('./pages/password'));
+const StoreApply = lazy(() => import('./pages/store/apply'));
+const StoreSetting = lazy(() => import('./pages/store/setting'));
+const AiAdvisorPage = lazy(() => import('./pages/ai/advisor'));
+const LandingPage = lazy(() => import('./pages/landing'));
 
 const { Header, Content, Footer, Sider } = Layout;
+const RouteFallback = () => <div className="py-12 text-center text-gray-500">页面加载中...</div>;
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -269,38 +269,40 @@ const App: React.FC = () => {
       <AntdApp>
         <AuthProvider>
           <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
 
-              {/* 商家入驻/信息完善页面 (需要登录但不需要 MainLayout) */}
-              <Route path="/store/apply" element={
-                <PrivateRoute>
-                  <StoreApply />
-                </PrivateRoute>
-              } />
+                {/* 商家入驻/信息完善页面 (需要登录但不需要 MainLayout) */}
+                <Route path="/store/apply" element={
+                  <PrivateRoute>
+                    <StoreApply />
+                  </PrivateRoute>
+                } />
 
-              {/* Protected Routes */}
-              <Route element={<PrivateRoute />}>
-                <Route element={<MainLayout />}>
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="product/list" element={<ProductList />} />
-                  <Route path="product/add" element={<ProductEdit />} />
-                  <Route path="product/edit/:id" element={<ProductEdit />} />
-                  <Route path="order/list" element={<OrderList />} />
-                  <Route path="order/pending" element={<OrderList />} />
-                  <Route path="review/list" element={<ReviewList />} />
-                  <Route path="im" element={<ImPage />} />
-                  <Route path="ai/advisor" element={<AiAdvisorPage />} />
-                  <Route path="store/setting" element={<StoreSetting />} />
-                  <Route path="password" element={<Password />} />
-                  <Route path="*" element={<div>页面开发中...</div>} />
+                {/* Protected Routes */}
+                <Route element={<PrivateRoute />}>
+                  <Route element={<MainLayout />}>
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="product/list" element={<ProductList />} />
+                    <Route path="product/add" element={<ProductEdit />} />
+                    <Route path="product/edit/:id" element={<ProductEdit />} />
+                    <Route path="order/list" element={<OrderList />} />
+                    <Route path="order/pending" element={<OrderList />} />
+                    <Route path="review/list" element={<ReviewList />} />
+                    <Route path="im" element={<ImPage />} />
+                    <Route path="ai/advisor" element={<AiAdvisorPage />} />
+                    <Route path="store/setting" element={<StoreSetting />} />
+                    <Route path="password" element={<Password />} />
+                    <Route path="*" element={<div>页面开发中...</div>} />
+                  </Route>
                 </Route>
-              </Route>
-            </Routes>
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </AuthProvider>
       </AntdApp>

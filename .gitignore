@@ -28,12 +28,15 @@ yarn-error.log
 pnpm-debug.log
 .env
 .env.local
+deploy/baota/env/*.env
+!deploy/baota/env/*.example
 
 # Build
 build/
 out/
 *.jar
 customer_dist*.zip
+release/
 
 # Configuration
 application.yml
