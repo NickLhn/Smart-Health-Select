@@ -110,9 +110,8 @@ public class AliyunOcrServiceImpl implements OcrService {
             Config config = new Config()
                     .setAccessKeyId(ocrProperties.getAccessKeyId())
                     .setAccessKeySecret(ocrProperties.getAccessKeySecret());
-            config.endpoint = (ocrProperties.getEndpoint() == null || ocrProperties.getEndpoint().isBlank())
-                    ? "ocr-api.cn-hangzhou.aliyuncs.com"
-                    : ocrProperties.getEndpoint();
+            config.endpoint = "ocr-api.cn-hangzhou.aliyuncs.com";
+            log.info("阿里云OCR初始化成功，使用endpoint: {}", config.endpoint);
             this.client = new Client(config);
         } catch (Exception e) {
             this.client = null;
