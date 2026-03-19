@@ -121,6 +121,12 @@ cp deploy/baota/env/langgraph.compose.env.example /www/server/bt-env/smart-healt
 
 不要把真实值提交到仓库。
 
+注意：
+
+- `ZHIJIAN_JWT_SECRET` 一旦用于线上签发登录 Token，就不要随意更换。
+- 如果生产环境更换了这个值，旧用户的登录态会立即失效，需要全部重新登录。
+- 如果你是在已有线上环境上接管部署，请先把当前线上实际使用的密钥写入 `backend.env` 和 `langgraph.compose.env`，再重启服务。
+
 ## 5. 启动后端与 AI 服务
 
 ### backend
