@@ -1,9 +1,0 @@
-.ant-layout-sider-trigger {
-  background: linear-gradient(90deg, #022c22, #047857);
-  color: #ecfdf5;
-  border-top: 1px solid rgba(16, 185, 129, 0.35);
-}
-
-.ant-layout-sider-trigger .anticon {
-  font-size: 16px;
-}

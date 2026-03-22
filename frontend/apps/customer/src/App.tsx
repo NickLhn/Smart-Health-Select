@@ -10,6 +10,7 @@ import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { AIProvider } from './context/AIContext';
 
+// 页面级懒加载，减少首屏资源体积。
 const Home = lazy(() => import('./pages/home'));
 const MedicineList = lazy(() => import('./pages/medicine'));
 const HealthPage = lazy(() => import('./pages/health'));
@@ -41,16 +42,19 @@ const App: React.FC = () => {
       theme={antdTheme}
     >
       <AntdApp>
+        {/* Provider 顺序决定了全局状态的可用范围。 */}
         <AuthProvider>
           <CartProvider>
             <BrowserRouter>
               <AIProvider>
                 <Suspense fallback={<RouteFallback />}>
                   <Routes>
+                    {/* 登录、注册、找回密码不走主站布局。 */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     
+                    {/* 主站页面统一挂在 MainLayout 下，保持顶部导航和底部导航一致。 */}
                     <Route path="/" element={<MainLayout />}>
                       <Route index element={<Home />} />
                       <Route path="medicine" element={<MedicineList />} />
@@ -72,7 +76,8 @@ const App: React.FC = () => {
                       <Route path="profile/favorite" element={<FavoritePage />} />
                       <Route path="profile/comment" element={<CommentPage />} />
                       <Route path="profile/patient" element={<PatientList />} />
-                      <Route path="*" element={<div className="text-center mt-20">页面开发中...</div>} />
+                      {/* 未匹配路径统一回首页，避免向老师展示“开发中”占位。 */}
+                      <Route path="*" element={<Navigate to="/" replace />} />
                     </Route>
                   </Routes>
                 </Suspense>

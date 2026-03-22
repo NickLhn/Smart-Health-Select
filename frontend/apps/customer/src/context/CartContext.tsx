@@ -3,11 +3,9 @@ import { App } from 'antd';
 import { addToCart as apiAddToCart, getCartList, deleteCartItems, updateCartCount } from '../services/cart';
 import type { CartItemVO } from '../services/cart';
 
-// Map backend VO to frontend interface for compatibility, 
-// or update frontend to use VO directly. 
-// Let's adapt the frontend interface to match backend data but keep friendly names if needed.
+// 购物车上下文会把后端返回的 VO 映射为前端更易用的结构。
 export interface CartItem {
-  id: number; // Cart Item ID
+  id: number;
   medicineId: number;
   name: string;
   price: number;
@@ -17,6 +15,7 @@ export interface CartItem {
   stock?: number;
 }
 
+// 购物车上下文负责维护购物车项、总价和常用操作。
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (medicineId: number, quantity: number) => Promise<boolean>;
@@ -41,16 +40,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       const res = await getCartList();
       if (res && res.code === 200) {
-        // Map VO to CartItem
+        // 把后端 VO 转成前端页面直接消费的字段结构。
         const items = (res.data || []).map(item => ({
           id: item.id,
           medicineId: item.medicineId,
           name: item.medicineName,
-          price: item.price || 0, // Ensure price is not undefined
+          price: item.price || 0,
           quantity: item.count,
           image: item.medicineImage,
           stock: item.stock,
-          specs: '标准规格' // Backend doesn't return specs yet, default it
+          // 后端暂未返回规格，先给前端一个占位值。
+          specs: '标准规格'
         }));
         setCartItems(items);
       }
@@ -61,7 +61,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Load on mount
+  // Provider 挂载后先拉一次购物车。
   useEffect(() => {
     refreshCart();
   }, [refreshCart]);
@@ -100,6 +100,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateQuantity = async (id: number, quantity: number) => {
     if (quantity <= 0) {
+      // 数量减到 0 及以下时，直接视为删除。
       return removeFromCart(id);
     }
     try {
@@ -116,7 +117,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const clearCart = async () => {
-    // Collect all IDs
+    // 清空购物车本质上是批量删除当前所有购物车项。
     const ids = cartItems.map(item => item.id);
     if (ids.length === 0) return;
     
@@ -134,6 +135,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // 总价和件数在上下文层统一计算，页面直接消费。
   const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -157,6 +159,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useCart = () => {
   const context = useContext(CartContext);
   if (context === undefined) {
+    // 强制在 Provider 内部使用，避免拿到空上下文。
     throw new Error('useCart must be used within a CartProvider');
   }
   return context;

@@ -28,6 +28,7 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result receive(Long couponId, Long userId) {
+        // 领取前校验优惠券是否存在、是否失效、是否还有库存。
         Coupon coupon = couponService.getById(couponId);
         if (coupon == null) {
             return Result.failed("优惠券不存在");
@@ -46,6 +47,7 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
             return Result.failed("您已领取过该优惠券");
         }
 
+        // 生成用户优惠券记录，并给一段简短券码。
         UserCoupon userCoupon = new UserCoupon();
         userCoupon.setCouponId(couponId);
         userCoupon.setUserId(userId);
@@ -63,6 +65,7 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
 
     @Override
     public List<UserCouponDTO> myCoupons(Long userId, Integer status) {
+        // 我的优惠券列表会把用户券和优惠券主表做一次组装。
         LambdaQueryWrapper<UserCoupon> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(UserCoupon::getUserId, userId)
                 .eq(status != null, UserCoupon::getUseStatus, status)
@@ -95,6 +98,7 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void useCoupon(Long userCouponId, Long orderId) {
+        // 核销时要求优惠券必须处于未使用状态。
         UserCoupon userCoupon = this.getById(userCouponId);
         if (userCoupon == null) {
             throw new RuntimeException("优惠券不存在");
@@ -115,6 +119,7 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
 
     @Override
     public BigDecimal getCouponAmount(Long userCouponId, BigDecimal orderAmount) {
+        // 金额试算阶段只返回可抵扣金额，不直接修改用户券状态。
         UserCoupon userCoupon = this.getById(userCouponId);
         if (userCoupon == null) {
             return BigDecimal.ZERO;

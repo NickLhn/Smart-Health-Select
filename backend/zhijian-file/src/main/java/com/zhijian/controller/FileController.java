@@ -11,12 +11,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- * 文件上传控制器
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Tag(name = "文件管理")
 @RestController
 @RequestMapping("/file")
@@ -25,10 +19,10 @@ public class FileController {
     @Resource
     private FileService fileService;
 
+    // 前端统一通过这个接口上传图片、证件照和其他附件。
     @Operation(summary = "上传文件")
     @PostMapping("/upload")
     public Result<String> upload(@RequestParam("file") MultipartFile file) {
         return Result.success(fileService.upload(file));
     }
 }
-

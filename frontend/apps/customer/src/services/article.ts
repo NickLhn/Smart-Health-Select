@@ -1,5 +1,6 @@
 import request from './request';
 
+// 用户端健康资讯查询接口。
 export interface HealthArticle {
   id: number;
   title: string;
@@ -29,10 +30,12 @@ export interface ArticleQueryParams {
   status?: number;
 }
 
+// 获取资讯分页列表。
 export const getArticlePage = (params: ArticleQueryParams) => {
   return request.get<PageResult<HealthArticle>>('/health/article/page', { params });
 };
 
+// 获取资讯详情。
 export const getArticleDetail = (id: number) => {
   return request.get<HealthArticle>(`/health/article/${id}`);
 };

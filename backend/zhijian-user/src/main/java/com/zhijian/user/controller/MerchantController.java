@@ -21,12 +21,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 商家管理控制器
- *
- * @author TraeAI
- * @since 1.0.0
- */
 @Tag(name = "商家管理")
 @RestController
 @RequestMapping("/merchant")
@@ -36,6 +30,8 @@ public class MerchantController {
 
     private final MerchantService merchantService;
     private final OcrService ocrService;
+
+    // ========================= 管理端查询与审核 =========================
 
     @Operation(summary = "商家列表 (管理端)")
     @GetMapping("/list")
@@ -61,6 +57,8 @@ public class MerchantController {
         return Result.success(merchant);
     }
 
+    // ========================= 商家入驻与 OCR =========================
+
     @Operation(summary = "商家入驻/更新信息")
     @PostMapping("/apply")
     public Result apply(@RequestBody @Valid MerchantApplyDTO applyDTO) {
@@ -71,6 +69,7 @@ public class MerchantController {
         return merchantService.apply(userId, applyDTO);
     }
 
+    // 同一个 OCR 能力同时提供 GET 版本，便于联调或浏览器直接测试。
     @Operation(summary = "营业执照OCR识别(用于自动填表)")
     @PostMapping("/ocr/business-license")
     public Result<BusinessLicenseOcrResponseDTO> ocrBusinessLicense(@RequestBody @Valid BusinessLicenseOcrRequestDTO req) {
@@ -110,6 +109,7 @@ public class MerchantController {
         }
     }
 
+    // GET 版本主要服务于联调或需要手工传 URL 的场景。
     @Operation(summary = "身份证OCR识别(正反面合并弹窗)")
     @PostMapping("/ocr/idcard-bundle")
     public Result<IdCardOcrResponseDTO> ocrIdCardBundle(@RequestBody @Valid IdCardBundleOcrRequestDTO req) {
@@ -156,6 +156,8 @@ public class MerchantController {
             return Result.failed(e.getMessage() == null || e.getMessage().isBlank() ? "识别失败" : e.getMessage());
         }
     }
+
+    // ========================= 管理端详情与审核、商家端运营设置 =========================
 
     @Operation(summary = "获取商家详情 (管理端)")
     @GetMapping("/{id}")

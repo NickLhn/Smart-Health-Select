@@ -28,6 +28,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     @Override
     public DashboardDataDTO getAdminDashboardData() {
+        // 旧统计模块通过订单数据聚合得到管理端仪表盘信息。
         DashboardDataDTO data = new DashboardDataDTO();
 
         List<Integer> validStatus = List.of(1, 2, 3, 5);
@@ -58,6 +59,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         List<DailySalesDTO> trend = new ArrayList<>();
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         for (int i = 6; i >= 0; i--) {
+            // 近 7 天销售趋势。
             LocalDate date = LocalDate.now().minusDays(i);
             LocalDateTime start = LocalDateTime.of(date, LocalTime.MIN);
             LocalDateTime end = LocalDateTime.of(date, LocalTime.MAX);
@@ -76,6 +78,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         data.setSalesTrend(trend);
 
         List<ProductSalesDTO> topSelling = orderService.getTopSellingProducts(10);
+        // 把热销商品 DTO 转成旧统计模块使用的展示 DTO。
         List<TopProductDTO> topProducts = topSelling.stream().map(dto -> {
             TopProductDTO p = new TopProductDTO();
             p.setMedicineId(dto.getMedicineId());

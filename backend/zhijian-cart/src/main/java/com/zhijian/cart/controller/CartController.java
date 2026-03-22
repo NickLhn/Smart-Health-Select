@@ -28,6 +28,8 @@ public class CartController {
 
     private final CartService cartService;
 
+    // 所有购物车接口都绑定当前登录用户，避免出现跨用户购物车数据。
+
     @Operation(summary = "添加购物车", description = "将指定药品添加到当前用户的购物车中")
     @PostMapping("/add")
     public Result add(@Valid @RequestBody CartAddDTO addDTO) {

@@ -9,17 +9,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/**
- * 药品分类服务实现类
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Service
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements CategoryService {
 
     @Override
     public List<Category> listTree() {
+        // 先查出全部分类，再在内存里组装树结构。
         List<Category> all = this.list(new LambdaQueryWrapper<Category>()
                 .orderByAsc(Category::getSort));
         return all.stream()
@@ -29,6 +24,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     }
 
     private List<Category> getChildren(Category root, List<Category> all) {
+        // 递归构造当前分类节点的子节点。
         List<Category> children = all.stream()
                 .filter(category -> category.getParentId().equals(root.getId()))
                 .peek(category -> category.setChildren(getChildren(category, all)))
@@ -38,6 +34,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
     @Override
     public boolean addCategory(Category category) {
+        // 新增分类时根据父节点推断层级；没有父节点时视为一级分类。
         if (category.getParentId() == null) {
             category.setParentId(0L);
             category.setLevel(1);
@@ -53,4 +50,3 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         return this.save(category);
     }
 }
-

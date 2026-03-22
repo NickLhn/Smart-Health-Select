@@ -35,6 +35,7 @@ public class AiServiceImpl implements AiService {
 
     @Override
     public Result<AIChatResponse> chat(AIChatRequest request, String authorization, String requestId) {
+        // 同步对话接口，直接等待 LangGraph 返回完整回答。
         String rid = normalizeRequestId(requestId);
         Long userId = UserContext.getUserId();
         if (userId == null) {
@@ -46,6 +47,7 @@ public class AiServiceImpl implements AiService {
         }
 
         try {
+            // conversationId 由后端根据用户身份统一生成。
             LangGraphAgentClient.AgentChatData agentData = agentClient.chat(
                     buildConversationId(userId),
                     message.trim(),
@@ -58,6 +60,7 @@ public class AiServiceImpl implements AiService {
             resp.setAction(extractAction(agentData));
             return Result.success(resp);
         } catch (Exception e) {
+            // 下游异常统一转换为平台定义的错误码。
             AiError err = classifyError(e, rid);
             return Result.failed(err.resultCode);
         }
@@ -84,6 +87,7 @@ public class AiServiceImpl implements AiService {
         }
 
         String conversationId = buildConversationId(userId);
+        // 流式接口通过异步任务执行，避免阻塞请求线程。
         CompletableFuture.runAsync(() -> {
             try {
                 LangGraphAgentClient.AgentChatData agentData = agentClient.chat(conversationId, message.trim(), authorization, rid);
@@ -95,6 +99,7 @@ public class AiServiceImpl implements AiService {
                 emitter.complete();
             } catch (Exception e) {
                 AiError err = classifyError(e, rid);
+                // 根据异常类型返回更贴近用户理解的提示。
                 String msg = switch (err.type) {
                     case "AUTH" -> "登录已过期，请重新登录后再试。";
                     case "TIMEOUT" -> "AI响应超时，请稍后再试。";
@@ -110,6 +115,7 @@ public class AiServiceImpl implements AiService {
 
     @Override
     public Result<List<ChatHistoryMessage>> history() {
+        // 历史消息从 memoryRepository 读取，再转成前端统一展示结构。
         Long userId = UserContext.getUserId();
         if (userId == null) {
             return Result.failed("请先登录");
@@ -155,6 +161,7 @@ public class AiServiceImpl implements AiService {
 
     @Override
     public Result<Boolean> clearHistory() {
+        // 清空当前用户的 AI 历史对话。
         Long userId = UserContext.getUserId();
         if (userId == null) {
             return Result.failed("请先登录");
@@ -166,6 +173,7 @@ public class AiServiceImpl implements AiService {
     }
 
     private String buildConversationId(Long userId) {
+        // 管理端和普通用户使用不同前缀，避免历史消息串话。
         if (UserContext.isAdmin()) {
             return "admin:" + userId;
         }
@@ -197,6 +205,7 @@ public class AiServiceImpl implements AiService {
     }
 
     private void sendError(SseEmitter emitter, AiError error) {
+        // 错误信息通过 SSE 的 error 事件单独发送。
         try {
             String payload = objectMapper.writeValueAsString(
                     Map.of(
@@ -233,6 +242,7 @@ public class AiServiceImpl implements AiService {
     }
 
     private void sendCards(SseEmitter emitter, Object cards) {
+        // 推荐卡片为空时不下发事件，减少前端空处理逻辑。
         if (cards == null) {
             return;
         }
@@ -250,6 +260,7 @@ public class AiServiceImpl implements AiService {
     }
 
     private void sendAction(SseEmitter emitter, Object action) {
+        // action 事件用于指导前端执行跳转等额外动作。
         if (action == null) {
             return;
         }
@@ -310,6 +321,7 @@ public class AiServiceImpl implements AiService {
     }
 
     private String normalizeRequestId(String raw) {
+        // requestId 优先复用前端传入值，缺失时后端自动生成。
         String val = raw == null ? "" : raw.trim();
         if (!val.isEmpty()) {
             return val;
@@ -318,6 +330,7 @@ public class AiServiceImpl implements AiService {
     }
 
     private AiError classifyError(Exception e, String requestId) {
+        // 把连接异常、超时异常、鉴权异常统一映射到可识别的错误类型。
         Throwable cause = unwrapCause(e);
         if (cause instanceof LangGraphAgentClient.AgentHttpException agentHttp) {
             int status = agentHttp.getStatus();
@@ -345,6 +358,7 @@ public class AiServiceImpl implements AiService {
     }
 
     private Throwable unwrapCause(Throwable e) {
+        // 向下展开异常链，尽量定位真正的底层异常。
         Throwable cur = e;
         for (int i = 0; i < 8; i++) {
             Throwable next = cur.getCause();

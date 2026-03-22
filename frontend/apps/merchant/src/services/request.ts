@@ -8,6 +8,8 @@ interface Result<T = any> {
   data: T;
 }
 
+// 商家端统一请求封装：
+// 除了 token 注入和错误处理外，还额外负责 401 时自动回登录页。
 class Request {
   private instance: AxiosInstance;
 
@@ -17,6 +19,7 @@ class Request {
     // 请求拦截器
     this.instance.interceptors.request.use(
       (config) => {
+        // 商家端所有业务接口默认都携带 token。
         const token = localStorage.getItem('token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
@@ -32,6 +35,7 @@ class Request {
     this.instance.interceptors.response.use(
       (response: AxiosResponse<Result>) => {
         const { code, message, data } = response.data;
+        // 后端约定 code=200 为业务成功，其他情况按异常处理。
         if (code === 200) {
           return response;
         } else {
@@ -47,12 +51,10 @@ class Request {
             console.error('Response Status:', error.response.status);
             console.error('Response Data:', error.response.data);
             
-            // 如果是 401，可能是 Token 失效，跳转到登录页
+            // 如果 token 过期或无效，统一清空本地状态并跳回登录页。
             if (error.response.status === 401) {
-                // 清除 token
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
-                // 这里使用 window.location 跳转，因为不在组件内
                 if (!window.location.pathname.includes('/login')) {
                     window.location.href = '/login';
                 }
@@ -63,6 +65,7 @@ class Request {
     );
   }
 
+  // 暴露统一的 HTTP 方法，页面和 service 文件只关注业务参数。
   get<T = any>(url: string, config?: AxiosRequestConfig): Promise<Result<T>> {
     return this.instance.get(url, config).then((res) => res.data);
   }

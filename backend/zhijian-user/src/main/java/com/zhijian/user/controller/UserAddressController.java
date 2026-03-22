@@ -15,12 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * 用户收货地址控制器
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Tag(name = "收货地址管理")
 @RestController
 @RequestMapping("/user/address")
@@ -78,6 +72,7 @@ public class UserAddressController {
         if (address == null || !address.getUserId().equals(userId)) {
             return Result.failed("地址不存在或无权操作");
         }
+        // 删除前额外校验归属关系，防止越权操作。
         userAddressService.removeById(id);
         return Result.success(null, "删除成功");
     }

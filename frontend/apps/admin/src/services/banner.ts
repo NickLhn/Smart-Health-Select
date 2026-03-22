@@ -1,5 +1,6 @@
 import request from './request';
 
+// 管理端轮播图管理接口。
 export interface Banner {
   id: number;
   title: string;
@@ -24,22 +25,22 @@ export interface PageResult<T> {
   pages: number;
 }
 
-// 分页查询轮播图
+// 分页查询轮播图列表。
 export const getBannerList = (params: BannerQuery) => {
   return request.get<PageResult<Banner>>('/admin/banner/list', { params });
 };
 
-// 添加轮播图
+// 新增轮播图。
 export const addBanner = (data: Partial<Banner>) => {
   return request.post('/admin/banner', data);
 };
 
-// 修改轮播图
+// 更新轮播图。
 export const updateBanner = (id: number, data: Partial<Banner>) => {
   return request.put(`/admin/banner/${id}`, data);
 };
 
-// 删除轮播图
+// 删除轮播图。
 export const deleteBanner = (id: number) => {
   return request.delete(`/admin/banner/${id}`);
 };

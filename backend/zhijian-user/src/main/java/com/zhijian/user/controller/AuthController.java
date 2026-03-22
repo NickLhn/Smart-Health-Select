@@ -14,12 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 认证控制器
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Tag(name = "认证管理", description = "用户注册与登录")
 @RestController
 @RequestMapping("/auth")
@@ -34,12 +28,7 @@ public class AuthController {
         return userService.login(loginDTO);
     }
 
-    /**
-     * 用户注册
-     *
-     * @param registerDTO 注册参数
-     * @return 注册结果
-     */
+    // 注册接口为多个端共用，具体身份由 role 或前端入口控制。
     @Operation(summary = "用户注册")
     @PostMapping("/register")
     public Result register(@RequestBody @Valid UserRegisterDTO registerDTO) {

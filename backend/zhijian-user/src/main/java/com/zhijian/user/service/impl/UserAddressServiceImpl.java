@@ -11,17 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * 用户收货地址服务实现类
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Service
 public class UserAddressServiceImpl extends ServiceImpl<UserAddressMapper, UserAddress> implements UserAddressService {
 
     @Override
     public List<UserAddress> myList(Long userId) {
+        // 默认地址排在最前面，便于前端直接默认选中。
         return this.list(new LambdaQueryWrapper<UserAddress>()
                 .eq(UserAddress::getUserId, userId)
                 .orderByDesc(UserAddress::getIsDefault)
@@ -31,12 +26,12 @@ public class UserAddressServiceImpl extends ServiceImpl<UserAddressMapper, UserA
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean addAddress(UserAddress address) {
-        // 如果是第一个地址，默认设为默认地址
+        // 第一个地址自动设为默认地址。
         long count = this.count(new LambdaQueryWrapper<UserAddress>().eq(UserAddress::getUserId, address.getUserId()));
         if (count == 0) {
             address.setIsDefault(1);
         } else if (address.getIsDefault() != null && address.getIsDefault() == 1) {
-            // 如果新加的是默认地址，取消其他默认
+            // 新增默认地址时，先把其他默认地址取消掉。
             this.update(new LambdaUpdateWrapper<UserAddress>()
                     .eq(UserAddress::getUserId, address.getUserId())
                     .set(UserAddress::getIsDefault, 0));
@@ -48,7 +43,7 @@ public class UserAddressServiceImpl extends ServiceImpl<UserAddressMapper, UserA
     @Transactional(rollbackFor = Exception.class)
     public boolean updateAddress(UserAddress address) {
         if (address.getIsDefault() != null && address.getIsDefault() == 1) {
-            // 如果修改为默认地址，取消其他默认
+            // 修改为默认地址时，同样先清理其他默认标记。
             this.update(new LambdaUpdateWrapper<UserAddress>()
                     .eq(UserAddress::getUserId, address.getUserId())
                     .set(UserAddress::getIsDefault, 0));
@@ -59,20 +54,19 @@ public class UserAddressServiceImpl extends ServiceImpl<UserAddressMapper, UserA
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean setDefault(Long id, Long userId) {
-        // 1. 校验地址存在且属于该用户
+        // 先校验地址归属关系。
         UserAddress address = this.getById(id);
         if (address == null || !address.getUserId().equals(userId)) {
             throw new RuntimeException("地址不存在或无权操作");
         }
 
-        // 2. 取消该用户所有默认地址
+        // 取消该用户现有默认地址。
         this.update(new LambdaUpdateWrapper<UserAddress>()
                 .eq(UserAddress::getUserId, userId)
                 .set(UserAddress::getIsDefault, 0));
 
-        // 3. 设置当前地址为默认
+        // 再把当前地址设为默认。
         address.setIsDefault(1);
         return this.updateById(address);
     }
 }
-

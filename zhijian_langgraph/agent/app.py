@@ -21,12 +21,14 @@ from agent.settings import Settings, load_settings
 app = FastAPI(title="zhijian-langgraph-agent", version="0.1.0")
 
 
+# AI Agent 对外的聊天请求体。
 class ChatRequest(BaseModel):
     conversationId: str = Field(..., min_length=6, max_length=128)
     message: str = Field(..., min_length=1, max_length=2000)
 
 
 def get_settings() -> Settings:
+    # 配置加载后缓存在 app.state 中，避免每次请求重复读取环境变量。
     settings = getattr(app.state, "settings", None)
     if settings is None:
         settings = load_settings()
@@ -35,6 +37,7 @@ def get_settings() -> Settings:
 
 
 def get_graph(settings: Settings):
+    # 普通用户图只初始化一次，后续请求直接复用。
     graph = getattr(app.state, "graph", None)
     if graph is None:
         graph = build_graph(settings)
@@ -43,6 +46,7 @@ def get_graph(settings: Settings):
 
 
 def get_merchant_graph(settings: Settings):
+    # 商家图和普通用户图拆开缓存，便于各自维护节点能力。
     graph = getattr(app.state, "merchant_graph", None)
     if graph is None:
         graph = build_merchant_graph(settings)
@@ -51,6 +55,7 @@ def get_merchant_graph(settings: Settings):
 
 
 def get_admin_graph(settings: Settings):
+    # 管理端图负责审核、运营等后台类问答。
     graph = getattr(app.state, "admin_graph", None)
     if graph is None:
         graph = build_admin_graph(settings)
@@ -63,6 +68,7 @@ def current_user(
     request_id: Optional[str] = Header(default=None, alias="X-Request-ID"),
     settings: Settings = Depends(get_settings),
 ) -> tuple[AuthUser, str, Optional[str]]:
+    # Agent 直接依赖后端签发的 Bearer Token 识别当前用户身份。
     if not authorization:
         raise HTTPException(status_code=401, detail="Missing Authorization header")
     user = authenticate_user(settings, authorization)
@@ -91,6 +97,7 @@ def chat(
 
     ttl_seconds = 24 * 60 * 60
 
+    # 先恢复对话状态，再把本轮消息塞回图执行所需上下文。
     state = load_state(r, keys)
     state.update(
         {
@@ -109,6 +116,7 @@ def chat(
         ttl_seconds,
     )
 
+    # 按用户角色或会话前缀选择对应的业务图。
     graph = get_graph(settings)
     merchant_graph = get_merchant_graph(settings)
     admin_graph = get_admin_graph(settings)
@@ -131,6 +139,7 @@ def chat(
         ttl_seconds,
     )
 
+    # 只持久化下一轮对话还会用到的关键状态，避免 Redis 中堆积无效上下文。
     persisted_state = {
         "pending_action": (result or {}).get("pending_action"),
         "pending_intent": (result or {}).get("pending_intent"),

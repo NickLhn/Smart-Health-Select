@@ -35,12 +35,6 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.Random;
 
-/**
- * 药品服务实现类
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -61,6 +55,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
 
     @PostConstruct
     public void init() {
+        // 启动时加载 Lua 脚本，用于后续做原子扣库存。
         stockDeductScript = new DefaultRedisScript<>();
         stockDeductScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("scripts/stock_deduct.lua")));
         stockDeductScript.setResultType(Long.class);
@@ -71,16 +66,16 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         Medicine medicine = new Medicine();
         BeanUtil.copyProperties(dto, medicine);
         medicine.setSellerId(sellerId);
-        // 设置分类ID
         medicine.setCategoryId(dto.getCategoryId());
-        medicine.setStatus(1); // 默认上架
-        medicine.setSales(0); // 默认销量为0
+        // 新增商品默认上架、销量为 0、逻辑删除标记为未删除。
+        medicine.setStatus(1);
+        medicine.setSales(0);
         medicine.setDeleted(0);
         boolean success = medicineMapper.insert(medicine) > 0;
         if (success) {
-            // 虽然是新增，但为了保险起见，如果之前有缓存穿透留下的空值，删掉它
+            // 如果之前缓存过空值，这里顺手删掉，避免新建后读到旧的空缓存。
             deleteCache(medicine.getId());
-            // 初始化Redis库存
+            // 新增商品后同步初始化 Redis 库存。
             updateStockCache(medicine.getId(), medicine.getStock());
         }
         return success;
@@ -93,11 +88,12 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
             throw new RuntimeException("药品不存在或无权操作");
         }
         BeanUtil.copyProperties(dto, medicine);
-        medicine.setId(id); // 确保ID不被覆盖
+        // 回填主键，避免 DTO 覆盖实体 ID。
+        medicine.setId(id);
         boolean success = medicineMapper.updateById(medicine) > 0;
         if (success) {
             deleteCache(id);
-            // 更新Redis库存
+            // 如果库存变更，顺带把 Redis 中的库存缓存也刷新掉。
             if (dto.getStock() != null) {
                 updateStockCache(id, dto.getStock());
             }
@@ -110,6 +106,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         Page<Medicine> page = new Page<>(query.getPage(), query.getSize());
         LambdaQueryWrapper<Medicine> wrapper = new LambdaQueryWrapper<>();
         
+        // 逻辑删除的商品默认不再返回给前端。
         wrapper.eq(Medicine::getDeleted, 0);
         if (StrUtil.isNotBlank(query.getKeyword())) {
             wrapper.and(w -> w.like(Medicine::getName, query.getKeyword())
@@ -120,10 +117,9 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         wrapper.eq(query.getCategoryId() != null, Medicine::getCategoryId, query.getCategoryId());
         wrapper.eq(query.getSellerId() != null, Medicine::getSellerId, query.getSellerId());
         wrapper.eq(query.getIsPrescription() != null, Medicine::getIsPrescription, query.getIsPrescription());
-        // 如果有状态参数，则匹配状态
         wrapper.eq(query.getStatus() != null, Medicine::getStatus, query.getStatus());
 
-        // 解析前端传入的 sort 参数 (e.g. price_asc)
+        // 兼容前端传入的简写排序值，例如 price_asc。
         if (StrUtil.isBlank(query.getSortBy()) && StrUtil.isNotBlank(query.getSort())) {
             String[] parts = query.getSort().split("_");
             if (parts.length == 2) {
@@ -132,7 +128,6 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
             }
         }
         
-        // 排序逻辑
         if (StrUtil.isNotBlank(query.getSortBy())) {
             boolean isAsc = "asc".equalsIgnoreCase(query.getSortOrder());
             if ("price".equalsIgnoreCase(query.getSortBy())) {
@@ -141,7 +136,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
                 wrapper.orderBy(true, isAsc, Medicine::getSales);
             }
         } else {
-            // 默认按创建时间降序
+            // 默认按创建时间倒序展示。
             wrapper.orderByDesc(Medicine::getCreateTime);
         }
 
@@ -154,11 +149,11 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
     public Medicine getDetail(Long id) {
         String key = CACHE_KEY_PREFIX + id;
         
-        // 1. 尝试从缓存获取
+        // 先走缓存，降低热点商品详情的数据库压力。
         try {
             String json = stringRedisTemplate.opsForValue().get(key);
             if (StrUtil.isNotBlank(json)) {
-                // 防穿透：如果是空字符串标记，直接返回null
+                // 读到 NULL 标记说明之前已经确认数据库里没有这条记录。
                 if ("NULL".equals(json)) {
                     return null;
                 }
@@ -168,7 +163,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
             log.warn("Redis get error: {}", e.getMessage());
         }
 
-        // 2. 缓存未命中，查询数据库
+        // 缓存未命中后再回源数据库。
         Medicine medicine = medicineMapper.selectById(id);
         
         if (medicine != null && !Integer.valueOf(1).equals(medicine.getDeleted())) {
@@ -185,7 +180,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
                 }
             }
             
-            // 3. 写入缓存 (加上随机过期时间，防止雪崩)
+            // 写缓存时附带随机过期时间，降低大面积同一时刻失效的风险。
             try {
                 long ttl = CACHE_TTL * 60 * 60 + new Random().nextInt(300); // 1小时 + 随机0-300秒
                 stringRedisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(medicine), ttl, TimeUnit.SECONDS);
@@ -193,7 +188,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
                 log.warn("Redis set error: {}", e.getMessage());
             }
         } else {
-            // 4. 防穿透：数据库不存在，缓存空值 (短时间)
+            // 数据库里没有时短时间缓存空值，防止缓存穿透。
             try {
                 stringRedisTemplate.opsForValue().set(key, "NULL", 5, TimeUnit.MINUTES);
             } catch (Exception e) {
@@ -232,10 +227,9 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
 
         wrapper.eq(query.getCategoryId() != null, Medicine::getCategoryId, query.getCategoryId());
         wrapper.eq(query.getIsPrescription() != null, Medicine::getIsPrescription, query.getIsPrescription());
-        // 管理员查询，如果有指定状态则过滤，否则不过滤(查所有)
+        // 管理端如果不传状态，就查看全部状态。
         wrapper.eq(query.getStatus() != null, Medicine::getStatus, query.getStatus());
         
-        // 排序逻辑 (复用)
         if (StrUtil.isNotBlank(query.getSortBy())) {
             boolean isAsc = "asc".equalsIgnoreCase(query.getSortOrder());
             if ("price".equalsIgnoreCase(query.getSortBy())) {
@@ -310,9 +304,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         return success;
     }
 
-    /**
-     * 删除缓存
-     */
+    // 删除商品详情缓存。
     private void deleteCache(Long id) {
         String key = CACHE_KEY_PREFIX + id;
         stringRedisTemplate.delete(key);

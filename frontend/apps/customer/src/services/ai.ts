@@ -1,6 +1,7 @@
 import request from './request';
 import type { Medicine } from './medicine';
 
+// 用户端 AI 问诊/咨询接口。
 export interface AIChatResponse {
   text: string;
   recommendations?: Medicine[];
@@ -14,16 +15,19 @@ export interface ChatHistoryMessage {
   recommendations?: Medicine[];
 }
 
+// 普通对话接口，适合不需要实时流式输出的场景。
 export const sendChatMessage = async (message: string): Promise<AIChatResponse> => {
   const res = await request.post<AIChatResponse>('/ai/chat', { message }, { timeout: 60000 });
   return res.data;
 };
 
+// 获取历史对话。
 export const getChatHistory = async (): Promise<ChatHistoryMessage[]> => {
   const res = await request.get<ChatHistoryMessage[]>('/ai/history', { timeout: 20000 });
   return res.data;
 };
 
+// 清空对话历史。
 export const clearChatHistory = async (): Promise<boolean> => {
   const res = await request.delete<boolean>('/ai/history', { timeout: 20000 });
   return res.data;
@@ -38,12 +42,14 @@ export interface StreamCallbacks {
 }
 
 const buildRequestId = () => {
+  // 为每次流式请求生成唯一 requestId，方便后端日志定位。
   if (typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function') {
     return (crypto as any).randomUUID();
   }
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 };
 
+// 流式对话接口，适合边生成边展示回复。
 export const streamChatMessage = async (message: string, callbacks: StreamCallbacks) => {
   const token = localStorage.getItem('token');
   const requestId = buildRequestId();
@@ -76,7 +82,7 @@ export const streamChatMessage = async (message: string, callbacks: StreamCallba
       buffer += decoder.decode(value, { stream: true });
       buffer = buffer.replace(/\r\n/g, '\n');
       
-      // 流式事件之间使用两个换行分隔
+      // SSE 事件之间用空行分隔。
       const parts = buffer.split('\n\n');
       buffer = parts.pop() || ''; // Keep the last incomplete part
 
@@ -86,7 +92,7 @@ export const streamChatMessage = async (message: string, callbacks: StreamCallba
       }
     }
 
-    // 流结束时再处理最后一段未完整拆分的缓冲内容
+    // 处理最后一段未完整拆分的缓冲数据。
     if (!streamEnded && buffer.trim()) {
       buffer = buffer.replace(/\r\n/g, '\n');
       processPart(buffer, callbacks);

@@ -30,6 +30,7 @@ public class CartServiceImpl extends ServiceImpl<CartItemMapper, CartItem> imple
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void add(CartAddDTO addDTO, Long userId) {
+        // 加购前先校验药品是否存在、是否上架、库存是否足够。
         Medicine medicine = medicineService.getById(addDTO.getMedicineId());
         if (medicine == null) {
             throw new RuntimeException("药品不存在");
@@ -46,6 +47,7 @@ public class CartServiceImpl extends ServiceImpl<CartItemMapper, CartItem> imple
                 .eq(CartItem::getMedicineId, addDTO.getMedicineId()));
 
         if (existItem != null) {
+            // 已存在相同商品时直接累加数量。
             existItem.setCount(existItem.getCount() + addDTO.getCount());
             this.updateById(existItem);
             return;
@@ -60,6 +62,7 @@ public class CartServiceImpl extends ServiceImpl<CartItemMapper, CartItem> imple
 
     @Override
     public void updateCount(CartUpdateDTO updateDTO, Long userId) {
+        // 修改数量时必须校验购物车项归属和最新库存。
         CartItem cartItem = this.getById(updateDTO.getId());
         if (cartItem == null) {
             throw new RuntimeException("购物车项不存在");
@@ -97,6 +100,7 @@ public class CartServiceImpl extends ServiceImpl<CartItemMapper, CartItem> imple
             return new ArrayList<>();
         }
 
+        // 批量查药品信息，再映射成前端展示用的购物车 VO。
         List<Long> medicineIds = cartItems.stream()
                 .map(CartItem::getMedicineId)
                 .collect(Collectors.toList());
@@ -121,6 +125,7 @@ public class CartServiceImpl extends ServiceImpl<CartItemMapper, CartItem> imple
 
     @Override
     public void clear(Long userId) {
+        // 清空购物车本质上是删除当前用户全部购物车项。
         this.remove(new LambdaQueryWrapper<CartItem>().eq(CartItem::getUserId, userId));
     }
 }

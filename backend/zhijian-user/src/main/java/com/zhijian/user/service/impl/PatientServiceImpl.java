@@ -13,17 +13,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * 就诊人服务实现类
- *
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Service
 public class PatientServiceImpl extends ServiceImpl<PatientMapper, Patient> implements PatientService {
 
     @Override
     public List<Patient> listMyPatients() {
+        // 默认就诊人排在最前面，方便前端直接选中。
         Long userId = UserContext.getUserId();
         return list(new LambdaQueryWrapper<Patient>()
                 .eq(Patient::getUserId, userId)
@@ -39,11 +34,11 @@ public class PatientServiceImpl extends ServiceImpl<PatientMapper, Patient> impl
         patient.setCreateTime(LocalDateTime.now());
         patient.setUpdateTime(LocalDateTime.now());
 
-        // 如果设置为默认，取消其他默认
+        // 新增就诊人时，如果指定为默认，就把其他记录的默认标记清掉。
         if (Integer.valueOf(1).equals(patient.getIsDefault())) {
             clearDefault(userId);
         } else {
-            // 如果是第一个就诊人，强制设为默认
+            // 第一个就诊人默认设为默认就诊人，减少前端额外处理。
             long count = count(new LambdaQueryWrapper<Patient>().eq(Patient::getUserId, userId));
             if (count == 0) {
                 patient.setIsDefault(1);
@@ -65,9 +60,10 @@ public class PatientServiceImpl extends ServiceImpl<PatientMapper, Patient> impl
         }
 
         patient.setUpdateTime(LocalDateTime.now());
-        patient.setUserId(userId); // 确保userId不被修改
+        // 更新时强制回填当前用户 ID，避免通过请求体篡改归属关系。
+        patient.setUserId(userId);
 
-        // 如果设置为默认，取消其他默认
+        // 当前记录被设置为默认时，其余记录必须取消默认标记。
         if (Integer.valueOf(1).equals(patient.getIsDefault()) && !Integer.valueOf(1).equals(exist.getIsDefault())) {
             clearDefault(userId);
         }
@@ -77,6 +73,7 @@ public class PatientServiceImpl extends ServiceImpl<PatientMapper, Patient> impl
 
     @Override
     public boolean deletePatient(Long id) {
+        // 删除时额外带上用户 ID 条件，防止越权删除他人就诊人。
         Long userId = UserContext.getUserId();
         return remove(new LambdaQueryWrapper<Patient>()
                 .eq(Patient::getId, id)
@@ -85,6 +82,7 @@ public class PatientServiceImpl extends ServiceImpl<PatientMapper, Patient> impl
 
     @Override
     public Patient getPatientById(Long id) {
+        // 详情接口只返回当前用户自己的就诊人记录。
         Long userId = UserContext.getUserId();
         Patient patient = getById(id);
         if (patient != null && patient.getUserId().equals(userId)) {
@@ -93,10 +91,10 @@ public class PatientServiceImpl extends ServiceImpl<PatientMapper, Patient> impl
         return null;
     }
 
+    // 清除当前用户名下其他就诊人的默认标记。
     private void clearDefault(Long userId) {
         update(new LambdaUpdateWrapper<Patient>()
                 .eq(Patient::getUserId, userId)
                 .set(Patient::getIsDefault, 0));
     }
 }
-

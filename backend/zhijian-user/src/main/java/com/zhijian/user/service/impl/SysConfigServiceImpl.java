@@ -12,17 +12,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * 系统配置服务实现类
- *
- * @author TraeAI
- * @since 1.0.0
- */
 @Service
 public class SysConfigServiceImpl extends ServiceImpl<SysConfigMapper, SysConfig> implements SysConfigService {
 
     @Override
     public Map<String, String> getAllConfigs() {
+        // 系统配置以 key-value 形式整体返回给管理端。
         List<SysConfig> list = this.list();
         if (list == null || list.isEmpty()) {
             return new HashMap<>();
@@ -40,9 +35,8 @@ public class SysConfigServiceImpl extends ServiceImpl<SysConfigMapper, SysConfig
             SysConfig config = new SysConfig();
             config.setConfigKey(entry.getKey());
             config.setConfigValue(entry.getValue());
-            // 如果存在则更新，不存在则插入(saveOrUpdate需要主键，这里configKey是主键)
+            // configKey 就是主键，直接走 saveOrUpdate 即可覆盖已有配置。
             this.saveOrUpdate(config);
         }
     }
 }
-

@@ -8,6 +8,8 @@ interface Result<T = any> {
   data: T;
 }
 
+// 管理端统一请求层：
+// 负责 token 注入、统一业务错误处理，以及对 axios 做轻量封装。
 class Request {
   private instance: AxiosInstance;
 
@@ -17,6 +19,7 @@ class Request {
     // 请求拦截器
     this.instance.interceptors.request.use(
       (config) => {
+        // 管理端依赖本地 token 做鉴权，请求发出前统一补头。
         const token = localStorage.getItem('token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
@@ -32,6 +35,7 @@ class Request {
     this.instance.interceptors.response.use(
       (response: AxiosResponse<Result>) => {
         const { code, message, data } = response.data;
+        // 业务码非 200 时直接进入异常流，页面只需要处理成功或失败提示。
         if (code === 200) {
           return response;
         } else {
@@ -48,6 +52,7 @@ class Request {
     );
   }
 
+  // 统一导出常见 HTTP 方法，调用方不直接接触 axios 实例。
   get<T = any>(url: string, config?: AxiosRequestConfig): Promise<Result<T>> {
     return this.instance.get(url, config).then((res) => res.data);
   }

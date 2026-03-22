@@ -24,6 +24,8 @@ public class UserCouponController {
 
     private final UserCouponService userCouponService;
 
+    // 用户优惠券相关接口：领取、查询我的优惠券。
+
     @Operation(summary = "领取优惠券")
     @PostMapping("/receive/{couponId}")
     public Result receive(@PathVariable Long couponId) {

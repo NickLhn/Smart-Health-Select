@@ -1,5 +1,6 @@
 import request from './request';
 
+// 管理端优惠券管理接口。
 export interface Coupon {
   id: number;
   name: string;
@@ -43,10 +44,12 @@ export interface PageResult<T> {
   pages: number;
 }
 
+// 优惠券分页查询。
 export const getCouponPage = (params: CouponQueryDTO) => {
   return request.get<PageResult<Coupon>>('/marketing/coupon/page', { params });
 };
 
+// 创建优惠券。
 export const createCoupon = (data: CouponCreateDTO) => {
   return request.post('/marketing/coupon/create', data);
 };

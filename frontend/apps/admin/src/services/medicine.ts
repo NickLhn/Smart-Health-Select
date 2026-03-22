@@ -1,5 +1,6 @@
 import request from './request';
 
+// 管理端药品与分类管理接口。
 export interface MedicineQuery {
   page?: number;
   size?: number;
@@ -44,22 +45,22 @@ export interface Result<T> {
   data: T;
 }
 
-// 分页搜索药品 (管理端)
+// 管理端药品分页列表，支持关键字和状态筛选。
 export const getAdminMedicineList = (params: MedicineQuery) => {
   return request.get<PageResult<Medicine>>('/medicine/admin/list', { params });
 };
 
-// 删除药品 (管理端)
+// 管理员删除药品。
 export const deleteMedicineAdmin = (id: number) => {
   return request.delete(`/medicine/admin/${id}`);
 };
 
-// 修改药品状态 (管理端)
+// 管理员强制上下架药品。
 export const updateMedicineStatusAdmin = (id: number, status: number) => {
   return request.patch(`/medicine/admin/${id}/status?status=${status}`);
 };
 
-// 获取分类列表 (复用之前的或新建)
+// 分类接口同时服务于药品筛选和分类管理页面。
 export interface Category {
   id: number;
   name: string;

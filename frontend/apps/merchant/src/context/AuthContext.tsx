@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import type { UserInfo } from '../services/auth';
 
+// 商家端登录态上下文。
 interface AuthContextType {
   user: UserInfo | null;
   isAuthenticated: boolean;
@@ -25,6 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const login = (token: string, userInfo: UserInfo) => {
+    // 登录成功后同步本地存储和内存状态。
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userInfo));
     setUser(userInfo);
@@ -32,6 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    // 退出时清空本地登录态。
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
@@ -48,6 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
+    // Provider 外使用时直接抛错，避免静默异常。
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

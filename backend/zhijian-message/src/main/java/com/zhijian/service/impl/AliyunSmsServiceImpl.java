@@ -23,6 +23,7 @@ public class AliyunSmsServiceImpl implements SmsService {
     @PostConstruct
     public void init() {
         try {
+            // 启动时初始化阿里云短信客户端。
             Config config = new Config()
                     .setAccessKeyId(smsProperties.getAccessKeyId())
                     .setAccessKeySecret(smsProperties.getAccessKeySecret());
@@ -36,7 +37,7 @@ public class AliyunSmsServiceImpl implements SmsService {
 
     @Override
     public boolean sendVerificationCode(String phone, String code) {
-        // 根据SDK示例，模板 100001 需要 code 和 min 参数
+        // 验证码模板固定传入 code 和有效分钟数。
         String templateParam = "{\"code\":\"" + code + "\", \"min\":\"5\"}";
         return sendSms(phone, templateParam);
     }
@@ -48,12 +49,13 @@ public class AliyunSmsServiceImpl implements SmsService {
             return false;
         }
 
+        // 组装阿里云短信请求参数。
         SendSmsVerifyCodeRequest request = new SendSmsVerifyCodeRequest()
                 .setPhoneNumber(phone)
                 .setSignName(smsProperties.getSignName())
                 .setTemplateCode(smsProperties.getTemplateCode())
                 .setTemplateParam(templateParam)
-                .setCountryCode("86"); // SDK示例中包含 CountryCode
+                .setCountryCode("86");
         
         RuntimeOptions runtime = new RuntimeOptions();
 

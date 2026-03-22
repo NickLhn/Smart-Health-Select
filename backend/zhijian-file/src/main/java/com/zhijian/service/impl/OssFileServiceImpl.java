@@ -15,12 +15,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
-/**
- * OSS文件服务实现类
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Slf4j
 @Service
 public class OssFileServiceImpl implements FileService {
@@ -30,6 +24,7 @@ public class OssFileServiceImpl implements FileService {
 
     @Override
     public String upload(MultipartFile file) {
+        // 上传时实时读取 OSS 配置，避免写死到代码里。
         String endpoint = ossConfig.getEndpoint();
         String accessKeyId = ossConfig.getAccessKeyId();
         String accessKeySecret = ossConfig.getAccessKeySecret();
@@ -40,7 +35,7 @@ public class OssFileServiceImpl implements FileService {
         }
 
         try {
-            // 创建OSSClient实例
+            // 每次上传创建 OSS 客户端，并在 finally 中释放。
             OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
 
             try {
@@ -53,11 +48,11 @@ public class OssFileServiceImpl implements FileService {
                         originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
                 String fileName = UUID.randomUUID().toString().replaceAll("-", "") + suffix;
                 
-                // 按日期分组
+                // 按日期分目录，便于后续做文件归档和排查。
                 String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
                 String objectName = ossConfig.getDirPrefix() + datePath + "/" + fileName;
 
-                // 上传文件
+                // 上传到 OSS，并返回外部可访问地址。
                 ossClient.putObject(bucketName, objectName, inputStream);
                 
                 String protocol = "https://";
@@ -85,4 +80,3 @@ public class OssFileServiceImpl implements FileService {
         }
     }
 }
-

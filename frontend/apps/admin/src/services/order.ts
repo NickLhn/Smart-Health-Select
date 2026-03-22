@@ -1,5 +1,6 @@
 import request from './request';
 
+// 管理端订单管理接口。
 export interface OrderQueryDTO {
   page: number;
   size: number;
@@ -39,6 +40,7 @@ export interface PageResult<T> {
   pages: number;
 }
 
+// 获取管理端订单列表。
 export const getAdminOrderList = (params: OrderQueryDTO) => {
   return request.get<PageResult<Order>>('/orders/admin/list', { params });
 };
@@ -49,6 +51,7 @@ export interface OrderAuditDTO {
   reason?: string;
 }
 
+// 审核处方或待审核订单。
 export const auditOrder = (data: OrderAuditDTO) => {
   return request.post('/orders/audit', data);
 };

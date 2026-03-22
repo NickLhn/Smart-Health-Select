@@ -3,6 +3,7 @@ import { Drawer } from 'antd';
 import type { Medicine } from '../services/medicine';
 import { clearChatHistory, getChatHistory } from '../services/ai';
 
+// AI 面板按需懒加载，避免首页首次渲染就把 AI 页面打进来。
 const AIConsultation = lazy(() => import('../pages/ai-consultation'));
 
 export interface Message {
@@ -13,6 +14,7 @@ export interface Message {
   recommendations?: Medicine[];
 }
 
+// AI 上下文负责管理抽屉开关、消息列表和历史同步。
 interface AIContextType {
   openAI: () => void;
   closeAI: () => void;
@@ -26,6 +28,7 @@ interface AIContextType {
 
 const AIContext = createContext<AIContextType | undefined>(undefined);
 
+// 默认欢迎语，保证首次打开 AI 面板时不会出现空白状态。
 const WELCOME_MESSAGE: Message = {
   id: '1',
   text: `您好！欢迎来到智健优选。我是您的专属健康服务助手，很高兴为您服务！
@@ -71,10 +74,12 @@ export const AIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    // Provider 挂载时先尝试恢复 AI 历史消息。
     reloadMessages();
   }, []);
 
   const openAI = () => {
+    // 每次打开时重新拉一次历史，确保和服务端保持同步。
     void reloadMessages();
     setIsAIOpen(true);
   };
@@ -110,7 +115,7 @@ export const AIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         width={window.innerWidth > 768 ? 480 : '100%'}
         styles={{ body: { padding: 0 } }}
         closable={false}
-        // 这里不在关闭抽屉时销毁内容，避免仅切换显示状态时把上下文里的消息清掉
+        // 关闭抽屉时不销毁内容，避免只是收起面板就丢消息状态。
         zIndex={1001} // Ensure it's above other elements
       >
         <Suspense fallback={<div className="p-6 text-center text-gray-500">AI 面板加载中...</div>}>
@@ -124,6 +129,7 @@ export const AIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 export const useAI = () => {
   const context = useContext(AIContext);
   if (!context) {
+    // 强制在 Provider 内部使用。
     throw new Error('useAI must be used within an AIProvider');
   }
   return context;

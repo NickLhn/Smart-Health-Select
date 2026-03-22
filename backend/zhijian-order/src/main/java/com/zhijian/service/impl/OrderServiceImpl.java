@@ -49,12 +49,6 @@ import com.zhijian.user.mapper.MerchantMapper;
 import com.zhijian.pojo.user.entity.Merchant;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * 订单服务实现类
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -72,6 +66,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private final ApplicationEventPublisher eventPublisher;
     private final MerchantMapper merchantMapper;
 
+    // ========================= 订单状态流转 =========================
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean cancelOrder(Long orderId) {
@@ -84,10 +80,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             throw new RuntimeException("当前状态无法取消订单");
         }
         
-        order.setStatus(6); // 已取消
+        order.setStatus(6);
         boolean success = this.updateById(order);
         if (success) {
-            // 恢复库存
+            // 取消后要把库存加回去，避免商品数量被白白占用。
             fillOrderItems(List.of(order));
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
@@ -110,7 +106,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             throw new RuntimeException("当前状态无法申请退款");
         }
         
-        order.setStatus(4); // 售后中
+        order.setStatus(4);
         order.setRefundReason(reason);
         return this.updateById(order);
     }
@@ -127,16 +123,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         }
         
         if (agree) {
-            order.setStatus(5); // 已退款
-            // 记录退款流水
+            order.setStatus(5);
+            // 商家同意后，订单进入退款完成态，并补记退款流水。
             refundOrder(orderId, order.getPayAmount(), "商家同意退款");
         } else {
-            // 拒绝退款，恢复原状态
-            // 根据是否有发货时间判断
+            // 拒绝退款时，根据是否已发货恢复到待发货或待收货状态。
             if (order.getDeliveryTime() != null) {
-                order.setStatus(2); // 待收货
+                order.setStatus(2);
             } else {
-                order.setStatus(1); // 待发货
+                order.setStatus(1);
             }
         }
         order.setRefundRemark(remark);
@@ -145,35 +140,26 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    /**
-     * 创建订单
-     *
-     * @param createDTO 订单创建参数
-     * @param userId    用户ID
-     * @return 订单ID
-     */
     public Result createOrder(OrderCreateDTO createDTO, Long userId) {
-        // 1. 查询药品信息
+        // 单商品立即购买流程。
         Medicine medicine = medicineService.getById(createDTO.getMedicineId());
         if (medicine == null) {
             return Result.failed("药品不存在");
         }
 
-        // 2. 检查库存
         if (medicine.getStock() < createDTO.getQuantity()) {
             return Result.failed("库存不足");
         }
 
-        // 3. 扣减库存
+        // 先扣库存，避免并发下单导致超卖。
         boolean updateStock = medicineService.deductStock(medicine.getId(), createDTO.getQuantity());
         if (!updateStock) {
             return Result.failed("库存不足");
         }
         
-        // 计算金额
+        // 订单金额由商品总额、运费、优惠券三部分共同决定。
         BigDecimal totalAmount = medicine.getPrice().multiply(BigDecimal.valueOf(createDTO.getQuantity()));
         
-        // 计算运费
         BigDecimal freight = BigDecimal.ZERO;
         if (medicine.getSellerId() != null) {
             Merchant merchant = merchantMapper.selectOne(new LambdaQueryWrapper<Merchant>()
@@ -184,9 +170,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         }
 
         BigDecimal couponAmount = BigDecimal.ZERO;
-        BigDecimal payAmount = totalAmount.add(freight); // 初始应付 = 商品总额 + 运费
+        BigDecimal payAmount = totalAmount.add(freight);
 
-        // 优惠券逻辑
+        // 如果本次使用优惠券，则在总金额基础上扣减。
         if (createDTO.getUserCouponId() != null) {
             couponAmount = userCouponService.getCouponAmount(createDTO.getUserCouponId(), totalAmount);
             payAmount = payAmount.subtract(couponAmount);
@@ -195,9 +181,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             }
         }
 
-        // 4. 创建订单
+        // 生成订单主记录。
         Order order = new Order();
-        // 生成时间戳订单号
+        // 订单号由时间戳和随机数拼接，便于演示时观察时序。
         String timeStr = cn.hutool.core.date.DateUtil.format(new java.util.Date(), "yyyyMMddHHmmssSSS");
         String randomStr = cn.hutool.core.util.RandomUtil.randomNumbers(6);
         order.setOrderNo(timeStr + randomStr);
@@ -210,19 +196,20 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         
         boolean isPrescription = Integer.valueOf(1).equals(medicine.getIsPrescription());
         if (isPrescription) {
+            // 处方药订单要求就诊人和处方图都齐全，并进入待审核状态。
             if (createDTO.getPatientId() == null) {
                 return Result.failed("处方药必须选择就诊人");
             }
             if (createDTO.getPrescriptionImage() == null || createDTO.getPrescriptionImage().isEmpty()) {
                 return Result.failed("处方药必须上传处方图片");
             }
-            order.setAuditStatus(1); // 待审核
-            order.setStatus(7);      // 待审核 (自定义状态7)
+            order.setAuditStatus(1);
+            order.setStatus(7);
             order.setPatientId(createDTO.getPatientId());
             order.setPrescriptionImage(createDTO.getPrescriptionImage());
         } else {
-            order.setAuditStatus(0); // 无需审核
-            order.setStatus(0);      // 待支付
+            order.setAuditStatus(0);
+            order.setStatus(0);
         }
         
         order.setReceiverName(createDTO.getReceiverName());
@@ -232,7 +219,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
         this.save(order);
 
-        // 5. 创建订单项
+        // 生成订单项，便于后续展示和库存回滚。
         OrderItem item = new OrderItem();
         item.setOrderId(order.getId());
         item.setMedicineId(medicine.getId());
@@ -243,7 +230,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         item.setTotalPrice(medicine.getPrice().multiply(BigDecimal.valueOf(createDTO.getQuantity())));
         orderItemMapper.insert(item);
         
-        // 6. 核销优惠券
+        // 优惠券在订单落库后再核销，避免订单失败却提前占用。
         if (createDTO.getUserCouponId() != null) {
             userCouponService.useCoupon(createDTO.getUserCouponId(), order.getId());
         }
@@ -253,17 +240,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    /**
-     * 从购物车创建订单
-     *
-     * @param createDTO 购物车订单创建参数
-     * @param userId    用户ID
-     * @return 订单ID列表
-     */
     public Result<List<Long>> createOrderFromCart(OrderCreateFromCartDTO createDTO, Long userId) {
         log.info("createOrderFromCart called: userId={}, addressId={}, cartItemIds={}", userId, createDTO.getAddressId(), createDTO.getCartItemIds());
         
-        // 1. 获取地址
+        // 先校验地址归属，避免用其他用户地址下单。
         UserAddress address = userAddressService.getById(createDTO.getAddressId());
         log.info("Address found: {}", address);
         if (address == null || !address.getUserId().equals(userId)) {
@@ -272,7 +252,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         }
         String fullAddress = address.getProvince() + address.getCity() + address.getRegion() + address.getDetailAddress();
 
-        // 2. 获取购物车项
+        // 获取本次勾选的购物车项。
         List<CartItem> cartItems = cartService.listByIds(createDTO.getCartItemIds());
         log.info("Cart items found: {}", cartItems);
         if (cartItems == null || cartItems.isEmpty()) {
@@ -280,7 +260,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             return Result.failed("未选择商品");
         }
 
-        // 3. 校验购物车项归属
+        // 所有购物车项都必须属于当前用户。
         for (CartItem item : cartItems) {
             if (!item.getUserId().equals(userId)) {
                 return Result.failed("包含无效的购物车商品");
@@ -289,28 +269,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
         List<Long> orderIds = new ArrayList<>();
 
-        // 4. 遍历创建订单 (拆单逻辑：目前简单按商品拆单，每个商品一个订单)
-        // 注意：优惠券目前逻辑比较简单，如果是拆单，优惠券只能应用到其中一个订单，或者按比例分摊？
-        // 简化逻辑：如果是购物车下单，暂不支持使用优惠券（或者只支持全场通用券且只应用到第一个订单，这比较复杂）。
-        // 这里的实现：如果传入了优惠券，尝试应用到第一个金额足够的订单，或者抛出异常提示购物车下单暂不支持优惠券。
-        // 为了更好的体验，我们假设 createOrderFromCart 目前不支持优惠券，或者简单地忽略优惠券参数。
-        // 但既然 DTO 加了，我们就尝试实现：把优惠券应用到总金额最大的那个订单上。
-        
-        // 预计算所有订单金额
-        // ... 比较复杂，暂时只处理单个订单逻辑，或者简单地：购物车下单暂不支持优惠券。
-        // 修正：如果 cartItems 只有一个，其实等同于直接下单。
-        // 既然是 MVP，我们先不支持购物车批量下单使用优惠券，或者只支持单品下单使用。
-        // 但用户可能期望能用。
-        // 策略：只允许在单个订单中使用优惠券。如果购物车拆成了多个订单，优惠券怎么算？
-        // 简单策略：仅当拆单后只有一个订单时允许使用优惠券。否则报错或忽略。
-        
+        // 当前购物车下单采用简化拆单策略：一个购物车项对应一个订单。
+        // 多商品拆单时，为避免优惠券分摊歧义，暂不支持使用优惠券。
         if (createDTO.getUserCouponId() != null && cartItems.size() > 1) {
-            // 多商品拆单暂不支持优惠券
              return Result.failed("多商品合并下单暂不支持使用优惠券");
         }
 
         for (CartItem cartItem : cartItems) {
-            // 查询药品
+            // 逐项校验商品有效性和库存。
             Medicine medicine = medicineService.getById(cartItem.getMedicineId());
             if (medicine == null) {
                 throw new RuntimeException("药品已下架: " + cartItem.getMedicineId());
@@ -1202,4 +1168,3 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         }
     }
 }
-

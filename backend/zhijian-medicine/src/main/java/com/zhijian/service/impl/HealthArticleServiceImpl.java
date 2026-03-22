@@ -8,5 +8,5 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class HealthArticleServiceImpl extends ServiceImpl<HealthArticleMapper, HealthArticle> implements HealthArticleService {
+    // 当前健康资讯服务直接复用 MyBatis-Plus 通用 CRUD 能力。
 }
-

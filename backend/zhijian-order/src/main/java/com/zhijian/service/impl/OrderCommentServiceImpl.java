@@ -17,12 +17,6 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 订单评价服务实现类
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Service
 public class OrderCommentServiceImpl extends ServiceImpl<OrderCommentMapper, OrderComment> implements OrderCommentService {
 
@@ -35,7 +29,7 @@ public class OrderCommentServiceImpl extends ServiceImpl<OrderCommentMapper, Ord
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result comment(OrderCommentCreateDTO createDTO, Long userId) {
-        // 1. 获取订单
+        // 只有订单本人且订单已完成时，才允许发表评论。
         Order order = orderService.getById(createDTO.getOrderId());
         if (order == null) {
             return Result.failed("订单不存在");
@@ -50,12 +44,12 @@ public class OrderCommentServiceImpl extends ServiceImpl<OrderCommentMapper, Ord
             return Result.failed("该订单已评价");
         }
 
-        // 2. 获取用户信息
+        // 评价里冗余存储昵称和头像，方便前端直接展示评论列表。
         SysUser user = userService.getById(userId);
         String userName = (user != null && user.getNickname() != null) ? user.getNickname() : "匿名用户";
         String userAvatar = (user != null) ? user.getAvatar() : null;
 
-        // 3. 创建评价
+        // 创建评价记录。
         OrderComment comment = new OrderComment();
         comment.setOrderId(order.getId());
         comment.setUserId(userId);
@@ -69,7 +63,7 @@ public class OrderCommentServiceImpl extends ServiceImpl<OrderCommentMapper, Ord
 
         this.save(comment);
 
-        // 4. 更新订单评价状态
+        // 订单侧同步标记为“已评价”，避免重复评价。
         order.setCommentStatus(1);
         orderService.updateById(order);
 
@@ -81,20 +75,13 @@ public class OrderCommentServiceImpl extends ServiceImpl<OrderCommentMapper, Ord
         Page<OrderComment> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<OrderComment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(OrderComment::getMedicineId, medicineId)
-                .eq(OrderComment::getStatus, 0) // 只显示状态正常的评价
+                // 仅展示正常状态的评价。
+                .eq(OrderComment::getStatus, 0)
                 .orderByDesc(OrderComment::getCreateTime);
         return this.page(pageParam, wrapper);
     }
 
     @Override
-    /**
-     * 获取我的评价列表
-     *
-     * @param userId 用户ID
-     * @param page   页码
-     * @param size   每页大小
-     * @return 评价分页数据
-     */
     public IPage<OrderComment> getMyComments(Long userId, Integer page, Integer size) {
         Page<OrderComment> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<OrderComment> wrapper = new LambdaQueryWrapper<>();
@@ -103,4 +90,3 @@ public class OrderCommentServiceImpl extends ServiceImpl<OrderCommentMapper, Ord
         return this.page(pageParam, wrapper);
     }
 }
-

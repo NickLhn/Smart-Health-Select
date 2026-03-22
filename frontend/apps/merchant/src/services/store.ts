@@ -1,5 +1,6 @@
 import request from './request';
 
+// 商家店铺信息与入驻接口。
 export interface Merchant {
   id: number;
   userId: number;
@@ -61,23 +62,17 @@ export interface MerchantSettingDTO {
   notice: string;
 }
 
-/**
- * 获取我的店铺信息
- */
+// 获取当前登录商家的店铺资料与审核状态。
 export async function getMyStore() {
   return request.get<Merchant>('/merchant/my-store');
 }
 
-/**
- * 商家入驻/更新信息
- */
+// 商家首次入驻或补充入驻资料都走这个接口。
 export async function applyStore(data: MerchantApplyDTO) {
   return request.post<void>('/merchant/apply', data);
 }
 
-/**
- * 更新店铺运营设置
- */
+// 更新营业状态、配送费、起送价等运营配置。
 export async function updateStoreSettings(data: MerchantSettingDTO) {
   return request.put<void>('/merchant/settings', data);
 }

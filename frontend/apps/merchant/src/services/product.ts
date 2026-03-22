@@ -1,6 +1,6 @@
 import request from './request';
 
-// 药品数据接口
+// 商家端商品与评价管理接口。
 export interface Medicine {
   id: number;
   name: string;
@@ -22,7 +22,7 @@ export interface Medicine {
   updateTime?: string;
 }
 
-// 创建/更新 DTO
+// 创建和更新商品时共用的数据结构。
 export interface MedicineDTO {
   name: string;
   categoryId: number;
@@ -37,7 +37,7 @@ export interface MedicineDTO {
   productionDate?: string;
 }
 
-// 查询参数
+// 商品列表查询条件。
 export interface MedicineQuery extends Record<string, any> {
   page?: number;
   size?: number;
@@ -46,7 +46,7 @@ export interface MedicineQuery extends Record<string, any> {
   status?: number;
 }
 
-// 分页结果
+// 通用分页返回结构。
 export interface PageResult<T> {
   records: T[];
   total: number;
@@ -77,60 +77,48 @@ export interface MedicineComment {
   createTime: string;
 }
 
+// 商家查看商品评价列表，并支持分页。
 export async function getMerchantCommentList(page: number = 1, size: number = 10) {
   return request.get<PageResult<MedicineComment>>('/medicine/comment/merchant', {
     params: { page, size }
   });
 }
 
+// 回复评价时只提交回复内容，后端按 commentId 绑定到评价记录。
 export async function replyComment(commentId: number, content: string) {
   return request.post(`/medicine/comment/reply/${commentId}`, { reply: content });
 }
 
-/**
- * 分页获取药品列表
- */
+// 获取当前商家自己的商品列表。
 export async function getMedicineList(params: MedicineQuery) {
   return request.get<PageResult<Medicine>>('/medicine/merchant/list', {
     params,
   });
 }
 
-/**
- * 获取药品详情
- */
+// 获取单个商品详情，编辑页会复用这个接口。
 export async function getMedicineDetail(id: number) {
   return request.get<Medicine>(`/medicine/${id}`);
 }
 
-/**
- * 创建药品
- */
+// 创建商品。
 export async function createMedicine(data: MedicineDTO) {
   return request.post<void>('/medicine', data);
 }
 
-/**
- * 更新药品
- */
+// 更新商品。
 export async function updateMedicine(id: number, data: MedicineDTO) {
   return request.put<void>(`/medicine/${id}`, data);
 }
 
-/**
- * 更新药品状态 (上下架)
- */
+// 更新商品上架/下架状态。
 export async function updateMedicineStatus(id: number, status: number) {
   return request.patch<void>(`/medicine/${id}/status`, null, {
     params: { status },
   });
 }
 
-/**
- * 获取分类树/列表
- * (假设后端有这个接口，通常在 CategoryController)
- */
+// 获取分类列表，供商品发布和筛选复用。
 export async function getCategoryList() {
-  // 暂时假设有一个获取所有分类的接口，具体路径可能需要确认
   return request.get<Category[]>('/category/list');
 }

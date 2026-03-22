@@ -28,6 +28,8 @@ public class CouponController {
 
     private final CouponService couponService;
 
+    // 优惠券接口同时服务管理端维护和用户端可领取列表。
+
     @Operation(summary = "创建优惠券")
     @PostMapping("/create")
     public Result create(@RequestBody CouponCreateDTO createDTO) {

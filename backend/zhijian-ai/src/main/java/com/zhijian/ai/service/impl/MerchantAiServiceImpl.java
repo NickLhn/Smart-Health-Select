@@ -35,6 +35,7 @@ public class MerchantAiServiceImpl implements MerchantAiService {
 
     @Override
     public Result<AIChatResponse> chat(AIChatRequest request, String authorization, String requestId) {
+        // 商家端同步对话接口。
         String rid = normalizeRequestId(requestId);
         Long userId = UserContext.getUserId();
         if (userId == null) {
@@ -49,6 +50,7 @@ public class MerchantAiServiceImpl implements MerchantAiService {
         }
 
         try {
+            // 商家对话历史统一使用 merchant 前缀。
             LangGraphAgentClient.AgentChatData agentData = agentClient.chat(
                     buildConversationId(userId),
                     message.trim(),
@@ -90,6 +92,7 @@ public class MerchantAiServiceImpl implements MerchantAiService {
         }
 
         String conversationId = buildConversationId(userId);
+        // 流式对话异步执行，减少接口阻塞时间。
         CompletableFuture.runAsync(() -> {
             try {
                 LangGraphAgentClient.AgentChatData agentData = agentClient.chat(conversationId, message.trim(), authorization, rid);
@@ -101,6 +104,7 @@ public class MerchantAiServiceImpl implements MerchantAiService {
                 emitter.complete();
             } catch (Exception e) {
                 AiError err = classifyError(e, rid);
+                // 根据错误类型返回更贴近商家用户理解的提示。
                 String msg = switch (err.type) {
                     case "AUTH" -> "登录已过期，请重新登录后再试。";
                     case "TIMEOUT" -> "AI响应超时，请稍后再试。";
@@ -116,6 +120,7 @@ public class MerchantAiServiceImpl implements MerchantAiService {
 
     @Override
     public Result<List<ChatHistoryMessage>> history() {
+        // 历史消息从 memoryRepository 读取，再转成前端可直接渲染的结构。
         Long userId = UserContext.getUserId();
         if (userId == null) {
             return Result.failed("请先登录");
@@ -164,6 +169,7 @@ public class MerchantAiServiceImpl implements MerchantAiService {
 
     @Override
     public Result<Boolean> clearHistory() {
+        // 清空当前商家用户的 AI 对话历史。
         Long userId = UserContext.getUserId();
         if (userId == null) {
             return Result.failed("请先登录");
@@ -206,6 +212,7 @@ public class MerchantAiServiceImpl implements MerchantAiService {
     }
 
     private void sendError(SseEmitter emitter, AiError error) {
+        // 错误信息通过 SSE 的 error 事件单独发送。
         try {
             String payload = objectMapper.writeValueAsString(
                     Map.of(
@@ -242,6 +249,7 @@ public class MerchantAiServiceImpl implements MerchantAiService {
     }
 
     private void sendCards(SseEmitter emitter, Object cards) {
+        // 推荐卡片为空时不发送事件。
         if (cards == null) {
             return;
         }
@@ -259,6 +267,7 @@ public class MerchantAiServiceImpl implements MerchantAiService {
     }
 
     private void sendAction(SseEmitter emitter, Object action) {
+        // action 事件用于指导前端执行跳转或辅助动作。
         if (action == null) {
             return;
         }
@@ -319,6 +328,7 @@ public class MerchantAiServiceImpl implements MerchantAiService {
     }
 
     private String normalizeRequestId(String raw) {
+        // requestId 优先使用前端传入值，否则自动生成。
         String val = raw == null ? "" : raw.trim();
         if (!val.isEmpty()) {
             return val;
@@ -327,6 +337,7 @@ public class MerchantAiServiceImpl implements MerchantAiService {
     }
 
     private AiError classifyError(Exception e, String requestId) {
+        // 将下游异常统一映射成商家端可识别的错误类型。
         Throwable cause = unwrapCause(e);
         if (cause instanceof LangGraphAgentClient.AgentHttpException agentHttp) {
             int status = agentHttp.getStatus();
@@ -354,6 +365,7 @@ public class MerchantAiServiceImpl implements MerchantAiService {
     }
 
     private Throwable unwrapCause(Throwable e) {
+        // 向下展开异常链，尽量找到最原始的错误来源。
         Throwable cur = e;
         for (int i = 0; i < 8; i++) {
             Throwable next = cur.getCause();

@@ -23,12 +23,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 药品管理控制器
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Tag(name = "药品管理", description = "药品发布、搜索与详情")
 @RestController
 @RequestMapping("/medicine")
@@ -37,6 +31,8 @@ public class MedicineController {
 
     private final MedicineService medicineService;
     private final MedicineFootprintService footprintService;
+
+    // ========================= 商家侧药品管理 =========================
 
     @Operation(summary = "发布药品 (商家)")
     @PostMapping
@@ -116,6 +112,7 @@ public class MedicineController {
         }
 
         if ("SELLER".equalsIgnoreCase(role)) {
+            // 商家只能查看自己店铺下的药品详情，避免越权读取其他商家的商品。
             Long sellerId = UserContext.getUserId();
             if (sellerId == null || medicine == null || !sellerId.equals(medicine.getSellerId())) {
                 return Result.failed("药品不存在或无权查看");
@@ -124,6 +121,7 @@ public class MedicineController {
         }
 
         if (!"ADMIN".equalsIgnoreCase(role) && !"PHARMACIST".equalsIgnoreCase(role)) {
+            // 普通用户只能看到已上架药品，并在登录状态下记录浏览足迹。
             if (medicine == null || medicine.getStatus() == null || medicine.getStatus() != 1) {
                 return Result.failed("药品不存在");
             }
@@ -137,6 +135,7 @@ public class MedicineController {
         return Result.success(medicine);
     }
     
+    // ========================= 用户侧足迹 =========================
     @Operation(summary = "获取我的足迹")
     @GetMapping("/footprints")
     public Result<IPage<Medicine>> footprints(@RequestParam(defaultValue = "1") Integer page,
@@ -148,7 +147,7 @@ public class MedicineController {
         return Result.success(footprintService.myFootprints(userId, page, size));
     }
 
-    // ================== 管理端接口 ==================
+    // ========================= 管理端接口 =========================
 
     @Operation(summary = "分页搜索药品 (管理端)")
     @GetMapping("/admin/list")
@@ -194,4 +193,3 @@ public class MedicineController {
         return Result.success(null, "状态更新成功");
     }
 }
-

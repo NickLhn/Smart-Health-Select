@@ -15,6 +15,7 @@ public class ImServiceImpl extends ServiceImpl<ImMessageMapper, ImMessage> imple
 
     @Override
     public ImMessage sendMessage(Long fromUserId, Long toUserId, String content, Integer type) {
+        // 发送消息时默认把未读状态置为 0。
         ImMessage message = new ImMessage();
         message.setFromUserId(fromUserId);
         message.setToUserId(toUserId);
@@ -27,6 +28,7 @@ public class ImServiceImpl extends ServiceImpl<ImMessageMapper, ImMessage> imple
 
     @Override
     public List<ImMessage> getHistory(Long userId1, Long userId2) {
+        // 会话历史按时间升序返回，便于前端直接渲染聊天顺序。
         return this.list(new LambdaQueryWrapper<ImMessage>()
                 .and(w -> w.eq(ImMessage::getFromUserId, userId1).eq(ImMessage::getToUserId, userId2))
                 .or(w -> w.eq(ImMessage::getFromUserId, userId2).eq(ImMessage::getToUserId, userId1))
@@ -35,6 +37,7 @@ public class ImServiceImpl extends ServiceImpl<ImMessageMapper, ImMessage> imple
 
     @Override
     public List<Map<String, Object>> getContacts(Long userId) {
+        // 联系人列表由“我发过的人”和“给我发过的人”两部分合并得到。
         List<ImMessage> sent = this.list(new LambdaQueryWrapper<ImMessage>()
                 .eq(ImMessage::getFromUserId, userId)
                 .groupBy(ImMessage::getToUserId)
@@ -52,9 +55,11 @@ public class ImServiceImpl extends ServiceImpl<ImMessageMapper, ImMessage> imple
         return contactIds.stream().map(id -> {
             Map<String, Object> map = new HashMap<>();
             map.put("userId", id);
-            map.put("name", "用户 " + id); // TODO: Fetch real name
+            // 当前联系人名称仍然是兜底占位值，后续可以再补真实昵称查询。
+            map.put("name", "用户 " + id);
             map.put("avatar", "");
             
+            // 每个联系人补最后一条消息和未读数。
             ImMessage lastMsg = this.getOne(new LambdaQueryWrapper<ImMessage>()
                     .and(w -> w.eq(ImMessage::getFromUserId, userId).eq(ImMessage::getToUserId, id))
                     .or(w -> w.eq(ImMessage::getFromUserId, id).eq(ImMessage::getToUserId, userId))
@@ -76,6 +81,7 @@ public class ImServiceImpl extends ServiceImpl<ImMessageMapper, ImMessage> imple
     
     @Override
     public void markAsRead(Long fromUserId, Long toUserId) {
+        // 把某个联系人发来的未读消息全部标记为已读。
         this.update(new LambdaUpdateWrapper<ImMessage>()
                 .eq(ImMessage::getFromUserId, fromUserId)
                 .eq(ImMessage::getToUserId, toUserId)
@@ -83,4 +89,3 @@ public class ImServiceImpl extends ServiceImpl<ImMessageMapper, ImMessage> imple
                 .set(ImMessage::getReadStatus, 1));
     }
 }
-

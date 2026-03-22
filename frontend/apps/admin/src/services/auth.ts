@@ -1,5 +1,6 @@
 import request from './request';
 
+// 管理端认证与账户相关接口。
 export interface LoginParams {
   username?: string;
   password?: string;
@@ -39,6 +40,7 @@ export interface LoginResult {
   userInfo: UserInfo;
 }
 
+// 登录、注册、重置密码都走统一的用户认证接口，只通过 role 区分端侧身份。
 export const login = (params: LoginParams) => {
   return request.post<LoginResult>('/auth/login', params);
 };
@@ -52,13 +54,15 @@ export const resetPassword = (params: ResetPasswordParams) => {
 };
 
 export const updatePassword = (params: PasswordUpdateParams) => {
-  return request.put('/user/password', params);
+  return request.post('/user/password', params);
 };
 
+// 当前项目的退出登录由前端本地清 token 完成，这里保留统一调用形式。
 export const logout = () => {
   return Promise.resolve(); 
 };
 
+// 验证码接口统一复用短信服务，后端按手机号参数发送。
 export const sendVerifyCode = (mobile: string) => {
   return request.post('/sms/send-code', null, { params: { phone: mobile } });
 };

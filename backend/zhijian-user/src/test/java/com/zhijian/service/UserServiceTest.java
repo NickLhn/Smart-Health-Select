@@ -1,4 +1,4 @@
-package com.zhijian.user.service;
+package com.zhijian.service;
 
 import com.zhijian.common.result.Result;
 import com.zhijian.pojo.user.entity.SysUser;
@@ -118,4 +118,3 @@ public class UserServiceTest {
         assertEquals("密码错误", result.getMessage());
     }
 }
-

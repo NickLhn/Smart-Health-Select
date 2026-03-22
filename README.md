@@ -2,6 +2,18 @@
 
 智健优选是一个多端协同的医药健康服务平台，覆盖用户购药、商家经营、平台运营与骑手配送全流程，并集成 AI 问诊/智能客服与阿里云能力（OSS/短信/OCR）。
 
+## 部署说明
+
+当前仓库以 **宝塔部署方案** 为主：
+
+- 前端 `customer / merchant / admin` 作为静态站点交给宝塔 Nginx 托管
+- 后端以 Spring Boot Jar 方式运行
+- AI 服务支持两种方式：
+  - 直接以 Python 进程运行
+  - 在宝塔环境下通过 `docker-compose.langgraph.yml` 单独容器化运行
+
+仓库已经移除了“整站 Docker 一键部署”方案，只保留宝塔主部署链路和 AI 可选容器化能力。
+
 ## 仓库结构
 
 ```
@@ -19,6 +31,10 @@ Zhijian-System/
 │     ├─ merchant/          商家端（React + Vite，默认 3001）
 │     ├─ admin/             管理端（React + Vite，默认 3002）
 │     └─ rider/             骑手端（Taro）
+├─ deploy/baota/            宝塔部署脚本、环境模板、Nginx 示例
+├─ docker-compose.langgraph.yml  AI 容器化编排（宝塔可选）
+├─ Dockerfile.langgraph     AI Agent 镜像构建文件
+├─ Dockerfile.tools         AI Tools 镜像构建文件
 └─ zhijian_langgraph/       AI 智能体服务（FastAPI + LangGraph）
 ```
 
@@ -76,6 +92,12 @@ python -m uvicorn tools_service.app:app --host 127.0.0.1 --port 18080
 python -m uvicorn agent.app:app --host 127.0.0.1 --port 18081
 ```
 
+如果你采用宝塔部署，也可以保留“本地开发不用 Docker、线上 AI 单独容器化”的方式。对应文件为：
+
+- `docker-compose.langgraph.yml`
+- `Dockerfile.langgraph`
+- `Dockerfile.tools`
+
 ## 配置（环境变量）
 
 仓库不存放任何真实密钥，请通过环境变量注入（本地可用系统环境变量或运行配置）。
@@ -132,6 +154,12 @@ mvn -q clean package -DskipTests
 cd frontend
 pnpm lint
 pnpm build:all
+```
+
+### 宝塔发布包
+
+```bash
+bash deploy/baota/scripts/create_release_bundle.sh
 ```
 
 ## 安全说明

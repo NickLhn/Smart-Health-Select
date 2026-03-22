@@ -13,12 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * 就诊人管理控制器
- *
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Tag(name = "就诊人管理")
 @RestController
 @RequestMapping("/user/patient")
@@ -36,6 +30,7 @@ public class PatientController {
     @Operation(summary = "添加就诊人")
     @PostMapping("/add")
     public Result<Boolean> add(@RequestBody PatientAddDTO patientAddDTO) {
+        // DTO 转实体后统一交给 service 处理默认就诊人等规则。
         Patient patient = new Patient();
         BeanUtils.copyProperties(patientAddDTO, patient);
         return Result.success(patientService.addPatient(patient));
@@ -44,6 +39,7 @@ public class PatientController {
     @Operation(summary = "修改就诊人")
     @PutMapping("/update")
     public Result<Boolean> update(@RequestBody PatientUpdateDTO patientUpdateDTO) {
+        // 就诊人更新同样先做 DTO -> 实体转换，再由 service 校验归属关系。
         Patient patient = new Patient();
         BeanUtils.copyProperties(patientUpdateDTO, patient);
         return Result.success(patientService.updatePatient(patient));

@@ -37,6 +37,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
 
     @Override
     public Long createDelivery(DeliveryCreateDTO createDTO) {
+        // 一个订单只创建一张配送单，避免重复派单。
         Delivery exist = deliveryMapper.selectOne(new LambdaQueryWrapper<Delivery>()
                 .eq(Delivery::getOrderId, createDTO.getOrderId()));
         if (exist != null) {
@@ -46,6 +47,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
         Delivery delivery = new Delivery();
         BeanUtil.copyProperties(createDTO, delivery);
         delivery.setStatus(0);
+        // 配送核销码用于配送完成时校验收货。
         delivery.setVerifyCode(String.format("%04d", RandomUtil.randomInt(10000)));
         delivery.setIsUrgent(createDTO.getIsUrgent() != null ? createDTO.getIsUrgent() : 0);
 
@@ -56,6 +58,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean acceptDelivery(Long deliveryId, Long courierId) {
+        // 只有待接单的配送单才能被骑手接单。
         Delivery delivery = deliveryMapper.selectById(deliveryId);
         if (delivery == null) {
             throw new RuntimeException("配送单不存在");
@@ -75,6 +78,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
 
         boolean success = deliveryMapper.updateById(delivery) > 0;
         if (success) {
+            // 接单成功后发事件，供订单侧同步状态。
             eventPublisher.publishEvent(new DeliveryStatusEvent(delivery.getOrderId(), delivery.getId(), 1));
         }
         return success;
@@ -83,6 +87,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean completeDelivery(Long deliveryId, Long courierId, String proofImage, String verifyCode) {
+        // 只有接单骑手本人且配送中状态，才能完成配送。
         Delivery delivery = deliveryMapper.selectById(deliveryId);
         if (delivery == null) {
             throw new RuntimeException("配送单不存在");
@@ -101,6 +106,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
 
         boolean success = deliveryMapper.updateById(delivery) > 0;
         if (success) {
+            // 配送完成后通知订单模块更新状态。
             eventPublisher.publishEvent(new DeliveryStatusEvent(delivery.getOrderId(), delivery.getId(), 2));
         }
         return success;
@@ -126,6 +132,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
     public Map<String, Object> getRiderStats(Long courierId) {
         Map<String, Object> stats = new HashMap<>();
 
+        // 分别统计今日、当月和累计配送收入与单量。
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         List<Delivery> todayDeliveries = deliveryMapper.selectList(new LambdaQueryWrapper<Delivery>()
                 .eq(Delivery::getCourierId, courierId)
@@ -176,6 +183,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
         log.info("查询待接单列表: page={}, size={}, count={}", page, size, result.getRecords().size());
 
         if (result.getRecords() != null) {
+            // 待接单列表里对收件人姓名和手机号做脱敏。
             result.getRecords().forEach(d -> {
                 if (d.getReceiverName() != null && d.getReceiverName().length() > 1) {
                     d.setReceiverName(d.getReceiverName().charAt(0) + "**");
@@ -190,6 +198,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
 
     @Override
     public IPage<Delivery> listMyDeliveries(Long courierId, Integer status, int page, int size) {
+        // 骑手自己的配送列表支持按状态筛选。
         return deliveryMapper.selectPage(new Page<>(page, size), new LambdaQueryWrapper<Delivery>()
                 .eq(Delivery::getCourierId, courierId)
                 .eq(status != null, Delivery::getStatus, status)

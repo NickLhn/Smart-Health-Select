@@ -18,12 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * 药品收藏服务实现类
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Service
 public class MedicineFavoriteServiceImpl extends ServiceImpl<MedicineFavoriteMapper, MedicineFavorite> implements MedicineFavoriteService {
 
@@ -33,6 +27,7 @@ public class MedicineFavoriteServiceImpl extends ServiceImpl<MedicineFavoriteMap
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result toggle(Long medicineId, Long userId) {
+        // 收藏前先确认药品存在。
         Medicine medicine = medicineService.getById(medicineId);
         if (medicine == null) {
             return Result.failed("药品不存在");
@@ -44,11 +39,11 @@ public class MedicineFavoriteServiceImpl extends ServiceImpl<MedicineFavoriteMap
         
         MedicineFavorite favorite = this.getOne(wrapper);
         if (favorite != null) {
-            // 已收藏，则取消收藏
+            // 已收藏则取消收藏。
             this.removeById(favorite.getId());
             return Result.success(false, "已取消收藏");
         } else {
-            // 未收藏，则添加收藏
+            // 未收藏则新增收藏记录。
             favorite = new MedicineFavorite();
             favorite.setUserId(userId);
             favorite.setMedicineId(medicineId);
@@ -76,7 +71,7 @@ public class MedicineFavoriteServiceImpl extends ServiceImpl<MedicineFavoriteMap
         
         IPage<MedicineFavorite> favoritePage = this.page(pageParam, wrapper);
         
-        // 转换结果，填充药品信息
+        // 把收藏记录补全为药品信息列表。
         List<Long> medicineIds = favoritePage.getRecords().stream()
                 .map(MedicineFavorite::getMedicineId)
                 .collect(Collectors.toList());
@@ -86,10 +81,7 @@ public class MedicineFavoriteServiceImpl extends ServiceImpl<MedicineFavoriteMap
             medicines = medicineService.listByIds(medicineIds);
         }
 
-        // 这里简单返回药品列表，实际项目中可能需要封装成 VO
-        // 为了保持简单，直接返回 Medicine 对象，但在 Page 中替换 Records
-        
-        // 由于 IPage<T> 的类型限制，这里创建一个新的 Page 对象返回
+        // 这里直接返回药品列表，避免前端再做一次额外联查。
         Page<Object> resultPage = new Page<>(page, size);
         resultPage.setTotal(favoritePage.getTotal());
         resultPage.setPages(favoritePage.getPages());
@@ -98,4 +90,3 @@ public class MedicineFavoriteServiceImpl extends ServiceImpl<MedicineFavoriteMap
         return resultPage;
     }
 }
-

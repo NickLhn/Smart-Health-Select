@@ -1,5 +1,6 @@
 import request from './request';
 
+// 用户端优惠券接口。
 export interface UserCoupon {
   id: number;
   couponId: number;
@@ -11,17 +12,17 @@ export interface UserCoupon {
   useStatus: number; // 0:未使用 1:已使用 2:已过期
 }
 
-// 获取可领取的优惠券列表
+// 获取当前可领取的优惠券列表。
 export const getAvailableCoupons = () => {
   return request.get<UserCoupon[]>('/marketing/coupon/list');
 };
 
-// 获取我的优惠券列表
+// 获取我的优惠券列表。
 export const getMyCoupons = (status?: number) => {
   return request.get<UserCoupon[]>('/marketing/user-coupon/my', { params: { status } });
 };
 
-// 领取优惠券
+// 领取指定优惠券。
 export const receiveCoupon = (couponId: number) => {
   return request.post(`/marketing/user-coupon/receive/${couponId}`);
 };

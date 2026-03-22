@@ -1,5 +1,6 @@
 import request from './request';
 
+// 管理端商家审核与查询接口。
 export interface Merchant {
   id: number;
   userId: number;
@@ -40,17 +41,17 @@ export interface Result<T> {
   data: T;
 }
 
-// 获取商家列表
+// 获取商家分页列表。
 export const getMerchantList = (params: MerchantQuery) => {
   return request.get<PageResult<Merchant>>('/merchant/list', { params });
 };
 
-// 商家审核
+// 执行商家审核。
 export const auditMerchant = (id: number, auditStatus: number, auditRemark?: string) => {
   return request.put('/merchant/audit', { id, auditStatus, auditRemark });
 };
 
-// 获取商家详情
+// 获取商家详情。
 export const getMerchantDetail = (id: number) => {
   return request.get<Merchant>(`/merchant/${id}`);
 };

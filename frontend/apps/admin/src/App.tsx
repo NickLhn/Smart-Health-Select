@@ -18,8 +18,9 @@ import {
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+// 管理端页面统一使用懒加载，避免一次性加载所有运营页面。
 const Dashboard = lazy(() => import('./pages/dashboard'));
 const UserList = lazy(() => import('./pages/user'));
 const MerchantAudit = lazy(() => import('./pages/user/audit'));
@@ -57,6 +58,7 @@ function getItem(
 }
 
 const items: MenuItem[] = [
+  // 侧边栏菜单与路由路径保持一一对应，便于根据 pathname 直接高亮。
   getItem('工作台', '/dashboard', <PieChartOutlined />),
   getItem('智能体', '/agent', <RobotOutlined />),
   getItem('用户管理', '/user', <UserOutlined />, [
@@ -93,6 +95,7 @@ const MainLayout: React.FC = () => {
   const { user, logout, isAuthenticated } = useAuth();
 
   useEffect(() => {
+    // 管理端所有业务页面都需要登录，未登录直接打回登录页。
     if (!isAuthenticated) {
       navigate('/login');
     }
@@ -128,6 +131,7 @@ const MainLayout: React.FC = () => {
   const openKey = '/' + selectedKey.split('/')[1];
 
   const currentTitle = (() => {
+    // 页面标题与路由集中维护，便于面包屑和页头保持一致。
     const map: Record<string, string> = {
       '/dashboard': '工作台',
       '/user/user-list': '普通用户',
@@ -266,9 +270,11 @@ const App: React.FC = () => {
           <BrowserRouter>
             <Suspense fallback={<RouteFallback />}>
               <Routes>
+                {/* 独立的认证页，不使用后台主布局。 */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                {/* 后台业务页统一包在 MainLayout 下。 */}
                 <Route path="/" element={<MainLayout />}>
                   <Route index element={<Dashboard />} />
                   <Route path="dashboard" element={<Dashboard />} />
@@ -285,7 +291,8 @@ const App: React.FC = () => {
                   <Route path="agent" element={<AdminAgent />} />
                   <Route path="system/agent" element={<AdminAgent />} />
                   <Route path="password" element={<Password />} />
-                  <Route path="*" element={<div>页面开发中...</div>} />
+                  {/* 未匹配路由回工作台，避免落到空白或占位页。 */}
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Route>
               </Routes>
             </Suspense>

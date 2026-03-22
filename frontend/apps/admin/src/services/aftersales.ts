@@ -1,13 +1,13 @@
 import request from './request';
 
-// 售后申请状态
+// 管理端售后管理接口与状态枚举。
 export enum RefundStatus {
   PENDING = 0, // 待审核
   APPROVED = 1, // 审核通过
   REJECTED = 2, // 审核拒绝
 }
 
-// 售后申请类型
+// 售后类型。
 export enum RefundType {
   ONLY_REFUND = 1, // 仅退款
   RETURN_REFUND = 2, // 退货退款
@@ -27,7 +27,7 @@ export interface RefundApply {
   auditReason?: string;
   createTime: string;
   updateTime: string;
-  // 关联字段 (如果后端有填充)
+  // 关联字段，后端明细查询时可能额外返回。
   orderNo?: string;
   username?: string;
 }
@@ -44,12 +44,12 @@ export interface RefundAuditParams {
   auditReason?: string;
 }
 
-// 获取售后申请列表
+// 获取售后申请分页列表。
 export const getRefundList = (params: RefundQuery) => {
   return request.get<any>('/aftersales/list', { params });
 };
 
-// 审核售后申请
+// 管理员或商家审核售后申请。
 export const auditRefund = (data: RefundAuditParams) => {
   return request.post('/aftersales/audit', data);
 };

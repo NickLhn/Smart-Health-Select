@@ -1,5 +1,6 @@
 import request from './request';
 
+// 首页聚合接口返回的数据模型。
 export interface Banner {
   id: number;
   imageUrl: string;
@@ -21,7 +22,8 @@ export interface Medicine {
   price: number;
   stock: number;
   sales: number;
-  specs: string; // Add specs if available in backend entity or DTO, otherwise might be missing
+  // 规格字段依赖后端返回，若后端未填充则前端需要兼容空值。
+  specs: string;
   description?: string;
 }
 
@@ -42,6 +44,7 @@ export interface HomeIndexVO {
   healthArticles?: HealthArticle[];
 }
 
+// 首页使用一个聚合接口，减少首屏并发请求数量。
 export const getHomeIndex = () => {
   return request.get<HomeIndexVO>('/home/index');
 };

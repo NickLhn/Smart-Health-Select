@@ -24,12 +24,6 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * 用户服务实现类
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -38,24 +32,18 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
     private final SysUserMapper userMapper;
     private final RedisUtil redisUtil;
 
+    // ========================= 登录与认证 =========================
+
     @Override
-    /**
-     * 用户登录
-     *
-     * @param loginDTO 登录参数
-     * @return 登录结果
-     */
     public Result login(UserLoginDTO loginDTO) {
         SysUser user = null;
 
-        // 手机号验证码登录
+        // 支持手机号 + 验证码登录，适合注册后快速登录和找回密码场景。
         if (StrUtil.isNotBlank(loginDTO.getMobile()) && StrUtil.isNotBlank(loginDTO.getCaptcha())) {
-            // 校验验证码
             String cacheCode = redisUtil.get("sms:code:" + loginDTO.getMobile());
             if (StrUtil.isBlank(cacheCode) || !cacheCode.equals(loginDTO.getCaptcha())) {
                 return Result.failed("验证码错误或已过期");
             }
-            // 验证通过后删除验证码
             redisUtil.delete("sms:code:" + loginDTO.getMobile());
             
             user = getByMobile(loginDTO.getMobile());
@@ -64,11 +52,9 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
             }
         
         } else {
-            // 账号密码登录
+            // 账号密码登录同时兼容“用户名登录”和“手机号登录”。
             String account = loginDTO.getUsername();
-            // 优先根据用户名查询
             user = getByUsername(account);
-            // 如果用户名查不到，尝试根据手机号查询（支持手机号+密码登录）
             if (user == null) {
                 user = getByMobile(account);
             }
@@ -81,8 +67,7 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
             }
         }
 
-        
-        // 校验角色权限
+        // 同一个账号可能被多个端共用，这里通过 role 限制实际登录入口。
         if (StrUtil.isNotBlank(loginDTO.getRole()) && !loginDTO.getRole().equals(user.getRole())) {
             return Result.failed("角色权限不匹配，禁止登录");
         }
@@ -91,7 +76,7 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
             return Result.failed("账号已被禁用");
         }
 
-        // 生成真实的 JWT Token
+        // 登录成功后签发 JWT，并把用户信息一起返回给前端。
         String token = JwtUtil.generateToken(user.getId(), user.getRole());
         
         Map<String, Object> data = new HashMap<>();
@@ -102,19 +87,11 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
     }
 
     @Override
-    /**
-     * 重置密码
-     *
-     * @param resetPasswordDTO 重置参数
-     * @return 结果
-     */
     public Result resetPassword(UserResetPasswordDTO resetPasswordDTO) {
-        // 校验验证码
         String cacheCode = redisUtil.get("sms:code:" + resetPasswordDTO.getMobile());
         if (StrUtil.isBlank(cacheCode) || !cacheCode.equals(resetPasswordDTO.getCaptcha())) {
             return Result.failed("验证码错误或已过期");
         }
-        // 验证通过后删除验证码
         redisUtil.delete("sms:code:" + resetPasswordDTO.getMobile());
 
         SysUser user = getByMobile(resetPasswordDTO.getMobile());
@@ -122,7 +99,7 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
             return Result.failed("用户不存在");
         }
         
-        // 校验角色 (可选)
+        // 如果前端显式传了 role，则顺带校验一下端侧身份。
         if (StrUtil.isNotBlank(resetPasswordDTO.getRole()) && !resetPasswordDTO.getRole().equals(user.getRole())) {
             return Result.failed("用户角色不匹配");
         }
@@ -133,14 +110,8 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
     }
 
     @Override
-    /**
-     * 用户注册
-     *
-     * @param registerDTO 注册参数
-     * @return 结果
-     */
     public Result register(UserRegisterDTO registerDTO) {
-        // 使用 count 检查，避免 TooManyResultsException
+        // 注册前先做用户名和手机号唯一性校验，避免脏数据进入系统。
         Long usernameCount = userMapper.selectCount(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getUsername, registerDTO.getUsername()));
         if (usernameCount > 0) {
@@ -156,7 +127,6 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
         try {
             SysUser user = new SysUser();
             user.setUsername(registerDTO.getUsername());
-            // 密码加密
             user.setPassword(BCrypt.hashpw(registerDTO.getPassword(), BCrypt.gensalt()));
             user.setMobile(registerDTO.getMobile());
             user.setRole(registerDTO.getRole());
@@ -170,21 +140,15 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
         }
     }
 
+    // ========================= 用户查询与资料维护 =========================
+
     @Override
-    /**
-     * 根据用户名查询用户
-     *
-     * @param username 用户名
-     * @return 用户实体
-     */
     public SysUser getByUsername(String username) {
-        // 使用 selectList 获取所有匹配的用户
         java.util.List<SysUser> users = userMapper.selectList(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getUsername, username)
-                .orderByDesc(SysUser::getCreateTime)); // 按创建时间倒序
+                .orderByDesc(SysUser::getCreateTime));
         
         if (users != null && !users.isEmpty()) {
-            // 如果存在多个，记录警告日志并返回最新创建的那个
             if (users.size() > 1) {
                 log.warn("Found {} users with username {}, returning the latest one.", users.size(), username);
             }
@@ -200,13 +164,11 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
      * @return 用户实体
      */
     public SysUser getByMobile(String mobile) {
-        // 使用 selectList 获取所有匹配的用户
         java.util.List<SysUser> users = userMapper.selectList(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getMobile, mobile)
-                .orderByDesc(SysUser::getCreateTime)); // 按创建时间倒序
+                .orderByDesc(SysUser::getCreateTime));
         
         if (users != null && !users.isEmpty()) {
-            // 如果存在多个，记录警告日志并返回最新创建的那个
             if (users.size() > 1) {
                 log.warn("Found {} users with mobile {}, returning the latest one.", users.size(), mobile);
             }
@@ -216,13 +178,6 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
     }
 
     @Override
-    /**
-     * 更新个人资料
-     *
-     * @param userId    用户ID
-     * @param updateDTO 更新参数
-     * @return 结果
-     */
     public Result updateInfo(Long userId, UserUpdateDTO updateDTO) {
         SysUser user = this.getById(userId);
         if (user == null) {
@@ -244,14 +199,6 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
     }
 
     @Override
-    /**
-     * 修改密码
-     *
-     * @param userId      用户ID
-     * @param oldPassword 旧密码
-     * @param newPassword 新密码
-     * @return 结果
-     */
     public Result updatePassword(Long userId, String oldPassword, String newPassword) {
         SysUser user = this.getById(userId);
         if (user == null) {
@@ -271,35 +218,26 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
         Page<SysUser> page = new Page<>(query.getPage(), query.getSize());
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
         
-        // 关键词搜索：用户名、昵称、手机号
+        // 管理端支持按用户名、昵称、手机号做模糊搜索。
         if (StrUtil.isNotBlank(query.getKeyword())) {
             wrapper.and(w -> w.like(SysUser::getUsername, query.getKeyword())
                     .or().like(SysUser::getNickname, query.getKeyword())
                     .or().like(SysUser::getMobile, query.getKeyword()));
         }
         
-        // 角色筛选
         wrapper.eq(StrUtil.isNotBlank(query.getRole()), SysUser::getRole, query.getRole());
         
-        // 状态筛选
         wrapper.eq(query.getStatus() != null, SysUser::getStatus, query.getStatus());
         
         wrapper.orderByDesc(SysUser::getCreateTime);
         
         IPage<SysUser> result = userMapper.selectPage(page, wrapper);
-        // 脱敏处理
+        // 列表返回前统一脱敏，避免密码字段被误传到前端。
         result.getRecords().forEach(u -> u.setPassword(null));
         return result;
     }
 
     @Override
-    /**
-     * 更新用户状态
-     *
-     * @param id     用户ID
-     * @param status 状态
-     * @return 是否成功
-     */
     public boolean updateStatus(Long id, Integer status) {
         SysUser user = new SysUser();
         user.setId(id);
@@ -307,4 +245,3 @@ public class UserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impleme
         return updateById(user);
     }
 }
-

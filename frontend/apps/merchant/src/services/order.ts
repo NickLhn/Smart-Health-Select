@@ -1,5 +1,6 @@
 import request from './request';
 
+// 商家端订单相关接口，覆盖接单后的核心操作。
 export interface OrderQuery {
   page?: number;
   size?: number;
@@ -63,27 +64,27 @@ export interface Result<T> {
   data: T;
 }
 
-// 获取商家订单列表
+// 获取当前商家的订单分页列表。
 export const getSellerOrderList = (params: OrderQuery) => {
   return request.get<PageResult<Order>>('/orders/seller/list', { params });
 };
 
-// 商家发货
+// 发货后订单会进入配送或待收货流程。
 export const shipOrder = (orderId: number) => {
   return request.post(`/orders/${orderId}/ship`);
 };
 
-// 商家审核处方
+// 商家可对处方类订单执行审核，通过 status 区分通过或驳回。
 export const auditOrder = (orderId: number, status: number, reason?: string) => {
   return request.post(`/orders/${orderId}/audit`, { status, reason });
 };
 
-// 商家处理退款
+// 商家处理退款申请，status=1 通常表示同意。
 export const processRefund = (orderId: number, status: number, remark?: string) => {
   return request.post(`/orders/${orderId}/refund/process`, { status, remark });
 };
 
-// 获取订单详情
+// 订单详情用于商家查看商品明细、审核信息和售后信息。
 export const getOrderDetail = (orderId: number) => {
   return request.get<Order>(`/orders/${orderId}`);
 };

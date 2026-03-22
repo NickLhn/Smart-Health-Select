@@ -9,20 +9,14 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/**
- * 轮播图服务实现类
- * 
- * @author Liuhaonan
- * @since 1.0.0
- */
 @Service
 public class BannerServiceImpl extends ServiceImpl<BannerMapper, Banner> implements BannerService {
 
     @Override
     public List<Banner> listEnabled() {
+        // 首页只展示启用状态的轮播图，并按排序字段升序排列。
         return this.list(new LambdaQueryWrapper<Banner>()
                 .eq(Banner::getStatus, 1)
                 .orderByAsc(Banner::getSort));
     }
 }
-

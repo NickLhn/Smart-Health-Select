@@ -1,5 +1,6 @@
 import request from './request';
 
+// 用户端药品与评价查询接口。
 export interface Medicine {
   id: number;
   name: string;
@@ -9,11 +10,12 @@ export interface Medicine {
   stock: number;
   sales: number;
   mainImage: string;
-  specs?: string; // made optional
+  // 规格字段有些场景后端不返回，因此前端按可选值处理。
+  specs?: string;
   description?: string;
-  indication?: string; // 适应症
-  usageMethod?: string; // 用法用量
-  contraindication?: string; // 禁忌
+  indication?: string;
+  usageMethod?: string;
+  contraindication?: string;
   sellerId?: number;
   sellerName?: string;
   status?: number;
@@ -33,7 +35,8 @@ export interface MedicineQuery {
   size?: number;
   categoryId?: number;
   keyword?: string;
-  sort?: string; // default, price_asc, price_desc, sales_desc
+  // 前端约定排序值，再在调用前转换为后端识别的 sortBy/sortOrder。
+  sort?: string;
   sellerId?: number;
 }
 
@@ -45,9 +48,9 @@ export interface PageResult<T> {
   pages: number;
 }
 
-// 获取药品列表（分页+搜索+筛选）
+// 获取药品列表，支持分页、搜索、分类筛选和排序。
 export const getMedicineList = (params: MedicineQuery) => {
-  // Transform sort param to backend expected format
+  // 把前端的排序枚举转换为后端更通用的字段名 + 顺序格式。
   const { sort, ...rest } = params;
   const queryParams: any = { ...rest };
 
@@ -95,12 +98,12 @@ export const getMyCommentList = (page: number = 1, size: number = 10) => {
   });
 };
 
-// 获取分类列表
+// 获取药品分类树/列表，首页和筛选页都会复用。
 export const getCategoryList = () => {
   return request.get<Category[]>('/category/list');
 };
 
-// 获取药品详情
+// 药品详情页通过这个接口展示说明、禁忌、商家等完整信息。
 export const getMedicineDetail = (id: number) => {
   return request.get<Medicine>(`/medicine/${id}`);
 };

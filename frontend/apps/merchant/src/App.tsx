@@ -15,10 +15,11 @@ import {
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { getMyStore } from './services/store';
 import PrivateRoute from './components/private-route';
+// 商家端页面较多，统一使用懒加载降低首屏体积。
 const Dashboard = lazy(() => import('./pages/dashboard'));
 const ProductList = lazy(() => import('./pages/product/list'));
 const ProductEdit = lazy(() => import('./pages/product/edit'));
@@ -54,6 +55,7 @@ function getItem(
 }
 
 const items: MenuItem[] = [
+  // 菜单路径直接复用路由路径，避免出现菜单项和路由脱节。
   getItem('商家工作台', '/dashboard', <DesktopOutlined />),
   getItem('商品管理', '/product', <ShopOutlined />, [
     getItem('商品列表', '/product/list'),
@@ -84,7 +86,7 @@ const MainLayout: React.FC = () => {
     const checkStoreStatus = async () => {
       try {
         const res = await getMyStore();
-        // 如果返回成功但没有数据，说明未入驻
+        // 如果当前账号还没有店铺资料，强制先完成入驻。
         if (res.code === 200 && !res.data) {
           navigate('/store/apply');
         }
@@ -93,8 +95,7 @@ const MainLayout: React.FC = () => {
       }
     };
 
-    // 简单做一个检查，实际项目可能需要更严谨的路由守卫
-    // 仅在普通商家页面场景下检查店铺状态
+    // 这里是轻量级守卫：商家登录后先校验是否已入驻。
     checkStoreStatus();
   }, [user, navigate]);
 
@@ -127,6 +128,7 @@ const MainLayout: React.FC = () => {
 
   const currentTitle = (() => {
     if (selectedKey.startsWith('/product/edit')) return '编辑商品';
+    // 页头标题集中维护，便于和侧边栏、面包屑保持同步。
     const map: Record<string, string> = {
       '/dashboard': '商家工作台',
       '/product/list': '商品列表',
@@ -271,20 +273,20 @@ const App: React.FC = () => {
           <BrowserRouter>
             <Suspense fallback={<RouteFallback />}>
               <Routes>
-                {/* Public Routes */}
+                {/* 公共页面：落地页和认证页。 */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
 
-                {/* 商家入驻/信息完善页面 (需要登录但不需要 MainLayout) */}
+                {/* 商家入驻页面需要登录，但不进入后台标准布局。 */}
                 <Route path="/store/apply" element={
                   <PrivateRoute>
                     <StoreApply />
                   </PrivateRoute>
                 } />
 
-                {/* Protected Routes */}
+                {/* 后台业务页面统一走 PrivateRoute + MainLayout。 */}
                 <Route element={<PrivateRoute />}>
                   <Route element={<MainLayout />}>
                     <Route path="dashboard" element={<Dashboard />} />
@@ -298,7 +300,8 @@ const App: React.FC = () => {
                     <Route path="ai/advisor" element={<AiAdvisorPage />} />
                     <Route path="store/setting" element={<StoreSetting />} />
                     <Route path="password" element={<Password />} />
-                    <Route path="*" element={<div>页面开发中...</div>} />
+                    {/* 兜底回工作台，避免落到无意义的占位页。 */}
+                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
                   </Route>
                 </Route>
               </Routes>

@@ -1,10 +1,12 @@
 import request from './request';
 
+// 管理端仪表盘图表项。
 export interface ChartData {
   name: string;
   value: number;
 }
 
+// 管理端首页概览数据。
 export interface DashboardData {
   totalOrders: number;
   totalSales: number;
@@ -12,7 +14,7 @@ export interface DashboardData {
   todaySales: number;
   totalUsers: number;
 
-  // To-Do
+  // 这两个字段用于管理端待处理事项卡片。
   pendingAudit: number;
   pendingRefund: number;
 
@@ -20,6 +22,7 @@ export interface DashboardData {
   statusDistribution: ChartData[];
 }
 
+// 管理端仪表盘当前走订单模块暴露的统计接口。
 export const getDashboardStatistics = () => {
   return request.get<DashboardData>('/dashboard/admin/stats');
 };

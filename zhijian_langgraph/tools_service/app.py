@@ -48,6 +48,7 @@ app = FastAPI(title="tools-service", version="0.1.0")
 
 
 def get_settings() -> Settings:
+    # 配置对象只在首次请求时加载，后续直接复用缓存。
     settings = getattr(app.state, "settings", None)
     if settings is None:
         settings = load_settings()
@@ -57,6 +58,7 @@ def get_settings() -> Settings:
 
 @app.on_event("startup")
 def ensure_medicine_deleted_column():
+    # 启动时兜底补齐 deleted 字段，兼容旧库结构。
     settings = get_settings()
     try:
         with get_conn(settings) as conn:
@@ -80,12 +82,14 @@ def current_user(
     authorization: Optional[str] = Header(default=None),
     settings: Settings = Depends(get_settings),
 ) -> AuthUser:
+    # 所有工具接口都复用后端 JWT 做鉴权。
     return authenticate_user(settings, authorization)
 
 def current_user_and_token(
     authorization: Optional[str] = Header(default=None),
     settings: Settings = Depends(get_settings),
 ) -> tuple[AuthUser, str]:
+    # 某些接口不仅要识别用户，还要把原始 token 继续透传给后端。
     user = authenticate_user(settings, authorization)
     token = (authorization or "").split(" ", 1)[-1].strip()
     if not token:
@@ -97,6 +101,7 @@ def current_seller_user(
     authorization: Optional[str] = Header(default=None),
     settings: Settings = Depends(get_settings),
 ) -> AuthUser:
+    # 商家专属工具接口统一在这里做角色校验。
     user = authenticate_user(settings, authorization)
     if user.role != "SELLER":
         raise HTTPException(status_code=403, detail="Seller role required")
@@ -117,6 +122,7 @@ def current_admin_user_and_token(
     authorization: Optional[str] = Header(default=None),
     settings: Settings = Depends(get_settings),
 ) -> tuple[AuthUser, str]:
+    # 管理端工具接口需要限制为管理员角色。
     user, token = current_user_and_token(authorization=authorization, settings=settings)
     if user.role != "ADMIN":
         raise HTTPException(status_code=403, detail="Admin role required")
@@ -124,6 +130,7 @@ def current_admin_user_and_token(
 
 
 def _merchant_missing_fields(merchant: dict) -> list[str]:
+    # 统一判断商家入驻资料是否完整，供 AI 和后台工具共用。
     def present(key: str) -> bool:
         v = merchant.get(key)
         if v is None:
@@ -153,6 +160,7 @@ def _merchant_missing_fields(merchant: dict) -> list[str]:
 
 
 def _sanitize_merchant(merchant: dict, reveal_fields: set[str]) -> dict:
+    # 对商家资料做脱敏，避免工具接口把完整敏感信息直接返回给模型或前端。
     def include_full(field: str) -> bool:
         return field in reveal_fields
 
@@ -189,6 +197,7 @@ def _resolve_time_range(
     start: Optional[str],
     end: Optional[str],
 ) -> tuple[datetime, datetime, str]:
+    # 把自然语言侧的时间范围概念收敛成明确的起止时间。
     tr = (time_range or "").strip() or "today"
     now = datetime.now()
     today_start = datetime(now.year, now.month, now.day)
@@ -219,6 +228,7 @@ def _resolve_time_range(
     raise HTTPException(status_code=400, detail="Invalid timeRange")
 
 def _backend_url(settings: Settings, path: str) -> str:
+    # 后端地址统一通过配置拼接，避免各接口手写 base url。
     base = settings.backend_base_url.rstrip("/")
     p = (path or "").strip()
     if not p.startswith("/"):
@@ -226,6 +236,7 @@ def _backend_url(settings: Settings, path: str) -> str:
     return base + p
 
 def _raise_on_backend_result(payload: dict) -> dict:
+    # tools-service 复用后端返回格式，统一在这里把业务错误转换成 HTTP 异常。
     try:
         code = int(payload.get("code"))
     except (TypeError, ValueError):
@@ -240,6 +251,7 @@ def _raise_on_backend_result(payload: dict) -> dict:
     raise HTTPException(status_code=400, detail=message)
 
 class CreateFromCartPayload(BaseModel):
+    # AI 帮用户下单时使用的购物车下单载荷。
     cartItemIds: list[int] = Field(..., min_length=1)
     addressId: int
     userCouponId: Optional[int] = None
@@ -248,6 +260,7 @@ class CreateFromCartPayload(BaseModel):
 
 
 class CartAddPayload(BaseModel):
+    # AI 帮用户加购时使用的参数模型。
     medicineId: int
     count: int = Field(default=1, ge=1, le=999)
 

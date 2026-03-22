@@ -1,5 +1,6 @@
 import request from './request';
 
+// 商家端 AI 助手接口。
 export interface ChatRequest {
     message: string;
 }
@@ -26,28 +27,33 @@ export interface StreamCallbacks {
     onError: (error: any) => void;
 }
 
+// 普通对话接口，适合一次性等待完整回答。
 export const sendChatMessage = async (message: string): Promise<AIChatResponse> => {
     const res = await request.post<AIChatResponse>('/merchant/ai/chat', { message }, { timeout: 60000 });
     return res.data;
 };
 
+// 获取商家 AI 对话历史。
 export const getChatHistory = async (): Promise<ChatHistoryMessage[]> => {
     const res = await request.get<ChatHistoryMessage[]>('/merchant/ai/history', { timeout: 20000 });
     return res.data;
 };
 
+// 清空商家 AI 对话历史。
 export const clearChatHistory = async (): Promise<boolean> => {
     const res = await request.delete<boolean>('/merchant/ai/history', { timeout: 20000 });
     return res.data;
 };
 
 const buildRequestId = () => {
+    // 为每次流式会话生成唯一 requestId，便于后端日志跟踪。
     if (typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function') {
         return (crypto as any).randomUUID();
     }
     return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 };
 
+// 流式对话接口，适合边生成边展示回答。
 export const streamChat = async (
     params: ChatRequest,
     callbacks: StreamCallbacks
@@ -87,6 +93,7 @@ export const streamChat = async (
             buffer += decoder.decode(value, { stream: true });
             buffer = buffer.replace(/\r\n/g, '\n');
 
+            // SSE 事件之间通过空行分隔。
             const parts = buffer.split('\n\n');
             buffer = parts.pop() || '';
 
