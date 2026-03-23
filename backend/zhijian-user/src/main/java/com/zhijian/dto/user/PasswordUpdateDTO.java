@@ -6,9 +6,6 @@ import lombok.Data;
 
 /**
  * 修改密码 DTO
- * 
- * @author Liuhaonan
- * @since 1.0.0
  */
 @Data
 @Schema(description = "修改密码参数")

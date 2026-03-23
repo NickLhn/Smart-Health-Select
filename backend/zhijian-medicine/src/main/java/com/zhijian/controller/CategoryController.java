@@ -12,10 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 药品分类控制器
- * 
- * @author Liuhaonan
- * @since 1.0.0
+ * 药品分类控制器。
  */
 @Tag(name = "分类管理")
 @RestController
@@ -38,7 +35,7 @@ public class CategoryController {
         if (userId == null) {
             return Result.failed("请先登录");
         }
-        // 简化权限校验，假设登录即可操作，实际应限制管理员
+        // 这里暂时只做登录校验，后续可以再收敛到管理员权限。
         categoryService.addCategory(category);
         return Result.success(null, "添加成功");
     }
@@ -65,4 +62,3 @@ public class CategoryController {
         return Result.success(null, "删除成功");
     }
 }
-

@@ -4,28 +4,44 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.zhijian.service.OrderCommentService;
-import com.zhijian.service.OrderService;
-import com.zhijian.user.service.UserService;
 import com.zhijian.common.result.Result;
+import com.zhijian.dto.order.OrderCommentCreateDTO;
+import com.zhijian.mapper.OrderCommentMapper;
 import com.zhijian.pojo.Order;
 import com.zhijian.pojo.OrderComment;
 import com.zhijian.pojo.user.entity.SysUser;
-import com.zhijian.mapper.OrderCommentMapper;
-import com.zhijian.dto.order.OrderCommentCreateDTO;
+import com.zhijian.service.OrderCommentService;
+import com.zhijian.service.OrderService;
+import com.zhijian.user.service.UserService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 订单评价服务实现类。
+ */
 @Service
 public class OrderCommentServiceImpl extends ServiceImpl<OrderCommentMapper, OrderComment> implements OrderCommentService {
 
+    /**
+     * 订单业务服务。
+     */
     @Resource
     private OrderService orderService;
 
+    /**
+     * 用户业务服务。
+     */
     @Resource
     private UserService userService;
 
+    /**
+     * 发表评论。
+     *
+     * @param createDTO 评价参数
+     * @param userId 用户 ID
+     * @return 操作结果
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result comment(OrderCommentCreateDTO createDTO, Long userId) {
@@ -44,12 +60,11 @@ public class OrderCommentServiceImpl extends ServiceImpl<OrderCommentMapper, Ord
             return Result.failed("该订单已评价");
         }
 
-        // 评价里冗余存储昵称和头像，方便前端直接展示评论列表。
+        // 昵称和头像做冗余存储，前端展示评价列表时不需要再回查用户表。
         SysUser user = userService.getById(userId);
         String userName = (user != null && user.getNickname() != null) ? user.getNickname() : "匿名用户";
         String userAvatar = (user != null) ? user.getAvatar() : null;
 
-        // 创建评价记录。
         OrderComment comment = new OrderComment();
         comment.setOrderId(order.getId());
         comment.setUserId(userId);
@@ -59,17 +74,25 @@ public class OrderCommentServiceImpl extends ServiceImpl<OrderCommentMapper, Ord
         comment.setRating(createDTO.getRating());
         comment.setContent(createDTO.getContent());
         comment.setImages(createDTO.getImages());
-        comment.setStatus(0); // 默认显示
+        comment.setStatus(0);
 
         this.save(comment);
 
-        // 订单侧同步标记为“已评价”，避免重复评价。
+        // 订单侧同步标记为已评价，防止重复发表评论。
         order.setCommentStatus(1);
         orderService.updateById(order);
 
         return Result.success(null, "评价成功");
     }
 
+    /**
+     * 获取药品评价列表。
+     *
+     * @param medicineId 药品 ID
+     * @param page 页码
+     * @param size 每页大小
+     * @return 评价分页结果
+     */
     @Override
     public IPage<OrderComment> getMedicineComments(Long medicineId, Integer page, Integer size) {
         Page<OrderComment> pageParam = new Page<>(page, size);
@@ -81,6 +104,14 @@ public class OrderCommentServiceImpl extends ServiceImpl<OrderCommentMapper, Ord
         return this.page(pageParam, wrapper);
     }
 
+    /**
+     * 获取我的评价列表。
+     *
+     * @param userId 用户 ID
+     * @param page 页码
+     * @param size 每页大小
+     * @return 评价分页结果
+     */
     @Override
     public IPage<OrderComment> getMyComments(Long userId, Integer page, Integer size) {
         Page<OrderComment> pageParam = new Page<>(page, size);

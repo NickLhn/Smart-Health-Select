@@ -14,12 +14,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 认证管理控制器。
+ */
 @Tag(name = "认证管理", description = "用户注册与登录")
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
+    /**
+     * 用户业务服务。
+     */
     private final UserService userService;
 
     @Operation(summary = "用户登录")

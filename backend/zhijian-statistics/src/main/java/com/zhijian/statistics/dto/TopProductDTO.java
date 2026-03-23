@@ -5,6 +5,9 @@ import lombok.Data;
 
 import java.io.Serializable;
 
+/**
+ * 热销商品对象。
+ */
 @Data
 @Schema(description = "热销商品")
 public class TopProductDTO implements Serializable {

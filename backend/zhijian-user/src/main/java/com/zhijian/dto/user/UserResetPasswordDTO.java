@@ -6,9 +6,6 @@ import lombok.Data;
 
 /**
  * 用户重置密码 DTO
- * 
- * @author TraeAI
- * @since 1.0.0
  */
 @Data
 @Schema(description = "用户重置密码请求参数")

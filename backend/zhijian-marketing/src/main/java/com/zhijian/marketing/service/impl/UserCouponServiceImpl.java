@@ -19,16 +19,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * 用户优惠券服务实现类。
+ */
 @Service
 @RequiredArgsConstructor
 public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCoupon> implements UserCouponService {
 
+    /**
+     * 优惠券业务服务。
+     */
     private final CouponService couponService;
 
+    /**
+     * 领取优惠券。
+     *
+     * @param couponId 优惠券 ID
+     * @param userId 用户 ID
+     * @return 领取结果
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result receive(Long couponId, Long userId) {
-        // 领取前校验优惠券是否存在、是否失效、是否还有库存。
+        // 领取前校验优惠券是否存在、是否失效以及是否还有库存。
         Coupon coupon = couponService.getById(couponId);
         if (coupon == null) {
             return Result.failed("优惠券不存在");
@@ -47,7 +60,7 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
             return Result.failed("您已领取过该优惠券");
         }
 
-        // 生成用户优惠券记录，并给一段简短券码。
+        // 生成用户优惠券记录，并分配一段简短券码。
         UserCoupon userCoupon = new UserCoupon();
         userCoupon.setCouponId(couponId);
         userCoupon.setUserId(userId);
@@ -63,9 +76,16 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
         return Result.success();
     }
 
+    /**
+     * 查询我的优惠券列表。
+     *
+     * @param userId 用户 ID
+     * @param status 使用状态
+     * @return 用户优惠券列表
+     */
     @Override
     public List<UserCouponDTO> myCoupons(Long userId, Integer status) {
-        // 我的优惠券列表会把用户券和优惠券主表做一次组装。
+        // 用户券记录和优惠券主表信息在这里做一次组装返回。
         LambdaQueryWrapper<UserCoupon> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(UserCoupon::getUserId, userId)
                 .eq(status != null, UserCoupon::getUseStatus, status)
@@ -95,6 +115,12 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
         return result;
     }
 
+    /**
+     * 核销优惠券。
+     *
+     * @param userCouponId 用户优惠券记录 ID
+     * @param orderId 订单 ID
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void useCoupon(Long userCouponId, Long orderId) {
@@ -117,9 +143,16 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
                 .update();
     }
 
+    /**
+     * 计算优惠券可抵扣金额。
+     *
+     * @param userCouponId 用户优惠券记录 ID
+     * @param orderAmount 订单金额
+     * @return 可抵扣金额
+     */
     @Override
     public BigDecimal getCouponAmount(Long userCouponId, BigDecimal orderAmount) {
-        // 金额试算阶段只返回可抵扣金额，不直接修改用户券状态。
+        // 金额试算阶段只返回抵扣金额，不直接修改用户券状态。
         UserCoupon userCoupon = this.getById(userCouponId);
         if (userCoupon == null) {
             return BigDecimal.ZERO;

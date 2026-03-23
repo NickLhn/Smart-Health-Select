@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+/**
+ * 每日销售数据对象。
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

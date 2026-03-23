@@ -9,9 +9,6 @@ import java.io.Serializable;
 
 /**
  * 系统配置实体
- *
- * @author TraeAI
- * @since 1.0.0
  */
 @Data
 @TableName("sys_config")

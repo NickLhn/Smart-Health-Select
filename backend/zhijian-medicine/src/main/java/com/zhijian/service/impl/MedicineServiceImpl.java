@@ -35,6 +35,9 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.Random;
 
+/**
+ * 药品服务实现类。
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -266,6 +269,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         if (ids == null || ids.isEmpty()) {
             return false;
         }
+        // 批量上下架直接走一条 update 语句，避免逐条更新。
         return update(new LambdaUpdateWrapper<Medicine>()
                 .in(Medicine::getId, ids)
                 .eq(Medicine::getDeleted, 0)
@@ -327,10 +331,10 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
     public boolean deductStock(Long medicineId, Integer count) {
         String key = STOCK_KEY_PREFIX + medicineId;
         
-        // 执行 Lua 脚本
+        // Lua 脚本里同时做库存校验和扣减，避免并发超卖。
         Long result = stringRedisTemplate.execute(stockDeductScript, Collections.singletonList(key), String.valueOf(count));
         
-        // 如果Key不存在 (返回 -1)，则从数据库加载并重试
+        // Redis 里还没有库存缓存时，先从数据库回填再重试一次。
         if (result == -1) {
             Medicine medicine = this.getById(medicineId);
             if (medicine == null) {
@@ -338,22 +342,17 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
                 return false;
             }
             updateStockCache(medicineId, medicine.getStock());
-            // 重试
             result = stringRedisTemplate.execute(stockDeductScript, Collections.singletonList(key), String.valueOf(count));
         }
         
         if (result == 1) {
-            // Redis 扣减成功，同步更新数据库
-            // 这里为了简单，直接执行 SQL update set stock = stock - count
-            // 生产环境建议发送 MQ 异步扣减
+            // Redis 扣减成功后再同步数据库，当前实现走同步 SQL 更新。
             boolean updateDb = this.update().setSql("stock = stock - " + count)
                     .eq("id", medicineId)
                     .update();
             if (!updateDb) {
                 log.error("Stock deducted in Redis but failed in DB! MedicineId: {}", medicineId);
-                // 此时数据不一致，Redis库存少，DB库存多。
-                // 简单的补偿：把 Redis 库存加回去 (或者不做处理，以此为准)
-                // stringRedisTemplate.opsForValue().increment(key, count);
+                // 这里留给后续做补偿或消息队列异步对账。
             }
             return true;
         }
@@ -365,7 +364,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
     public boolean restoreStock(Long medicineId, Integer count) {
         String key = STOCK_KEY_PREFIX + medicineId;
         
-        // 1. 恢复 Redis 库存
+        // 先恢复 Redis，再恢复数据库，尽量保持热点读的一致性。
         if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(key))) {
              Medicine medicine = this.getById(medicineId);
              if (medicine != null) {
@@ -374,7 +373,6 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         }
         stringRedisTemplate.opsForValue().increment(key, count);
         
-        // 2. 恢复 DB 库存
         return this.update().setSql("stock = stock + " + count)
                 .eq("id", medicineId)
                 .update();

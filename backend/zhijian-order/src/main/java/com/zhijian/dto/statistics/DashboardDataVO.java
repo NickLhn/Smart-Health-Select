@@ -5,23 +5,74 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * 仪表盘数据视图对象。
+ */
 @Data
 public class DashboardDataVO {
-    private Long totalOrders;
-    private BigDecimal totalSales;
-    private Long todayOrders;
-    private BigDecimal todaySales;
-    private Long totalUsers; // Only for admin
-    private Long productCount; // Only for merchant (or both)
-    
-    // To-Do Counts
-    private Long pendingPayment; // Status 0
-    private Long pendingShipment; // Status 1
-    private Long pendingAudit; // Status 7
-    private Long pendingRefund; // Status 4
 
+    /**
+     * 订单总数。
+     */
+    private Long totalOrders;
+
+    /**
+     * 销售总额。
+     */
+    private BigDecimal totalSales;
+
+    /**
+     * 今日订单数。
+     */
+    private Long todayOrders;
+
+    /**
+     * 今日销售额。
+     */
+    private BigDecimal todaySales;
+
+    /**
+     * 用户总数。
+     */
+    private Long totalUsers;
+
+    /**
+     * 商品总数。
+     */
+    private Long productCount;
+
+    /**
+     * 待支付数量。
+     */
+    private Long pendingPayment;
+
+    /**
+     * 待发货数量。
+     */
+    private Long pendingShipment;
+
+    /**
+     * 待审核数量。
+     */
+    private Long pendingAudit;
+
+    /**
+     * 待退款数量。
+     */
+    private Long pendingRefund;
+
+    /**
+     * 订单趋势。
+     */
     private List<ChartDataVO> orderTrend;
+
+    /**
+     * 销售趋势。
+     */
     private List<ChartDataVO> salesTrend;
+
+    /**
+     * 状态分布。
+     */
     private List<ChartDataVO> statusDistribution;
 }
-

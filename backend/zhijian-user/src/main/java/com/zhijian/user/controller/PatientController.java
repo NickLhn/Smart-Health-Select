@@ -13,11 +13,17 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * 就诊人管理控制器。
+ */
 @Tag(name = "就诊人管理")
 @RestController
 @RequestMapping("/user/patient")
 public class PatientController {
 
+    /**
+     * 就诊人业务服务。
+     */
     @Resource
     private PatientService patientService;
 

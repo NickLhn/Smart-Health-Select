@@ -25,29 +25,54 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * 用户端 AI 对话服务实现类。
+ */
 @Service
 @RequiredArgsConstructor
 public class AiServiceImpl implements AiService {
 
+    /**
+     * 对话历史存储接口。
+     */
     private final AiChatMemoryMapper memoryRepository;
+
+    /**
+     * LangGraph 智能体客户端。
+     */
     private final LangGraphAgentClient agentClient;
+
+    /**
+     * JSON 序列化工具。
+     */
     private final ObjectMapper objectMapper;
 
+    /**
+     * 发送用户端同步对话请求。
+     * <p>
+     * 该方法会校验登录状态和消息内容，并将下游异常统一转换为平台定义的错误码。
+     *
+     * @param request 对话请求参数
+     * @param authorization 认证信息
+     * @param requestId 请求 ID
+     * @return AI 对话结果
+     */
     @Override
     public Result<AIChatResponse> chat(AIChatRequest request, String authorization, String requestId) {
-        // 同步对话接口，直接等待 LangGraph 返回完整回答。
         String rid = normalizeRequestId(requestId);
         Long userId = UserContext.getUserId();
         if (userId == null) {
             return Result.failed(ResultCode.UNAUTHORIZED);
         }
+
+        // 先挡掉空消息，避免无意义地打到下游 Agent 服务。
         String message = request == null ? null : request.getMessage();
         if (message == null || message.trim().isEmpty()) {
             return Result.failed("消息不能为空");
         }
 
         try {
-            // conversationId 由后端根据用户身份统一生成。
+            // 用户端会话 ID 由后端统一生成，避免前端随意串改上下文。
             LangGraphAgentClient.AgentChatData agentData = agentClient.chat(
                     buildConversationId(userId),
                     message.trim(),
@@ -60,12 +85,21 @@ public class AiServiceImpl implements AiService {
             resp.setAction(extractAction(agentData));
             return Result.success(resp);
         } catch (Exception e) {
-            // 下游异常统一转换为平台定义的错误码。
             AiError err = classifyError(e, rid);
             return Result.failed(err.resultCode);
         }
     }
 
+    /**
+     * 发起用户端流式对话请求。
+     * <p>
+     * 流式结果通过异步任务推送到 SSE 通道，避免阻塞当前请求线程。
+     *
+     * @param request 对话请求参数
+     * @param authorization 认证信息
+     * @param requestId 请求 ID
+     * @return SSE 推送对象
+     */
     @Override
     public SseEmitter stream(AIChatRequest request, String authorization, String requestId) {
         SseEmitter emitter = new SseEmitter(0L);
@@ -87,7 +121,7 @@ public class AiServiceImpl implements AiService {
         }
 
         String conversationId = buildConversationId(userId);
-        // 流式接口通过异步任务执行，避免阻塞请求线程。
+        // 流式响应改成异步推送，避免请求线程长时间阻塞。
         CompletableFuture.runAsync(() -> {
             try {
                 LangGraphAgentClient.AgentChatData agentData = agentClient.chat(conversationId, message.trim(), authorization, rid);
@@ -99,7 +133,7 @@ public class AiServiceImpl implements AiService {
                 emitter.complete();
             } catch (Exception e) {
                 AiError err = classifyError(e, rid);
-                // 根据异常类型返回更贴近用户理解的提示。
+                // 下游错误统一翻译成前端可直接展示的提示语。
                 String msg = switch (err.type) {
                     case "AUTH" -> "登录已过期，请重新登录后再试。";
                     case "TIMEOUT" -> "AI响应超时，请稍后再试。";
@@ -113,9 +147,15 @@ public class AiServiceImpl implements AiService {
         return emitter;
     }
 
+    /**
+     * 查询当前用户的对话历史。
+     * <p>
+     * 历史消息从存储层读取后，会转换成前端统一使用的消息结构。
+     *
+     * @return 对话历史列表
+     */
     @Override
     public Result<List<ChatHistoryMessage>> history() {
-        // 历史消息从 memoryRepository 读取，再转成前端统一展示结构。
         Long userId = UserContext.getUserId();
         if (userId == null) {
             return Result.failed("请先登录");
@@ -127,6 +167,7 @@ public class AiServiceImpl implements AiService {
             return Result.success(List.of());
         }
 
+        // 历史消息原始结构来自存储层，这里转换成前端统一展示模型。
         long now = System.currentTimeMillis();
         long baseTs = now - (long) rawItems.size() * 10L;
         List<ChatHistoryMessage> result = new ArrayList<>(rawItems.size());
@@ -159,27 +200,46 @@ public class AiServiceImpl implements AiService {
         return Result.success(result);
     }
 
+    /**
+     * 清空当前用户的对话历史。
+     *
+     * @return 清空结果
+     */
     @Override
     public Result<Boolean> clearHistory() {
-        // 清空当前用户的 AI 历史对话。
         Long userId = UserContext.getUserId();
         if (userId == null) {
             return Result.failed("请先登录");
         }
 
+        // 清历史时同时清掉对话消息和状态缓存。
         String conversationId = buildConversationId(userId);
         boolean ok = memoryRepository.clearConversation(conversationId);
         return Result.success(ok);
     }
 
+    /**
+     * 构建会话 ID。
+     * <p>
+     * 管理端和普通用户使用不同前缀，避免历史消息串话。
+     *
+     * @param userId 用户 ID
+     * @return 会话 ID
+     */
     private String buildConversationId(Long userId) {
-        // 管理端和普通用户使用不同前缀，避免历史消息串话。
+        // 管理员与普通用户使用不同前缀，避免共用一个上下文空间。
         if (UserContext.isAdmin()) {
             return "admin:" + userId;
         }
         return "customer:" + userId;
     }
 
+    /**
+     * 发送普通文本消息并完成 SSE 通道。
+     *
+     * @param emitter SSE 推送对象
+     * @param message 消息内容
+     */
     private void completeWithMessage(SseEmitter emitter, String message) {
         try {
             sendMessage(emitter, message);
@@ -188,6 +248,13 @@ public class AiServiceImpl implements AiService {
         }
     }
 
+    /**
+     * 发送错误事件和提示消息并完成 SSE 通道。
+     *
+     * @param emitter SSE 推送对象
+     * @param error 错误信息
+     * @param message 提示消息
+     */
     private void completeWithError(SseEmitter emitter, AiError error, String message) {
         try {
             sendError(emitter, error);
@@ -197,6 +264,12 @@ public class AiServiceImpl implements AiService {
         }
     }
 
+    /**
+     * 发送文本消息事件。
+     *
+     * @param emitter SSE 推送对象
+     * @param message 消息内容
+     */
     private void sendMessage(SseEmitter emitter, String message) {
         try {
             emitter.send(SseEmitter.event().data(message == null ? "" : message));
@@ -204,8 +277,13 @@ public class AiServiceImpl implements AiService {
         }
     }
 
+    /**
+     * 发送错误事件。
+     *
+     * @param emitter SSE 推送对象
+     * @param error 错误信息
+     */
     private void sendError(SseEmitter emitter, AiError error) {
-        // 错误信息通过 SSE 的 error 事件单独发送。
         try {
             String payload = objectMapper.writeValueAsString(
                     Map.of(
@@ -220,6 +298,11 @@ public class AiServiceImpl implements AiService {
         }
     }
 
+    /**
+     * 发送完成事件。
+     *
+     * @param emitter SSE 推送对象
+     */
     private void sendDone(SseEmitter emitter) {
         try {
             emitter.send(SseEmitter.event().name("done").data("[DONE]"));
@@ -227,6 +310,12 @@ public class AiServiceImpl implements AiService {
         }
     }
 
+    /**
+     * 提取推荐卡片数据。
+     *
+     * @param agentData 智能体响应数据
+     * @return 推荐卡片数据
+     */
     private Object extractCards(LangGraphAgentClient.AgentChatData agentData) {
         if (agentData == null || agentData.getState() == null) {
             return null;
@@ -234,6 +323,12 @@ public class AiServiceImpl implements AiService {
         return agentData.getState().get("cards");
     }
 
+    /**
+     * 提取前端动作指令。
+     *
+     * @param agentData 智能体响应数据
+     * @return 前端动作指令
+     */
     private Object extractAction(LangGraphAgentClient.AgentChatData agentData) {
         if (agentData == null || agentData.getState() == null) {
             return null;
@@ -241,8 +336,14 @@ public class AiServiceImpl implements AiService {
         return agentData.getState().get("action");
     }
 
+    /**
+     * 发送推荐卡片事件。
+     *
+     * @param emitter SSE 推送对象
+     * @param cards 推荐卡片数据
+     */
     private void sendCards(SseEmitter emitter, Object cards) {
-        // 推荐卡片为空时不下发事件，减少前端空处理逻辑。
+        // 空卡片不下发，减少前端处理无效事件的分支。
         if (cards == null) {
             return;
         }
@@ -259,8 +360,14 @@ public class AiServiceImpl implements AiService {
         }
     }
 
+    /**
+     * 发送动作指令事件。
+     *
+     * @param emitter SSE 推送对象
+     * @param action 前端动作指令
+     */
     private void sendAction(SseEmitter emitter, Object action) {
-        // action 事件用于指导前端执行跳转等额外动作。
+        // action 事件单独发送，方便前端按类型做跳转或辅助动作。
         if (action == null) {
             return;
         }
@@ -278,6 +385,12 @@ public class AiServiceImpl implements AiService {
         }
     }
 
+    /**
+     * 构建动作指令 JSON 字符串。
+     *
+     * @param map 动作指令数据
+     * @return 动作指令 JSON
+     */
     private String buildActionJson(Map<?, ?> map) {
         String type = Objects.toString(map.get("type"), "");
         String url = Objects.toString(map.get("url"), "");
@@ -293,6 +406,12 @@ public class AiServiceImpl implements AiService {
         return "{\"type\":\"" + escapeJson(type) + "\",\"url\":\"" + escapeJson(url) + "\",\"replace\":" + replace + "}";
     }
 
+    /**
+     * 转义 JSON 字符串内容。
+     *
+     * @param s 原始字符串
+     * @return 转义后的字符串
+     */
     private String escapeJson(String s) {
         if (s == null || s.isEmpty()) {
             return "";
@@ -320,8 +439,14 @@ public class AiServiceImpl implements AiService {
         return sb.toString();
     }
 
+    /**
+     * 规范化请求 ID。
+     *
+     * @param raw 原始请求 ID
+     * @return 规范化后的请求 ID
+     */
     private String normalizeRequestId(String raw) {
-        // requestId 优先复用前端传入值，缺失时后端自动生成。
+        // requestId 优先复用前端值，缺失时后端兜底生成。
         String val = raw == null ? "" : raw.trim();
         if (!val.isEmpty()) {
             return val;
@@ -329,8 +454,15 @@ public class AiServiceImpl implements AiService {
         return UUID.randomUUID().toString();
     }
 
+    /**
+     * 对下游异常进行分类映射。
+     *
+     * @param e 原始异常
+     * @param requestId 请求 ID
+     * @return 分类后的错误信息
+     */
     private AiError classifyError(Exception e, String requestId) {
-        // 把连接异常、超时异常、鉴权异常统一映射到可识别的错误类型。
+        // 统一把下游异常映射成平台级错误类型，控制前端处理面。
         Throwable cause = unwrapCause(e);
         if (cause instanceof LangGraphAgentClient.AgentHttpException agentHttp) {
             int status = agentHttp.getStatus();
@@ -357,8 +489,14 @@ public class AiServiceImpl implements AiService {
         return new AiError("BAD_GATEWAY", ResultCode.AI_BAD_GATEWAY, requestId);
     }
 
+    /**
+     * 展开异常链并返回底层异常。
+     *
+     * @param e 原始异常
+     * @return 底层异常
+     */
     private Throwable unwrapCause(Throwable e) {
-        // 向下展开异常链，尽量定位真正的底层异常。
+        // 尽量向下找到真正的底层异常，避免被包装异常干扰判断。
         Throwable cur = e;
         for (int i = 0; i < 8; i++) {
             Throwable next = cur.getCause();
@@ -370,11 +508,33 @@ public class AiServiceImpl implements AiService {
         return cur;
     }
 
+    /**
+     * AI 调用错误信息。
+     */
     private static class AiError {
+
+        /**
+         * 错误类型。
+         */
         private final String type;
+
+        /**
+         * 平台错误码。
+         */
         private final ResultCode resultCode;
+
+        /**
+         * 请求 ID。
+         */
         private final String requestId;
 
+        /**
+         * 构造 AI 调用错误信息。
+         *
+         * @param type 错误类型
+         * @param resultCode 平台错误码
+         * @param requestId 请求 ID
+         */
         private AiError(String type, ResultCode resultCode, String requestId) {
             this.type = type;
             this.resultCode = resultCode;

@@ -5,9 +5,6 @@ import lombok.Data;
 
 /**
  * 商家查询参数
- *
- * @author TraeAI
- * @since 1.0.0
  */
 @Data
 @Schema(description = "商家查询参数")

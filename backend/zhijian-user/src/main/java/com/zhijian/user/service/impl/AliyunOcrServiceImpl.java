@@ -35,9 +35,6 @@ import java.util.regex.Pattern;
  * 阿里云OCR文字识别服务实现类
  * 
  * 提供营业执照和身份证的文字识别功能，支持从图片URL中提取关键信息
- *
- * @author Liu Haonan
- * @since 1.0.0
  */
 @Service
 @Slf4j

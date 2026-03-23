@@ -5,12 +5,8 @@ import com.zhijian.pojo.OrderComment;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * 订单评价 Mapper 接口
- * 
- * @author Liuhaonan
- * @since 1.0.0
+ * 订单评价数据访问接口。
  */
 @Mapper
 public interface OrderCommentMapper extends BaseMapper<OrderComment> {
 }
-

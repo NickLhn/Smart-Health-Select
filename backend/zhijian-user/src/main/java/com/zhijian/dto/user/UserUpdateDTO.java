@@ -5,9 +5,6 @@ import lombok.Data;
 
 /**
  * 用户信息更新 DTO
- * 
- * @author Liuhaonan
- * @since 1.0.0
  */
 @Data
 @Schema(description = "用户信息更新参数")

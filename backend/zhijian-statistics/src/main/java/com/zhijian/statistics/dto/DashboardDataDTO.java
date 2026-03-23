@@ -7,6 +7,9 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * 仪表盘数据对象。
+ */
 @Data
 @Schema(description = "数据概览DTO")
 public class DashboardDataDTO implements Serializable {

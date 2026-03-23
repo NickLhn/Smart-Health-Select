@@ -6,24 +6,22 @@ import com.zhijian.pojo.medicine.entity.Category;
 import java.util.List;
 
 /**
- * 药品分类服务接口
- * 
- * @author Liuhaonan
- * @since 1.0.0
+ * 药品分类服务接口。
  */
 public interface CategoryService extends IService<Category> {
 
     /**
-     * 获取所有分类（树形结构）
-     * @return 分类列表
+     * 查询分类树。
+     *
+     * @return 分类树列表
      */
     List<Category> listTree();
 
     /**
-     * 添加分类
+     * 添加分类。
+     *
      * @param category 分类信息
      * @return 是否成功
      */
     boolean addCategory(Category category);
 }
-

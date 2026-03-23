@@ -16,26 +16,44 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * 用户优惠券控制器。
+ */
 @Tag(name = "用户优惠券")
 @RestController
 @RequestMapping("/marketing/user-coupon")
 @RequiredArgsConstructor
 public class UserCouponController {
 
+    /**
+     * 用户优惠券业务服务。
+     */
     private final UserCouponService userCouponService;
 
-    // 用户优惠券相关接口：领取、查询我的优惠券。
-
+    /**
+     * 领取优惠券。
+     *
+     * @param couponId 优惠券 ID
+     * @return 领取结果
+     */
     @Operation(summary = "领取优惠券")
     @PostMapping("/receive/{couponId}")
     public Result receive(@PathVariable Long couponId) {
+        // 领取操作始终绑定当前登录用户。
         Long userId = UserContext.getUserId();
         return userCouponService.receive(couponId, userId);
     }
 
+    /**
+     * 查询我的优惠券列表。
+     *
+     * @param status 使用状态
+     * @return 用户优惠券列表
+     */
     @Operation(summary = "我的优惠券")
     @GetMapping("/my")
     public Result<List<UserCouponDTO>> myCoupons(@RequestParam(required = false) Integer status) {
+        // 我的优惠券只按当前用户查询，不允许前端指定 userId。
         Long userId = UserContext.getUserId();
         return Result.success(userCouponService.myCoupons(userId, status));
     }

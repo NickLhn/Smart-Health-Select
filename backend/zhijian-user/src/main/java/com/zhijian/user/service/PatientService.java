@@ -7,9 +7,6 @@ import java.util.List;
 
 /**
  * 就诊人服务接口
- *
- * @author Liuhaonan
- * @since 1.0.0
  */
 public interface PatientService extends IService<Patient> {
 

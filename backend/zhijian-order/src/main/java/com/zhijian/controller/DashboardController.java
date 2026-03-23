@@ -1,9 +1,9 @@
 package com.zhijian.controller;
 
-import com.zhijian.service.OrderService;
 import com.zhijian.common.context.UserContext;
 import com.zhijian.common.result.Result;
 import com.zhijian.dto.statistics.DashboardDataVO;
+import com.zhijian.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -12,18 +12,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 仪表盘控制器
+ * 仪表盘控制器。
  */
 @Tag(name = "仪表盘管理")
 @RestController
 @RequestMapping("/dashboard")
 public class DashboardController {
 
+    /**
+     * 订单业务服务。
+     */
     @Resource
     private OrderService orderService;
 
     /**
-     * 获取商家仪表盘数据
+     * 获取商家仪表盘数据。
+     *
      * @return 仪表盘数据
      */
     @Operation(summary = "获取商家仪表盘数据")
@@ -40,7 +44,8 @@ public class DashboardController {
     }
 
     /**
-     * 获取管理员仪表盘数据
+     * 获取管理员仪表盘数据。
+     *
      * @return 仪表盘数据
      */
     @Operation(summary = "获取管理员仪表盘数据")
@@ -56,4 +61,3 @@ public class DashboardController {
         return Result.success(orderService.getAdminStatistics());
     }
 }
-

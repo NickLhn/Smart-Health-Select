@@ -10,9 +10,6 @@ import java.time.LocalDateTime;
 
 /**
  * 用户实体类
- * 
- * @author Liuhaonan
- * @since 1.0.0
  */
 @Data
 @TableName("sys_user")

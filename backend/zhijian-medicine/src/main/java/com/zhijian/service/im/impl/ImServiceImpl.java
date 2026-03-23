@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 即时通讯服务实现类。
+ */
 @Service
 public class ImServiceImpl extends ServiceImpl<ImMessageMapper, ImMessage> implements ImService {
 

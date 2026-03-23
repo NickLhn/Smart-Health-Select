@@ -6,40 +6,60 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
- * 创建订单请求参数
- * 
- * @author Liuhaonan
- * @since 1.0.0
+ * 创建订单请求对象。
  */
 @Data
 @Schema(description = "创建订单请求参数")
 public class OrderCreateDTO {
 
+    /**
+     * 药品 ID。
+     */
     @Schema(description = "药品ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @NotNull(message = "药品ID不能为空")
     private Long medicineId;
 
+    /**
+     * 购买数量。
+     */
     @Schema(description = "购买数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
     @NotNull(message = "购买数量不能为空")
     @Min(value = 1, message = "购买数量至少为1")
     private Integer quantity;
 
+    /**
+     * 收货人姓名。
+     */
     @Schema(description = "收货人姓名", requiredMode = Schema.RequiredMode.REQUIRED, example = "张三")
     private String receiverName;
 
+    /**
+     * 收货人电话。
+     */
     @Schema(description = "收货人电话", requiredMode = Schema.RequiredMode.REQUIRED, example = "13800138000")
     private String receiverPhone;
 
+    /**
+     * 收货地址。
+     */
     @Schema(description = "收货地址", requiredMode = Schema.RequiredMode.REQUIRED, example = "北京市朝阳区")
     private String receiverAddress;
 
+    /**
+     * 用户优惠券记录 ID。
+     */
     @Schema(description = "优惠券ID (UserCoupon ID)")
     private Long userCouponId;
 
+    /**
+     * 就诊人 ID。
+     */
     @Schema(description = "就诊人ID (处方药必填)")
     private Long patientId;
 
+    /**
+     * 处方图片地址。
+     */
     @Schema(description = "处方图片URL (处方药必填)")
     private String prescriptionImage;
 }
-

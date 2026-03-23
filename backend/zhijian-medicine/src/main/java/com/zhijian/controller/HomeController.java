@@ -22,10 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 首页数据控制器
- * 
- * @author Liuhaonan
- * @since 1.0.0
+ * 首页数据控制器。
  */
 @Tag(name = "首页管理")
 @RestController
@@ -49,21 +46,19 @@ public class HomeController {
     public Result<HomeIndexVO> index() {
         HomeIndexVO vo = new HomeIndexVO();
 
-        // 1. 获取轮播图
+        // 首页聚合接口一次返回轮播图、分类、药品和资讯，减少前端串行请求。
         vo.setBanners(bannerService.listEnabled());
 
-        // 2. 获取分类树
         vo.setCategories(categoryService.listTree());
 
-        // 3. 获取热门药品 (真实数据：按销量排序)
+        // 热门药品按销量倒序取前 5 个已上架商品。
         Page<Medicine> hotPage = medicineService.page(new Page<>(1, 5), 
                 new LambdaQueryWrapper<Medicine>()
-                        .eq(Medicine::getStatus, 1) // 仅上架商品
+                        .eq(Medicine::getStatus, 1)
                         .orderByDesc(Medicine::getSales));
         vo.setHotMedicines(hotPage.getRecords());
 
-        // 4. 获取推荐药品/新品 (真实数据：按创建时间排序)
-        // 直接获取最新的5个上架商品作为新品
+        // 推荐位默认直接复用最新上架商品，避免首页没有内容。
         Page<Medicine> newArrivalsPage = medicineService.page(new Page<>(1, 5),
                 new LambdaQueryWrapper<Medicine>()
                         .eq(Medicine::getStatus, 1)
@@ -71,7 +66,7 @@ public class HomeController {
         
         List<Medicine> newArrivals = newArrivalsPage.getRecords();
 
-        // 如果没有数据，尝试随机获取（通常意味着数据库为空或无上架商品）
+        // 如果新品位没有数据，就随机兜底拿一批上架商品。
         if (newArrivals.isEmpty()) {
              Page<Medicine> randomPage = medicineService.page(new Page<>(1, 5),
                      new LambdaQueryWrapper<Medicine>()
@@ -82,7 +77,7 @@ public class HomeController {
             vo.setRecommendMedicines(newArrivals);
         }
 
-        // 5. 获取最新健康资讯 (取前3条)
+        // 健康资讯区域固定取最新的 3 条启用文章。
         Page<HealthArticle> articlePage = healthArticleService.page(new Page<>(1, 3),
                 new LambdaQueryWrapper<HealthArticle>()
                         .eq(HealthArticle::getStatus, 1)
@@ -92,4 +87,3 @@ public class HomeController {
         return Result.success(vo);
     }
 }
-

@@ -5,12 +5,8 @@ import com.zhijian.pojo.Order;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * 订单 Mapper 接口
- * 
- * @author Liuhaonan
- * @since 1.0.0
+ * 订单数据访问接口。
  */
 @Mapper
 public interface OrderMapper extends BaseMapper<Order> {
 }
-

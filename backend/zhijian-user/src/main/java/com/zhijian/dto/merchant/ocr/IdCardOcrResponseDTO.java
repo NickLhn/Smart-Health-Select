@@ -5,6 +5,9 @@ import lombok.Data;
 
 import java.time.LocalDate;
 
+/**
+ * 身份证 OCR 响应对象。
+ */
 @Data
 public class IdCardOcrResponseDTO {
     @Schema(description = "姓名")

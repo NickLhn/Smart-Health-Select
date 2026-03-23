@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * 健康资讯控制器。
+ */
 @Tag(name = "健康资讯管理")
 @RestController
 @RequestMapping("/health/article")
@@ -28,7 +31,8 @@ public class HealthArticleController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) Integer status) {
-        
+
+        // 资讯列表支持标题、分类、状态三个维度组合筛选。
         Page<HealthArticle> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<HealthArticle> wrapper = new LambdaQueryWrapper<>();
         if (title != null && !title.isEmpty()) {
@@ -41,7 +45,7 @@ public class HealthArticleController {
             wrapper.eq(HealthArticle::getStatus, status);
         }
         wrapper.orderByDesc(HealthArticle::getCreateTime);
-        
+
         return Result.success(healthArticleService.page(pageParam, wrapper));
     }
 
@@ -50,6 +54,7 @@ public class HealthArticleController {
     public Result<HealthArticle> getById(@PathVariable Long id) {
         HealthArticle article = healthArticleService.getById(id);
         if (article != null) {
+            // 详情页每次打开都累加一次浏览量。
             article.setViews(article.getViews() + 1);
             healthArticleService.updateById(article);
         }
@@ -59,6 +64,7 @@ public class HealthArticleController {
     @Operation(summary = "新增资讯")
     @PostMapping
     public Result<Boolean> save(@RequestBody HealthArticle article) {
+        // 新建资讯默认从 0 浏览量开始。
         article.setViews(0);
         return Result.success(healthArticleService.save(article));
     }
@@ -75,4 +81,3 @@ public class HealthArticleController {
         return Result.success(healthArticleService.removeById(id));
     }
 }
-

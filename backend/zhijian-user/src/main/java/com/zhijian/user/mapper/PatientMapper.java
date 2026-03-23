@@ -6,9 +6,6 @@ import org.apache.ibatis.annotations.Mapper;
 
 /**
  * 就诊人 Mapper 接口
- *
- * @author Liuhaonan
- * @since 1.0.0
  */
 @Mapper
 public interface PatientMapper extends BaseMapper<Patient> {

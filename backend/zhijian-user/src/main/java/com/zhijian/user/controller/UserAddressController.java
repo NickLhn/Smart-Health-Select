@@ -15,12 +15,18 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * 收货地址管理控制器。
+ */
 @Tag(name = "收货地址管理")
 @RestController
 @RequestMapping("/user/address")
 @RequiredArgsConstructor
 public class UserAddressController {
 
+    /**
+     * 收货地址业务服务。
+     */
     private final UserAddressService userAddressService;
 
     @Operation(summary = "获取我的地址列表")

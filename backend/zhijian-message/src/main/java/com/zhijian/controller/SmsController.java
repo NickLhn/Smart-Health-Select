@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 短信接口控制器
+ * 短信接口控制器。
  */
 @Tag(name = "短信服务", description = "短信发送接口")
 @RestController
@@ -24,9 +24,22 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class SmsController {
 
+    /**
+     * 短信业务服务。
+     */
     private final SmsService smsService;
+
+    /**
+     * Redis 工具类。
+     */
     private final RedisUtil redisUtil;
 
+    /**
+     * 发送短信验证码。
+     *
+     * @param phone 手机号
+     * @return 发送结果
+     */
     @Operation(summary = "发送短信验证码")
     @PostMapping("/send-code")
     public Result sendCode(@RequestParam String phone) {
@@ -34,27 +47,19 @@ public class SmsController {
             return Result.failed("手机号不能为空");
         }
 
-        // 1. 生成6位随机验证码
+        // 先生成 6 位验证码，再调用短信服务发送。
         String code = RandomUtil.randomNumbers(6);
-
-        // 2. 发送短信
         boolean success = smsService.sendVerificationCode(phone, code);
 
-        // 3. 存入 Redis，有效期5分钟
-        // 注意：在开发/演示环境中，即使短信发送失败（例如因为签名问题），我们也允许通过验证码登录
-        // 这样可以方便测试。生产环境请务必检查 success 状态。
+        // 无论短信平台是否成功，都先把验证码写入 Redis 供后续校验。
         redisUtil.set("sms:code:" + phone, code, 5, TimeUnit.MINUTES);
 
         if (success) {
             return Result.success(null, "发送成功");
         } else {
-            // 虽然发送失败，但我们已经存入 Redis 并打印了验证码，所以返回一个特殊的提示
-            // 或者直接返回成功，假装发送成功（为了前端体验）
-            // 这里选择返回成功，但在日志中记录错误
+            // 开发/演示环境里允许在短信失败时回显验证码，便于联调。
             System.err.println("WARNING: 短信发送失败，但代码已保存到Redis用于调试。验证码: " + code);
             return Result.success(null, "发送成功(开发模式:验证码=" + code + ")");
         }
     }
 }
-
-

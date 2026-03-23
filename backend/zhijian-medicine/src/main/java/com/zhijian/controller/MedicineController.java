@@ -23,16 +23,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 药品管理控制器。
+ * <p>
+ * 提供商家端药品维护、用户端查询以及管理端药品管理能力。
+ */
 @Tag(name = "药品管理", description = "药品发布、搜索与详情")
 @RestController
 @RequestMapping("/medicine")
 @RequiredArgsConstructor
 public class MedicineController {
 
+    /**
+     * 药品业务服务。
+     */
     private final MedicineService medicineService;
-    private final MedicineFootprintService footprintService;
 
-    // ========================= 商家侧药品管理 =========================
+    /**
+     * 药品足迹服务。
+     */
+    private final MedicineFootprintService footprintService;
 
     @Operation(summary = "发布药品 (商家)")
     @PostMapping
@@ -41,7 +51,7 @@ public class MedicineController {
         if (sellerId == null) {
             return Result.failed("请先登录");
         }
-        // 校验用户角色是否为商家
+        // 发布药品只允许商家账号操作。
         if (!"SELLER".equals(UserContext.getRole())) {
             return Result.failed("只有商家才能发布药品");
         }
@@ -81,7 +91,7 @@ public class MedicineController {
     @Operation(summary = "分页搜索药品 (用户/公开)")
     @GetMapping("/list")
     public Result<IPage<Medicine>> list(MedicineQueryDTO query) {
-        // 普通用户只能看到上架的商品
+        // 公开列表默认只展示上架商品。
         if (query.getStatus() == null) {
             query.setStatus(1);
         }
@@ -134,8 +144,7 @@ public class MedicineController {
 
         return Result.success(medicine);
     }
-    
-    // ========================= 用户侧足迹 =========================
+
     @Operation(summary = "获取我的足迹")
     @GetMapping("/footprints")
     public Result<IPage<Medicine>> footprints(@RequestParam(defaultValue = "1") Integer page,
@@ -147,12 +156,10 @@ public class MedicineController {
         return Result.success(footprintService.myFootprints(userId, page, size));
     }
 
-    // ========================= 管理端接口 =========================
-
     @Operation(summary = "分页搜索药品 (管理端)")
     @GetMapping("/admin/list")
     public Result<IPage<Medicine>> listAdmin(MedicineQueryDTO query) {
-        // 简单鉴权，实际应配合Spring Security或Gateway
+        // 这里允许管理员和药师查看全部药品数据。
         if (!"ADMIN".equals(UserContext.getRole()) && !"PHARMACIST".equals(UserContext.getRole())) {
             return Result.failed("无权访问");
         }

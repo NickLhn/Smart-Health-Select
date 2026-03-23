@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * 轮播图服务实现类。
+ */
 @Service
 public class BannerServiceImpl extends ServiceImpl<BannerMapper, Banner> implements BannerService {
 

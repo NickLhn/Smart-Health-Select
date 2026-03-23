@@ -6,9 +6,6 @@ import java.util.Map;
 
 /**
  * 系统配置服务接口
- *
- * @author TraeAI
- * @since 1.0.0
  */
 public interface SysConfigService extends IService<SysConfig> {
 

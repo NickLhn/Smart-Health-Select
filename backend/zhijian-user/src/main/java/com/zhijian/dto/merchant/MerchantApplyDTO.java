@@ -8,9 +8,6 @@ import java.time.LocalDate;
 
 /**
  * 商家入驻申请 DTO
- *
- * @author TraeAI
- * @since 1.0.0
  */
 @Data
 @Schema(description = "商家入驻申请参数")

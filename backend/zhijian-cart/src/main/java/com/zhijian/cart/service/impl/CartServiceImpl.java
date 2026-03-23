@@ -21,16 +21,30 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * 购物车服务实现类。
+ */
 @Service
 @RequiredArgsConstructor
 public class CartServiceImpl extends ServiceImpl<CartItemMapper, CartItem> implements CartService {
 
+    /**
+     * 药品业务服务。
+     */
     private final MedicineService medicineService;
 
+    /**
+     * 添加购物车项。
+     * <p>
+     * 添加前会校验药品状态和库存，并对已存在的购物车项执行数量累加。
+     *
+     * @param addDTO 加购参数
+     * @param userId 用户 ID
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void add(CartAddDTO addDTO, Long userId) {
-        // 加购前先校验药品是否存在、是否上架、库存是否足够。
+        // 加购前要同时校验药品是否存在、是否上架以及库存是否充足。
         Medicine medicine = medicineService.getById(addDTO.getMedicineId());
         if (medicine == null) {
             throw new RuntimeException("药品不存在");
@@ -47,7 +61,7 @@ public class CartServiceImpl extends ServiceImpl<CartItemMapper, CartItem> imple
                 .eq(CartItem::getMedicineId, addDTO.getMedicineId()));
 
         if (existItem != null) {
-            // 已存在相同商品时直接累加数量。
+            // 购物车里已有同商品时直接累加数量，避免插入重复行。
             existItem.setCount(existItem.getCount() + addDTO.getCount());
             this.updateById(existItem);
             return;
@@ -60,9 +74,17 @@ public class CartServiceImpl extends ServiceImpl<CartItemMapper, CartItem> imple
         this.save(cartItem);
     }
 
+    /**
+     * 更新购物车商品数量。
+     * <p>
+     * 更新时会校验购物车项归属关系以及最新库存。
+     *
+     * @param updateDTO 更新参数
+     * @param userId 用户 ID
+     */
     @Override
     public void updateCount(CartUpdateDTO updateDTO, Long userId) {
-        // 修改数量时必须校验购物车项归属和最新库存。
+        // 改数量时必须校验购物车项归属，避免跨用户修改数据。
         CartItem cartItem = this.getById(updateDTO.getId());
         if (cartItem == null) {
             throw new RuntimeException("购物车项不存在");
@@ -80,16 +102,31 @@ public class CartServiceImpl extends ServiceImpl<CartItemMapper, CartItem> imple
         this.updateById(cartItem);
     }
 
+    /**
+     * 删除购物车项。
+     *
+     * @param ids 购物车项 ID 列表
+     * @param userId 用户 ID
+     */
     @Override
     public void delete(List<Long> ids, Long userId) {
         if (ids == null || ids.isEmpty()) {
             return;
         }
+        // 删除时附带 userId 条件，确保只能删掉自己的购物车项。
         this.remove(new LambdaQueryWrapper<CartItem>()
                 .eq(CartItem::getUserId, userId)
                 .in(CartItem::getId, ids));
     }
 
+    /**
+     * 查询当前用户的购物车列表。
+     * <p>
+     * 该方法会补充药品名称、图片、价格和库存等展示字段。
+     *
+     * @param userId 用户 ID
+     * @return 购物车列表
+     */
     @Override
     public List<CartItemVO> myList(Long userId) {
         List<CartItem> cartItems = this.list(new LambdaQueryWrapper<CartItem>()
@@ -100,7 +137,7 @@ public class CartServiceImpl extends ServiceImpl<CartItemMapper, CartItem> imple
             return new ArrayList<>();
         }
 
-        // 批量查药品信息，再映射成前端展示用的购物车 VO。
+        // 先批量查药品，再回填展示字段，避免前端为每一项重复联查。
         List<Long> medicineIds = cartItems.stream()
                 .map(CartItem::getMedicineId)
                 .collect(Collectors.toList());
@@ -123,9 +160,14 @@ public class CartServiceImpl extends ServiceImpl<CartItemMapper, CartItem> imple
         }).collect(Collectors.toList());
     }
 
+    /**
+     * 清空当前用户的购物车。
+     *
+     * @param userId 用户 ID
+     */
     @Override
     public void clear(Long userId) {
-        // 清空购物车本质上是删除当前用户全部购物车项。
+        // 清空购物车本质上就是删除当前用户的全部购物车项。
         this.remove(new LambdaQueryWrapper<CartItem>().eq(CartItem::getUserId, userId));
     }
 }

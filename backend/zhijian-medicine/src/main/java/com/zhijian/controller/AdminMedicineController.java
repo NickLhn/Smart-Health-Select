@@ -14,10 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 管理员药品管理控制器
- *
- * @author Liuhaonan
- * @since 1.0.0
+ * 管理员药品管理控制器。
  */
 @Tag(name = "管理员-药品管理")
 @RestController
@@ -55,4 +52,3 @@ public class AdminMedicineController {
         return Result.success(null, "删除成功");
     }
 }
-

@@ -15,16 +15,30 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
+/**
+ * 基于阿里云 OSS 的文件服务实现类。
+ */
 @Slf4j
 @Service
 public class OssFileServiceImpl implements FileService {
 
+    /**
+     * OSS 配置对象。
+     */
     @Resource
     private OssConfig ossConfig;
 
+    /**
+     * 上传文件到阿里云 OSS。
+     * <p>
+     * 上传时会按日期分目录生成对象路径，并返回外部可访问地址。
+     *
+     * @param file 文件
+     * @return 文件访问地址
+     */
     @Override
     public String upload(MultipartFile file) {
-        // 上传时实时读取 OSS 配置，避免写死到代码里。
+        // 每次上传都从配置对象读取参数，避免把 OSS 信息写死在实现里。
         String endpoint = ossConfig.getEndpoint();
         String accessKeyId = ossConfig.getAccessKeyId();
         String accessKeySecret = ossConfig.getAccessKeySecret();
@@ -35,7 +49,7 @@ public class OssFileServiceImpl implements FileService {
         }
 
         try {
-            // 每次上传创建 OSS 客户端，并在 finally 中释放。
+            // OSS 客户端按次创建，并在 finally 中释放，避免连接资源泄漏。
             OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
 
             try {
@@ -47,14 +61,14 @@ public class OssFileServiceImpl implements FileService {
                 String suffix = originalFilename.contains(".") ? 
                         originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
                 String fileName = UUID.randomUUID().toString().replaceAll("-", "") + suffix;
-                
-                // 按日期分目录，便于后续做文件归档和排查。
+
+                // 按日期分目录，后续排查文件和归档都会更方便。
                 String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
                 String objectName = ossConfig.getDirPrefix() + datePath + "/" + fileName;
 
-                // 上传到 OSS，并返回外部可访问地址。
                 ossClient.putObject(bucketName, objectName, inputStream);
-                
+
+                // 统一拼出前端可直接访问的外链地址。
                 String protocol = "https://";
                 String domain = endpoint;
                 if (endpoint.startsWith("http://")) {
@@ -63,9 +77,9 @@ public class OssFileServiceImpl implements FileService {
                 } else if (endpoint.startsWith("https://")) {
                     domain = endpoint.substring(8);
                 }
-                
+
                 return protocol + bucketName + "." + domain + "/" + objectName;
-                
+
             } catch (IOException e) {
                 log.error("文件上传失败", e);
                 throw new RuntimeException("文件上传失败: " + e.getMessage());

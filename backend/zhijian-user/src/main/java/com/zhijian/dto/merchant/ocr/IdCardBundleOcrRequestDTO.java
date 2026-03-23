@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+/**
+ * 身份证正反面 OCR 请求对象。
+ */
 @Data
 public class IdCardBundleOcrRequestDTO {
     @Schema(description = "身份证正面图片URL", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -14,4 +17,3 @@ public class IdCardBundleOcrRequestDTO {
     @NotBlank(message = "backImageUrl不能为空")
     private String backImageUrl;
 }
-

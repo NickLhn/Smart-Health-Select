@@ -5,12 +5,8 @@ import com.zhijian.pojo.medicine.entity.Medicine;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * 药品表 Mapper 接口
- * 
- * @author TraeAI
- * @since 1.0.0
+ * 药品数据访问接口。
  */
 @Mapper
 public interface MedicineMapper extends BaseMapper<Medicine> {
 }
-

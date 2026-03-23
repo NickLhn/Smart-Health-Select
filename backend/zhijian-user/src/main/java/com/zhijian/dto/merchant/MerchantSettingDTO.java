@@ -6,9 +6,6 @@ import java.math.BigDecimal;
 
 /**
  * 商家运营设置 DTO
- *
- * @author TraeAI
- * @since 1.0.0
  */
 @Data
 @Schema(description = "商家运营设置参数")

@@ -11,6 +11,9 @@ import com.zhijian.dto.medicine.MedicineCommentCreateDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/**
+ * 药品评价服务实现类。
+ */
 @Service
 @RequiredArgsConstructor
 public class MedicineCommentServiceImpl extends ServiceImpl<MedicineCommentMapper, MedicineComment> implements MedicineCommentService {

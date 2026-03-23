@@ -6,9 +6,6 @@ import lombok.Data;
 
 /**
  * 商家审核 DTO
- *
- * @author TraeAI
- * @since 1.0.0
  */
 @Data
 @Schema(description = "商家审核参数")

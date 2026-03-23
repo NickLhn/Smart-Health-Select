@@ -4,6 +4,9 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+/**
+ * OCR 配置属性类。
+ */
 @Data
 @Component
 @ConfigurationProperties(prefix = "aliyun.ocr")

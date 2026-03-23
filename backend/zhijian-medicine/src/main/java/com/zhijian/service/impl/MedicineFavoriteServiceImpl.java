@@ -18,6 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 药品收藏服务实现类。
+ */
 @Service
 public class MedicineFavoriteServiceImpl extends ServiceImpl<MedicineFavoriteMapper, MedicineFavorite> implements MedicineFavoriteService {
 

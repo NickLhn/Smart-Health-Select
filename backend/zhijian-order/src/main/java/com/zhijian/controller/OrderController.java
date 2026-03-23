@@ -26,11 +26,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 订单管理控制器。
+ * <p>
+ * 提供用户端、商家端、药师端和管理端的订单流转接口。
+ */
 @Tag(name = "订单管理")
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
 
+    /**
+     * 订单业务服务。
+     */
     @Resource
     private OrderService orderService;
 

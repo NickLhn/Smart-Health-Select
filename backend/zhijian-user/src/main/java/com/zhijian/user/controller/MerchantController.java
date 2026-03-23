@@ -21,6 +21,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * 商家管理控制器。
+ * <p>
+ * 提供管理端审核查询、商家入驻申请以及 OCR 识别能力。
+ */
 @Tag(name = "商家管理")
 @RestController
 @RequestMapping("/merchant")
@@ -28,7 +33,14 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class MerchantController {
 
+    /**
+     * 商家业务服务。
+     */
     private final MerchantService merchantService;
+
+    /**
+     * OCR 业务服务。
+     */
     private final OcrService ocrService;
 
     // ========================= 管理端查询与审核 =========================

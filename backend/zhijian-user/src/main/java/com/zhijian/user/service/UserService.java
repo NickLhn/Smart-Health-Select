@@ -12,9 +12,6 @@ import com.zhijian.dto.user.UserUpdateDTO;
 
 /**
  * 用户服务接口
- * 
- * @author Liuhaonan
- * @since 1.0.0
  */
 public interface UserService extends IService<SysUser> {
 

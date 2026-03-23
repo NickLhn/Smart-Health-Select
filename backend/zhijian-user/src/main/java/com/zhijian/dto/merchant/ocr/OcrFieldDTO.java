@@ -5,6 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * OCR 字段结果对象。
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,4 +18,3 @@ public class OcrFieldDTO {
     @Schema(description = "置信度(0-100)")
     private Integer confidence;
 }
-

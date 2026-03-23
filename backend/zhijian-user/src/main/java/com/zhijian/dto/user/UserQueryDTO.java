@@ -3,6 +3,9 @@ package com.zhijian.dto.user;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+/**
+ * 用户查询请求对象。
+ */
 @Data
 @Schema(description = "用户查询参数")
 public class UserQueryDTO {
@@ -22,4 +25,3 @@ public class UserQueryDTO {
     @Schema(description = "状态(0:禁用 1:正常)")
     private Integer status;
 }
-

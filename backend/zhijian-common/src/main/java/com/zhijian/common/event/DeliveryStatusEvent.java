@@ -7,27 +7,25 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
- * 配送状态变更事件
- * 当订单配送状态发生变化时发布此事件
- *
- * @author Liuhaonan
- * @since 1.0.0
+ * 配送状态变更事件。
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class DeliveryStatusEvent implements Serializable {
 
-    /** 订单ID */
+    /**
+     * 订单 ID。
+     */
     private Long orderId;
 
-    /** 配送记录ID */
+    /**
+     * 配送记录 ID。
+     */
     private Long deliveryId;
 
     /**
-     * 配送状态
-     * 1:配送中
-     * 2:已送达
+     * 配送状态。
      */
     private Integer status;
 }

@@ -19,6 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+/**
+ * 商家服务实现类。
+ */
 @Service
 @RequiredArgsConstructor
 public class MerchantServiceImpl extends ServiceImpl<MerchantMapper, Merchant> implements MerchantService {

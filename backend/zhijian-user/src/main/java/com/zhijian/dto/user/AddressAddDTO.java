@@ -6,9 +6,6 @@ import lombok.Data;
 
 /**
  * 添加地址DTO
- * 
- * @author Liuhaonan
- * @since 1.0.0
  */
 @Data
 @Schema(description = "添加地址请求参数")

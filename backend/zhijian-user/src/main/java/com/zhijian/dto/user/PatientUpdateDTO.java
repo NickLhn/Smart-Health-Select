@@ -7,9 +7,6 @@ import java.time.LocalDate;
 
 /**
  * 修改就诊人DTO
- *
- * @author Liuhaonan
- * @since 1.0.0
  */
 @Data
 @Schema(description = "修改就诊人请求参数")

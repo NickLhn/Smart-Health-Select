@@ -11,9 +11,6 @@ import com.zhijian.dto.merchant.MerchantQueryDTO;
 
 /**
  * 商家服务接口
- *
- * @author TraeAI
- * @since 1.0.0
  */
 public interface MerchantService extends IService<Merchant> {
 

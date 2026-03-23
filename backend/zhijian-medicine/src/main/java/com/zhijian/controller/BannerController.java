@@ -16,10 +16,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 轮播图管理控制器
- *
- * @author Liuhaonan
- * @since 1.0.0
+ * 轮播图管理控制器。
  */
 @Tag(name = "轮播图管理")
 @RestController
@@ -29,12 +26,11 @@ public class BannerController {
     @Resource
     private BannerService bannerService;
 
+    /**
+     * 校验管理员权限。
+     */
     private void checkAdmin() {
-        // 简单模拟管理员权限校验，实际应根据业务角色定义
-        // String role = UserContext.getRole();
-        // if (!"ADMIN".equals(role)) {
-        //     throw new RuntimeException("无权操作");
-        // }
+        // 这里暂时保留为占位校验，后续可切到统一的管理员鉴权体系。
     }
 
     @Operation(summary = "分页查询轮播图")
@@ -80,4 +76,3 @@ public class BannerController {
         return Result.success(null, "删除成功");
     }
 }
-

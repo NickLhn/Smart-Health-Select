@@ -12,9 +12,6 @@ import java.time.LocalDateTime;
 
 /**
  * 就诊人实体
- *
- * @author Liuhaonan
- * @since 1.0.0
  */
 @Data
 @TableName("sys_patient")

@@ -13,12 +13,20 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * 用户管理控制器。
+ * <p>
+ * 提供个人中心和管理端用户管理接口。
+ */
 @Tag(name = "个人中心")
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
 public class UserController {
 
+    /**
+     * 用户业务服务。
+     */
     private final UserService userService;
 
     // ========================= 个人中心接口 =========================

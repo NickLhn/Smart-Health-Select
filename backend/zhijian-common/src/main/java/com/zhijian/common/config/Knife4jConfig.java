@@ -7,14 +7,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Knife4j (Swagger) 接口文档配置
- * 
- * @author TraeAI
- * @since 1.0.0
+ * Knife4j 接口文档配置类。
  */
 @Configuration
 public class Knife4jConfig {
 
+    /**
+     * 构建 OpenAPI 文档配置。
+     *
+     * @return OpenAPI 配置对象
+     */
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()

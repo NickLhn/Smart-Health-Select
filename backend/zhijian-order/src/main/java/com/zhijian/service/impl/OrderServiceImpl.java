@@ -49,21 +49,69 @@ import com.zhijian.user.mapper.MerchantMapper;
 import com.zhijian.pojo.user.entity.Merchant;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 订单服务实现类。
+ * <p>
+ * 负责下单、支付、发货、审核、退款、评价以及统计等完整订单生命周期管理。
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements OrderService {
 
+    /**
+     * 药品业务服务。
+     */
     private final MedicineService medicineService;
+
+    /**
+     * 药品评价业务服务。
+     */
     private final MedicineCommentService medicineCommentService;
+
+    /**
+     * 购物车业务服务。
+     */
     private final CartService cartService;
+
+    /**
+     * 收货地址业务服务。
+     */
     private final UserAddressService userAddressService;
+
+    /**
+     * 支付记录业务服务。
+     */
     private final PaymentRecordService paymentRecordService;
+
+    /**
+     * 用户优惠券业务服务。
+     */
     private final UserCouponService userCouponService;
+
+    /**
+     * 订单项数据访问对象。
+     */
     private final OrderItemMapper orderItemMapper;
+
+    /**
+     * 配送业务服务。
+     */
     private final DeliveryService deliveryService;
+
+    /**
+     * 用户业务服务。
+     */
     private final UserService userService;
+
+    /**
+     * 应用事件发布器。
+     */
     private final ApplicationEventPublisher eventPublisher;
+
+    /**
+     * 商家数据访问对象。
+     */
     private final MerchantMapper merchantMapper;
 
     // ========================= 订单状态流转 =========================

@@ -12,10 +12,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 药品收藏控制器
- * 
- * @author Liuhaonan
- * @since 1.0.0
+ * 药品收藏控制器。
  */
 @Tag(name = "药品收藏管理")
 @RestController
@@ -32,6 +29,7 @@ public class MedicineFavoriteController {
         if (userId == null) {
             return Result.failed("请先登录");
         }
+        // 收藏和取消收藏统一走 toggle，减少前端额外分支判断。
         return favoriteService.toggle(addDTO.getMedicineId(), userId);
     }
 
@@ -53,7 +51,7 @@ public class MedicineFavoriteController {
         if (userId == null) {
             return Result.failed("请先登录");
         }
+        // 我的收藏列表最终直接返回药品信息，前端不需要再补查一次详情。
         return Result.success(favoriteService.myList(userId, page, size));
     }
 }
-

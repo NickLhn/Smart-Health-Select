@@ -13,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * 就诊人服务实现类。
+ */
 @Service
 public class PatientServiceImpl extends ServiceImpl<PatientMapper, Patient> implements PatientService {
 

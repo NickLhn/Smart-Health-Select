@@ -7,9 +7,6 @@ import lombok.EqualsAndHashCode;
 
 /**
  * 更新地址DTO
- * 
- * @author Liuhaonan
- * @since 1.0.0
  */
 @Data
 @EqualsAndHashCode(callSuper = true)

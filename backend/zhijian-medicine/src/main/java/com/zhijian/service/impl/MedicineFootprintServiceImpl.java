@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 药品足迹服务实现类。
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

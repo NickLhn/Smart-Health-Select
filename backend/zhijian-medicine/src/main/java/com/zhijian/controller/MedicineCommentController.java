@@ -13,17 +13,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 药品评价控制器。
+ */
 @Tag(name = "药品评价")
 @RestController
 @RequestMapping("/medicine/comment")
 @RequiredArgsConstructor
 @Slf4j
-/**
- * 药品评价控制器
- *
- * @author Liuhaonan
- * @since 1.0.0
- */
 public class MedicineCommentController {
 
     private final MedicineCommentService commentService;
@@ -85,14 +82,14 @@ public class MedicineCommentController {
         if (!"SELLER".equals(com.zhijian.common.context.UserContext.getRole())) {
             return Result.failed("无权操作");
         }
-        
-        // 校验商家信息是否存在
+
+        // 只有已经完成商家入驻的账号才能查看店铺评价。
         com.zhijian.pojo.user.entity.Merchant merchant = merchantService.getByUserId(userId);
         if (merchant == null) {
             return Result.failed("商家信息不存在");
         }
-        
-        // 注意：Medicine表中sellerId存储的是商家的userId，所以这里传入userId
+
+        // Medicine 表中的 sellerId 存的是商家 userId，这里直接传当前用户 ID。
         IPage<MedicineComment> result = commentService.pageListBySellerId(userId, page, size);
         log.info("查询商家评价结果, total: {}, records: {}", result.getTotal(), result.getRecords().size());
         return Result.success(result);
@@ -116,11 +113,10 @@ public class MedicineCommentController {
         if (!"SELLER".equals(com.zhijian.common.context.UserContext.getRole())) {
             return Result.failed("无权操作");
         }
-        
+
         String content = params.get("reply");
-        
+
         boolean success = commentService.replyComment(id, content);
         return success ? Result.success(null, "回复成功") : Result.failed("回复失败");
     }
 }
-

@@ -11,9 +11,6 @@ import java.util.Map;
 
 /**
  * 系统配置控制器
- *
- * @author TraeAI
- * @since 1.0.0
  */
 @Tag(name = "系统配置")
 @RestController

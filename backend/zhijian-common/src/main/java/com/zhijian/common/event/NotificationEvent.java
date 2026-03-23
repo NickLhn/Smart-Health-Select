@@ -7,29 +7,30 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
- * 通知事件
+ * 通知事件。
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class NotificationEvent implements Serializable {
+
     /**
-     * 接收者ID
+     * 接收者 ID。
      */
     private Long userId;
 
     /**
-     * 消息内容
+     * 消息内容。
      */
     private String content;
 
     /**
-     * 消息类型 (例如: ORDER_UPDATE, REFUND_UPDATE)
+     * 消息类型。
      */
     private String type;
-    
+
     /**
-     * 关联ID (如订单ID)
+     * 关联 ID。
      */
     private Long relationId;
 }

@@ -9,20 +9,20 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 
 /**
- * 订单定时任务
- * 
- * @author Liuhaonan
- * @since 1.0.0
+ * 订单定时任务。
  */
 @Component
 @Slf4j
 public class OrderTask {
 
+    /**
+     * 订单业务服务。
+     */
     @Resource
     private OrderService orderService;
 
     /**
-     * 每分钟检查一次超时订单
+     * 定时检查超时订单。
      */
     @Scheduled(cron = "0 * * * * ?")
     public void cancelTimeoutOrders() {
@@ -30,4 +30,3 @@ public class OrderTask {
         log.info("定时处理超时订单{}", LocalDateTime.now());
     }
 }
-

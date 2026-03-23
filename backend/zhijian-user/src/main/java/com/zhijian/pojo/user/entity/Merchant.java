@@ -10,9 +10,6 @@ import java.time.LocalDateTime;
 
 /**
  * 商家信息实体
- *
- * @author TraeAI
- * @since 1.0.0
  */
 @Data
 @TableName("sys_merchant")

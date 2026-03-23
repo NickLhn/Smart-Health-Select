@@ -26,20 +26,42 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 退款申请服务实现类。
+ */
 @Service
 @RequiredArgsConstructor
 public class RefundServiceImpl extends ServiceImpl<RefundApplyMapper, RefundApply> implements RefundService {
 
+    /**
+     * 订单业务服务。
+     */
     private final OrderService orderService;
+
+    /**
+     * 用户业务服务。
+     */
     private final UserService userService;
+
+    /**
+     * 应用事件发布器。
+     */
     private final ApplicationEventPublisher eventPublisher;
 
+    /**
+     * 提交退款申请。
+     * <p>
+     * 校验订单归属、订单状态和重复申请后，创建退款申请并同步更新订单状态。
+     *
+     * @param applyDTO 退款申请参数
+     * @return 申请结果
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean applyRefund(RefundApplyDTO applyDTO) {
         Long userId = UserContext.getUserId();
 
-        // 售后申请必须绑定到当前用户自己的订单。
+        // 售后申请必须绑定当前用户自己的订单，避免越权提交退款。
         Order order = orderService.getById(applyDTO.getOrderId());
         if (order == null) {
             throw new RuntimeException("订单不存在");
@@ -52,7 +74,7 @@ public class RefundServiceImpl extends ServiceImpl<RefundApplyMapper, RefundAppl
             throw new RuntimeException("当前订单状态不可申请退款");
         }
 
-        // 同一订单在已有处理中申请时，不允许重复提交。
+        // 同一订单只允许存在一条处理中退款申请。
         long count = this.count(new LambdaQueryWrapper<RefundApply>()
                 .eq(RefundApply::getOrderId, order.getId())
                 .ne(RefundApply::getStatus, 2));
@@ -71,7 +93,7 @@ public class RefundServiceImpl extends ServiceImpl<RefundApplyMapper, RefundAppl
 
         this.save(refundApply);
 
-        // 订单状态同步切换为售后中。
+        // 提交申请后先把订单切到售后中，避免继续走正常履约流程。
         order.setStatus(4);
         order.setRefundReason(applyDTO.getReason());
         orderService.updateById(order);
@@ -86,14 +108,23 @@ public class RefundServiceImpl extends ServiceImpl<RefundApplyMapper, RefundAppl
         return true;
     }
 
+    /**
+     * 审核退款申请。
+     * <p>
+     * 审核通过时执行退款流程并更新订单状态，审核拒绝时恢复订单原始状态。
+     *
+     * @param auditDTO 退款审核参数
+     * @return 审核结果
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean auditRefund(RefundAuditDTO auditDTO) {
-        // 审核只允许处理待审核状态的申请。
         RefundApply refundApply = this.getById(auditDTO.getId());
         if (refundApply == null) {
             throw new RuntimeException("退款申请不存在");
         }
+
+        // 只有待审核状态允许进入审核流转，防止重复处理。
         if (refundApply.getStatus() != 0) {
             throw new RuntimeException("该申请已处理");
         }
@@ -104,12 +135,12 @@ public class RefundServiceImpl extends ServiceImpl<RefundApplyMapper, RefundAppl
         }
 
         if (auditDTO.getPass()) {
+            // 审核通过后走退款逻辑，并把订单状态改成已退款。
             refundApply.setStatus(1);
-            // 审核通过时走订单退款流程，并把订单改为已退款。
             orderService.refundOrder(order.getId(), refundApply.getAmount(), refundApply.getReason());
             order.setStatus(5);
         } else {
-            // 审核拒绝后，订单回到申请前的原始状态。
+            // 审核拒绝时恢复订单申请前的原始状态。
             refundApply.setStatus(2);
             order.setStatus(refundApply.getOriginalOrderStatus());
         }
@@ -130,6 +161,15 @@ public class RefundServiceImpl extends ServiceImpl<RefundApplyMapper, RefundAppl
         return true;
     }
 
+    /**
+     * 分页查询退款申请详情。
+     * <p>
+     * 在分页结果中补充订单编号和申请用户名，便于管理端展示。
+     *
+     * @param page 分页参数
+     * @param status 申请状态
+     * @return 退款申请分页结果
+     */
     @Override
     public IPage<RefundApply> pageWithDetail(IPage<RefundApply> page, Integer status) {
         LambdaQueryWrapper<RefundApply> wrapper = new LambdaQueryWrapper<>();
@@ -143,7 +183,7 @@ public class RefundServiceImpl extends ServiceImpl<RefundApplyMapper, RefundAppl
             return result;
         }
 
-        // 批量补充订单号和用户名，减少前端额外联查。
+        // 批量查订单和用户，避免列表展示时逐条联查。
         List<Long> orderIds = result.getRecords().stream()
                 .map(RefundApply::getOrderId)
                 .collect(Collectors.toList());
@@ -164,6 +204,7 @@ public class RefundServiceImpl extends ServiceImpl<RefundApplyMapper, RefundAppl
         }
 
         for (RefundApply apply : result.getRecords()) {
+            // 列表接口额外补充订单号和用户名，便于管理端直接展示。
             Order order = orderMap.get(apply.getOrderId());
             if (order != null) {
                 apply.setOrderNo(order.getOrderNo());

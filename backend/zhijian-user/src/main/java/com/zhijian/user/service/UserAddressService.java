@@ -7,9 +7,6 @@ import java.util.List;
 
 /**
  * 用户收货地址服务接口
- * 
- * @author Liuhaonan
- * @since 1.0.0
  */
 public interface UserAddressService extends IService<UserAddress> {
 
