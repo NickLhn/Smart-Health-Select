@@ -14,29 +14,28 @@ const Wallet: React.FC = () => {
   })
 
   const fetchData = async () => {
-    // Fetch completed orders to calculate income
+    // 钱包页当前直接基于已完成配送单汇总收益。
     const res = await request.get('/delivery/my/list', { 
-      status: 2, // Completed
+      status: 2,
       page: 1, 
-      size: 100 // Get recent 100 records
+      // 一次多拉一点，够覆盖大部分骑手近期收益明细。
+      size: 100
     })
 
     if (res.code === 200) {
       const records = res.data.records || []
       setList(records)
       
-      // Calculate total
+      // 汇总总收益。
       const total = records.reduce((sum: number, item: any) => {
         return sum + (item.deliveryFee || 0)
       }, 0)
       setTotalIncome(total)
 
-      // Calculate today income
-      const todayStr = new Date().toISOString().split('T')[0] // YYYY-MM-DD
+      // 再从同一批记录里筛出今日收益。
+      const todayStr = new Date().toISOString().split('T')[0]
       const todayTotal = records.reduce((sum: number, item: any) => {
-        // item.updateTime format might be "2023-10-27 10:00:00" or similar
         const itemDate = item.updateTime ? item.updateTime.split(' ')[0] : ''
-        // Or if it's ISO
         const itemDateIso = item.updateTime ? item.updateTime.split('T')[0] : ''
         
         if (itemDate === todayStr || itemDateIso === todayStr) {
@@ -66,6 +65,7 @@ const Wallet: React.FC = () => {
         ) : (
           list.map(item => (
             <View key={item.id} className='item'>
+              {/* 目前收益明细直接按配送单展示。 */}
               <View className='left'>
                 <Text className='title'>配送收入 - 订单 {item.orderId}</Text>
                 <Text className='time'>{item.updateTime || item.createTime}</Text>

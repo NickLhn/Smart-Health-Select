@@ -22,7 +22,7 @@ export interface DashboardData {
   statusDistribution: ChartData[];
 }
 
-// 管理端仪表盘当前走订单模块暴露的统计接口。
+// 当前仪表盘直接走订单模块暴露的统计接口，旧统计模块只做兼容保留。
 export const getDashboardStatistics = () => {
   return request.get<DashboardData>('/dashboard/admin/stats');
 };

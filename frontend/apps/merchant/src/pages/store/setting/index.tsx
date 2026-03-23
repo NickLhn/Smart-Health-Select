@@ -15,7 +15,7 @@ const StoreSetting: React.FC = () => {
       const res = await getMyStore();
       if (res.code === 200 && res.data) {
         setStoreInfo(res.data);
-        // 转换数据格式
+        // 开关控件使用 boolean，回填时先把后端 0/1 转成 true/false。
         const data = {
           ...res.data,
           businessStatus: res.data.businessStatus === 1,
@@ -37,6 +37,7 @@ const StoreSetting: React.FC = () => {
   const onFinish = async (values: any) => {
     setSubmitting(true);
     try {
+      // 保存前把开关值转回后端约定的 0/1。
       const data = {
         ...values,
         businessStatus: values.businessStatus ? 1 : 0,

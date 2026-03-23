@@ -13,6 +13,7 @@ const FavoritePage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // 收藏列表直接返回药品信息，页面层不需要额外补查详情。
       const res = await getMyFavorites();
       if (res.code === 200) {
         setList(res.data?.records || []);
@@ -30,6 +31,7 @@ const FavoritePage: React.FC = () => {
 
   const handleRemove = async (medicineId: number) => {
     try {
+      // 收藏接口本身是 toggle，取消成功后本地直接移除列表项。
       const res = await toggleFavorite({ medicineId });
       if (res.code === 200) {
         message.success('已取消收藏');
@@ -44,6 +46,7 @@ const FavoritePage: React.FC = () => {
   };
 
   const handleToDetail = (id: number) => {
+    // 收藏卡片点击后统一跳商品详情页。
     navigate(`/product/${id}`);
   };
 

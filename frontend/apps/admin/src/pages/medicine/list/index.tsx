@@ -25,6 +25,7 @@ const MedicineList: React.FC = () => {
     try {
       const res = await getCategoryList();
       if (res.code === 200) {
+        // 分类筛选直接复用药品分类树，避免维护两套来源。
         setCategories(res.data);
       }
     } catch (error) {
@@ -35,6 +36,7 @@ const MedicineList: React.FC = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // 管理端药品列表所有筛选条件都统一收敛到 query。
       const res = await getAdminMedicineList(query);
       if (res.code === 200) {
         setData(res.data.records);
@@ -58,6 +60,7 @@ const MedicineList: React.FC = () => {
 
   const handleSearch = useCallback((values: any) => {
     const keyword = (values?.keyword || '').trim();
+    // 搜索后回到第一页，避免停留在旧分页看不到新结果。
     setQuery((prev) => ({
       ...prev,
       page: 1,
@@ -101,7 +104,8 @@ const MedicineList: React.FC = () => {
       const res = await updateMedicineStatusAdmin(id, checked ? 1 : 0);
       if (res.code === 200) {
         message.success('状态更新成功');
-        fetchData(); // Refresh to ensure data consistency
+        // 状态切换后重新拉列表，保证展示和后端最终状态一致。
+        fetchData();
       }
     } catch (error) {
       message.error('状态更新失败');

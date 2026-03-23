@@ -10,6 +10,7 @@ const BottomNav: React.FC = () => {
   const { totalItems } = useCart();
 
   if (shouldHideCustomerBottomNav(location.pathname)) {
+    // 登录、结算等沉浸式页面隐藏底部导航，避免遮挡操作区。
     return null;
   }
 

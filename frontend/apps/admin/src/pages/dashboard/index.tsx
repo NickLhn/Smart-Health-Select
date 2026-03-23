@@ -19,6 +19,7 @@ const Dashboard: React.FC = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // 仪表盘卡片和图表都依赖同一份聚合统计数据。
       const res = await getDashboardStatistics();
       if (res.code === 200) {
         setData(res.data);
@@ -38,6 +39,7 @@ const Dashboard: React.FC = () => {
   const statusDistributionData = useMemo(() => data?.statusDistribution || [], [data]);
 
   const orderOption = useMemo(() => {
+    // 趋势图直接消费后端返回的日期和值，不在前端二次聚合。
     const x = orderTrendData.map((item) => item.name);
     const y = orderTrendData.map((item) => item.value);
 
@@ -88,6 +90,7 @@ const Dashboard: React.FC = () => {
   }, [orderTrendData]);
 
   const pieOption = useMemo(() => {
+    // 状态分布只做数据格式转换，配色和图表表现都在前端控制。
     const seriesData = statusDistributionData.map((item) => ({ value: item.value, name: item.name }));
     return {
       tooltip: { trigger: 'item' },
@@ -122,6 +125,7 @@ const Dashboard: React.FC = () => {
   }, [statusDistributionData]);
 
   const statCards = useMemo(() => {
+    // 顶部卡片和图表共用一份 data，避免多个请求之间出现时间差。
     return [
       {
         key: 'users',

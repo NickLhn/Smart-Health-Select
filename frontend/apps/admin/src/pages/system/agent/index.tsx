@@ -43,6 +43,7 @@ const AdminAgent: React.FC = () => {
   const loadHistory = useCallback(async () => {
     setBooting(true);
     try {
+      // 历史消息先完整拉回本地，便于最近消息裁剪和滚动定位。
       const history = await getChatHistory();
       const mapped: ChatItem[] = (history || []).map((h) => ({
         id: h.id,
@@ -92,6 +93,7 @@ const AdminAgent: React.FC = () => {
       setInput('');
 
       try {
+        // 管理端当前走非流式接口，返回后一次性替换占位消息。
         const resp = await sendChatMessage(value);
         const reply = resp?.text || '';
         setItems((prev) =>
@@ -126,6 +128,7 @@ const AdminAgent: React.FC = () => {
         try {
           await clearChatHistory();
           messageApi.success('已清空');
+          // 清空后本地消息也同步重置，保持界面和服务端一致。
           setItems([]);
         } catch (e: any) {
           messageApi.error(e?.message || '清空失败');

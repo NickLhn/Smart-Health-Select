@@ -15,6 +15,7 @@ const Register: React.FC = () => {
       return
     }
 
+    // 注册时固定把角色指定为 RIDER。
     const res = await request.post('/auth/register', {
       username,
       password,

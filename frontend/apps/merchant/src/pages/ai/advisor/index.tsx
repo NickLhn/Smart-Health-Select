@@ -45,6 +45,7 @@ const MerchantAgent: React.FC = () => {
   const loadHistory = useCallback(async () => {
     setBooting(true);
     try {
+      // 商家 AI 历史消息会先拉到本地，便于做最近消息裁剪。
       const history = await getChatHistory();
       const mapped: ChatItem[] = (history || []).map((h) => ({
         id: h.id,
@@ -95,6 +96,7 @@ const MerchantAgent: React.FC = () => {
 
       try {
         let currentText = '';
+        // 商家端走流式接口，边收到边更新最后一条 AI 消息。
         await streamChat(
           { message: value },
           {
@@ -126,6 +128,7 @@ const MerchantAgent: React.FC = () => {
             onAction: (action) => {
               const type = action?.type || action?.actionType;
               const url = action?.url || action?.path;
+              // action 事件允许后端直接指引前端跳转到指定业务页。
               if (type === 'NAVIGATE' && typeof url === 'string' && url) {
                 navigate(url, { replace: Boolean(action?.replace) });
               }
@@ -158,6 +161,7 @@ const MerchantAgent: React.FC = () => {
         try {
           await clearChatHistory();
           messageApi.success('已清空');
+          // 清空后本地消息也同步重置，保持界面和服务端一致。
           setItems([]);
         } catch (e: any) {
           messageApi.error(e?.message || '清空失败');

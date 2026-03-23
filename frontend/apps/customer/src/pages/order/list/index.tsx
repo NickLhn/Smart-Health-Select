@@ -29,6 +29,7 @@ const OrderList: React.FC = () => {
     setLoading(true);
     setLoadError(false);
     try {
+      // 订单列表统一按标签页状态和分页参数查询后端。
       const res = await getOrderList({
         page: page,
         size: pagination.pageSize,
@@ -67,11 +68,12 @@ const OrderList: React.FC = () => {
       case 'audit': status = 7; break; // 待审核
       default: status = undefined;
     }
-    // Reset to page 1 when tab changes
+    // 标签页切换时回到第一页，避免保留旧分页造成结果错位。
     fetchOrders(status, 1);
   }, [activeTab]);
 
   const handlePay = async (orderId: number) => {
+    // 列表页支付直接跳支付页，后续流程统一在收银台处理。
     navigate(`/payment/${orderId}`);
   };
 
@@ -85,6 +87,7 @@ const OrderList: React.FC = () => {
       async onOk() {
         setActionLoadingId(orderId);
         try {
+          // 确认收货成功后刷新当前标签页，马上看到状态变化。
           const res = await confirmReceipt(orderId);
           if (res.code === 200) {
             message.success('收货成功');
@@ -105,6 +108,7 @@ const OrderList: React.FC = () => {
   };
 
   const handleReview = (orderId: number) => {
+    // 评价弹窗每次都绑定当前订单，避免把内容发错单。
     setCurrentOrderId(orderId);
     setReviewModalVisible(true);
     reviewForm.resetFields();
@@ -123,7 +127,7 @@ const OrderList: React.FC = () => {
       if (res.code === 200) {
         message.success('评价成功');
         setReviewModalVisible(false);
-        // Refresh list
+        // 评价成功后刷新当前列表，订单状态和评价态一起更新。
         const status = getStatusFromTab(activeTab);
         fetchOrders(status, pagination.current);
       } else {
@@ -149,6 +153,7 @@ const OrderList: React.FC = () => {
   };
 
   const handlePageChange = (page: number) => {
+      // 翻页时保留当前标签对应的订单状态。
       const status = getStatusFromTab(activeTab);
       fetchOrders(status, page);
   };

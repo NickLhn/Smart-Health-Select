@@ -79,6 +79,7 @@ const ProductEdit: React.FC = () => {
       const res = await getCategoryList();
       if (res.code === 200) {
         const tree = res.data;
+        // 编辑页既需要树形分类选择，也需要扁平结构做路径回填。
         setCategories(flattenCategories(tree));
         setCategoryOptions(mapCategoryTree(tree));
       }
@@ -122,13 +123,12 @@ const ProductEdit: React.FC = () => {
   }, [categories, form, message]);
 
   useEffect(() => {
-    // 获取分类列表
+    // 先拉分类，后面编辑态回填要依赖分类路径。
     fetchCategories();
   }, [fetchCategories]);
 
   useEffect(() => {
-    // 只有当分类加载完成且是编辑模式时，才去获取详情并回填
-    // 这样可以确保 calculatePath 能找到对应的分类
+    // 编辑模式必须等分类加载完再回填，否则找不到分类路径。
     if (isEdit && categories.length > 0 && id) {
       fetchDetail(Number(id));
     }
@@ -151,6 +151,7 @@ const ProductEdit: React.FC = () => {
   const customRequest = async (options: any) => {
     const { onSuccess, onError, file } = options;
     try {
+      // 图片上传统一交给后台文件服务，表单里只保留 URL。
       const res = await uploadFile(file);
       if (res.code === 200) {
         onSuccess(res);
@@ -199,6 +200,7 @@ const ProductEdit: React.FC = () => {
 
       const payload = {
         ...values,
+        // Cascader 返回的是分类路径，提交时只保留最后一级分类 ID。
         categoryId: Array.isArray(values.categoryId) ? values.categoryId[values.categoryId.length - 1] : values.categoryId,
         mainImage,
         isPrescription: values.isPrescription,
@@ -208,6 +210,7 @@ const ProductEdit: React.FC = () => {
 
       let res;
       if (isEdit) {
+        // 编辑和新建复用同一套表单，只根据是否有 id 决定接口。
         res = await updateMedicine(Number(id), payload);
       } else {
         res = await createMedicine(payload);

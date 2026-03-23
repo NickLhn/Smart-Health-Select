@@ -17,6 +17,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       return savedUser ? JSON.parse(savedUser) : null;
     } catch (e) {
+      // 本地缓存损坏时直接回退为空，避免整站登录态异常。
       return null;
     }
   });

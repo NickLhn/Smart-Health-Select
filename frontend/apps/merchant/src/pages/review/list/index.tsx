@@ -23,6 +23,7 @@ const ReviewList: React.FC = () => {
   const loadData = useCallback(async (current: number, size: number) => {
     setLoading(true);
     try {
+      // 评价列表分页直接走商家端接口，表格层只负责展示。
       const res = await getMerchantCommentList(current, size);
       if (res.code === 200) {
         setData(res.data.records);
@@ -41,6 +42,7 @@ const ReviewList: React.FC = () => {
   }, [loadData, page, pageSize]);
 
   const handleReplyClick = (record: MedicineComment) => {
+    // 打开回复弹窗时绑定当前评价并清空输入框。
     setCurrentReplyId(record.id);
     setReplyContent('');
     setCurrentReplyRecord(record);
@@ -56,6 +58,7 @@ const ReviewList: React.FC = () => {
 
     setReplyLoading(true);
     try {
+      // 回复成功后重新拉当前页，确保表格和回复区同步。
       const res = await replyComment(currentReplyId, replyContent);
       if (res.code === 200) {
         messageApi.success('回复成功');

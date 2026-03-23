@@ -18,6 +18,7 @@ const PaymentPage: React.FC = () => {
 
   useEffect(() => {
     if (orderId) {
+      // 支付页先拉订单详情，避免展示已失效或不存在的订单。
       fetchOrder(parseInt(orderId));
     }
   }, [orderId]);
@@ -43,12 +44,13 @@ const PaymentPage: React.FC = () => {
     if (!order) return;
     setPayLoading(true);
     try {
-      // Simulate payment delay
+      // 这里保留一个短延迟，模拟真实支付过程中的等待感。
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const res = await payOrder(order.id);
       if (res.code === 200) {
         message.success('支付成功');
+        // 支付完成后直接回订单详情页继续看履约状态。
         navigate(`/order/${order.id}`, { replace: true });
       } else {
         message.error(res.message || '支付失败');

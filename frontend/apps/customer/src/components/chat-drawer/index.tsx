@@ -31,6 +31,7 @@ const ChatDrawer: React.FC<ChatDrawerProps> = ({ open, onClose, targetUserId, ta
   const fetchHistory = async () => {
     if (!targetUserId) return;
     try {
+      // 打开抽屉后按联系人维度拉历史消息，并依赖后端同步已读状态。
       const res = await getHistory(targetUserId);
       if (res.code === 200) {
         setMessages(res.data);
@@ -43,6 +44,7 @@ const ChatDrawer: React.FC<ChatDrawerProps> = ({ open, onClose, targetUserId, ta
 
   useEffect(() => {
     if (open && targetUserId) {
+      // 客服抽屉打开后短轮询，保证能看到最新回复。
       fetchHistory();
       const timer = setInterval(fetchHistory, 3000);
       return () => clearInterval(timer);
@@ -60,6 +62,7 @@ const ChatDrawer: React.FC<ChatDrawerProps> = ({ open, onClose, targetUserId, ta
   const handleSend = async () => {
     if (!inputValue.trim() || !targetUserId) return;
     try {
+      // 发送成功后复用同一套取历史逻辑刷新消息列表。
       const res = await sendMessage(targetUserId, inputValue);
       if (res.code === 200) {
         setInputValue('');

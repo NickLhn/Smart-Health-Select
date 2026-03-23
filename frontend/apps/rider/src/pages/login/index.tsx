@@ -14,6 +14,7 @@ const Login: React.FC = () => {
       return
     }
 
+    // 骑手端登录成功后把 token 和用户信息都落到本地缓存。
     const res = await request.post('/auth/login', {
       username,
       password
@@ -32,6 +33,7 @@ const Login: React.FC = () => {
   }
 
   const goToRegister = () => {
+    // 注册页用于新骑手入驻申请。
     Taro.navigateTo({ url: '/pages/register/index' })
   }
 

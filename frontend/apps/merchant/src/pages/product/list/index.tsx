@@ -48,6 +48,7 @@ const ProductList: React.FC = () => {
     try {
       const res = await getCategoryList();
       if (res.code === 200) {
+        // 分类筛选直接复用后端分类树，避免前端再维护一套静态枚举。
         setCategoryOptions(mapCategoryTree(res.data));
       }
     } catch {
@@ -58,6 +59,7 @@ const ProductList: React.FC = () => {
   const fetchData = useCallback(async (page = 1, size = 10) => {
     setLoading(true);
     try {
+      // 商品列表统一按当前搜索词、状态和分类路径查询。
       const res = await getMedicineList({
         page,
         size,
@@ -89,6 +91,7 @@ const ProductList: React.FC = () => {
   }, [fetchData]);
 
   const handleSearch = useCallback(() => {
+    // 搜索时回到第一页，避免旧分页导致结果错位。
     fetchData(1, pageSize);
   }, [fetchData, pageSize]);
 
@@ -114,6 +117,7 @@ const ProductList: React.FC = () => {
           const res = await updateMedicineStatus(record.id, newStatus);
           if (res.code === 200) {
             message.success(`${actionText}成功`);
+            // 状态变化后刷新当前页，保证表格展示和后端一致。
             fetchData(current, pageSize);
           } else {
             message.error(res.message || `${actionText}失败`);

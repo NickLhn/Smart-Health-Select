@@ -29,6 +29,7 @@ const CouponList: React.FC = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // 优惠券列表统一按当前分页和筛选条件拉取。
       const res = await getCouponPage({
         page,
         size: pageSize,
@@ -51,6 +52,7 @@ const CouponList: React.FC = () => {
   }, [page, pageSize, filters]);
 
   const handleSearch = useCallback((values: any) => {
+    // 搜索后回到第一页，避免保留旧分页导致结果错位。
     setFilters(values);
     setPage(1);
   }, []);
@@ -86,6 +88,7 @@ const CouponList: React.FC = () => {
   };
 
   const handleEdit = (record: Coupon) => {
+    // 编辑时把有效期拆成 RangePicker 需要的 dayjs 结构。
     setEditingId(record.id);
     form.setFieldsValue({
       ...record,
@@ -103,6 +106,7 @@ const CouponList: React.FC = () => {
   const handleEditorSubmit = async () => {
     try {
       const values = await form.validateFields();
+      // timeRange 只是前端表单结构，提交前要拆成 start/end。
       const payload = {
         ...values,
         startTime: values.timeRange[0].format('YYYY-MM-DD HH:mm:ss'),
@@ -111,6 +115,7 @@ const CouponList: React.FC = () => {
       delete payload.timeRange;
 
       if (editingId) {
+        // 编辑和新建复用同一个抽屉，只根据 editingId 区分接口。
         const res = await request.put(`/marketing/coupon/update/${editingId}`, payload);
         if (res.code === 200) {
           message.success('更新成功');

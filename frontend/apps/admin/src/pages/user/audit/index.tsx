@@ -28,6 +28,7 @@ const MerchantAudit: React.FC = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // 商家审核页默认按审核状态筛选，和顶部标签联动。
       const res = await getMerchantList({ ...query, auditStatus: statusFilter });
       if (res.code === 200) {
         setData(res.data.records);
@@ -54,6 +55,7 @@ const MerchantAudit: React.FC = () => {
       const values = auditForm.getFieldsValue();
       const remark = (values?.auditRemark || '').trim();
       if (!pass && !remark) {
+        // 驳回时必须填写原因，便于商家看到审核反馈。
         message.warning('请填写驳回原因');
         return;
       }
@@ -75,6 +77,7 @@ const MerchantAudit: React.FC = () => {
   }, [auditForm, currentMerchant, fetchData, message]);
 
   const showDetail = useCallback((record: Merchant) => {
+    // 打开详情抽屉前先清空审核表单，避免残留上次输入。
     setCurrentMerchant(record);
     auditForm.resetFields();
     setDrawerOpen(true);
@@ -180,6 +183,7 @@ const MerchantAudit: React.FC = () => {
   const handleSearch = useCallback(
     (values: any) => {
       const keyword = (values?.keyword || '').trim();
+      // 搜索后回到第一页，避免旧分页影响结果展示。
       setQuery((prev) => ({
         ...prev,
         page: 1,

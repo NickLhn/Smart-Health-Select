@@ -25,6 +25,7 @@ const Home: React.FC = () => {
   const [data, setData] = useState<HomeIndexVO | null>(null);
 
   useEffect(() => {
+    // 首页首屏只依赖一个聚合接口，避免同时发多个请求造成抖动。
     fetchData();
   }, []);
 
@@ -48,6 +49,7 @@ const Home: React.FC = () => {
 
   const onSearch = (value: string) => {
     if (value.trim()) {
+      // 搜索统一跳药品列表页，并把关键字透传给列表页查询。
       navigate(`/medicine?keyword=${encodeURIComponent(value.trim())}`);
     } else {
       navigate('/medicine');

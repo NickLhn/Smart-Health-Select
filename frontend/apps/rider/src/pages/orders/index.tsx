@@ -5,7 +5,8 @@ import request from '../../services/request'
 import './index.scss'
 
 const Orders: React.FC = () => {
-  const [activeTab, setActiveTab] = useState(1) // 1: 配送中, 2: 已送达
+  // 1 表示配送中，2 表示已送达。
+  const [activeTab, setActiveTab] = useState(1)
   const [list, setList] = useState<any[]>([])
 
   const parseToMs = (value: any): number | null => {
@@ -53,10 +54,12 @@ const Orders: React.FC = () => {
   }
 
   useDidShow(() => {
+    // 页面每次可见时都重新拉一次，避免切后台回来看到旧状态。
     fetchList()
   })
 
   useEffect(() => {
+    // 切换标签页时按状态重新查询。
     fetchList()
   }, [activeTab])
 
@@ -67,6 +70,7 @@ const Orders: React.FC = () => {
       size: 20 
     })
     if (res.code === 200) {
+      // 订单页按当前标签只展示配送中或已完成列表。
       setList(res.data.records || [])
     }
   }
@@ -78,6 +82,7 @@ const Orders: React.FC = () => {
   }
 
   const handleCardClick = (id: number) => {
+    // 订单详情页统一承接配送轨迹和送达操作。
     Taro.navigateTo({ url: `/pages/order-detail/index?id=${id}` })
   }
 

@@ -26,10 +26,10 @@ const MainLayout: React.FC = () => {
         </div>
       </Footer>
       
-      {/* Mobile Bottom Navigation */}
+      {/* 底部导航统一挂在主布局里，所有主站页面共享。 */}
       <BottomNav />
 
-      {/* AI Consultation Float Button */}
+      {/* AI 浮动入口放在布局层，任何主站页面都能随时拉起咨询面板。 */}
       <FloatButton 
         icon={<RobotOutlined />} 
         type="primary" 

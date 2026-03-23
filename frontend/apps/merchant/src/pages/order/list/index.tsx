@@ -53,6 +53,7 @@ const OrderList: React.FC = () => {
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
+      // 商家订单页把分页、状态和时间区间统一交给后端处理。
       const res = await getSellerOrderList({
         page: current,
         size: pageSize,
@@ -113,7 +114,8 @@ const OrderList: React.FC = () => {
           const res = await shipOrder(record.id);
           if (res.code === 200) {
             message.success('发货成功，已通知骑手');
-            fetchOrders(); // 刷新列表
+            // 发货后刷新列表，让订单从待发货流转到下一状态。
+            fetchOrders();
           } else {
             message.error(res.message || '发货失败');
           }
@@ -130,6 +132,7 @@ const OrderList: React.FC = () => {
   };
 
   const handleAuditClick = (record: Order) => {
+    // 打开审核弹窗前先清空上一次的审核结果和意见。
     setCurrentOrder(record);
     setAuditStatus(1);
     setAuditReason('');
@@ -160,6 +163,7 @@ const OrderList: React.FC = () => {
   };
 
   const handleRefundClick = (record: Order) => {
+    // 退款处理弹窗同样每次重置默认值。
     setCurrentOrder(record);
     setRefundStatus(1);
     setRefundRemark('');

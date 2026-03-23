@@ -25,6 +25,7 @@ const Dashboard: React.FC = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // 商家工作台所有卡片和图表都依赖同一份聚合统计数据。
       const res = await getDashboardStatistics();
       if (res.code === 200) {
         setData(res.data);
@@ -70,6 +71,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const salesOption = useMemo(() => {
+    // 销售趋势图直接消费后端返回的图表数据，不再前端二次聚合。
     const xData = salesTrendData.map((item) => item.name);
     const yData = salesTrendData.map((item) => item.value);
     return {
@@ -112,6 +114,7 @@ const Dashboard: React.FC = () => {
   }, [salesTrendData]);
 
   const orderOption = useMemo(() => {
+    // 订单趋势图与销售趋势图共用同一套时间维度结构。
     const xData = orderTrendData.map((item) => item.name);
     const yData = orderTrendData.map((item) => item.value);
     return {

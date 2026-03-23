@@ -15,7 +15,7 @@ export interface ChatHistoryMessage {
   recommendations?: any;
 }
 
-// 普通对话接口。
+// 管理端当前走普通对话接口，不用前端自己拼流式增量。
 export const sendChatMessage = async (message: string): Promise<AIChatResponse> => {
   const res = await request.post<AIChatResponse>('/ai/chat', { message }, { timeout: 60000 });
   return res.data;

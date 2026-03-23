@@ -19,6 +19,7 @@ const CategoryList: React.FC = () => {
     try {
       const res = await getCategoryList();
       if (res.code === 200) {
+        // 分类页直接使用树结构原始数据，后续增删改都围绕这棵树刷新。
         setData(res.data);
         setLastUpdatedAt(Date.now());
       }
@@ -37,6 +38,7 @@ const CategoryList: React.FC = () => {
     setEditingId(null);
     form.resetFields();
     if (parentId) {
+      // 从某个节点新增时，默认把它作为父级分类带入表单。
       form.setFieldValue('parentId', parentId);
     }
     setDrawerOpen(true);
@@ -46,6 +48,7 @@ const CategoryList: React.FC = () => {
     setEditingId(record.id);
     form.setFieldsValue({
       ...record,
+      // 一级分类在表单里显示为空，避免把 0 直接暴露给用户。
       parentId: record.parentId === 0 ? undefined : record.parentId,
     });
     setDrawerOpen(true);
@@ -68,6 +71,7 @@ const CategoryList: React.FC = () => {
       const values = await form.validateFields();
       const payload = {
         ...values,
+        // 后端约定 parentId=0 表示一级分类。
         parentId: values.parentId ?? 0,
       };
       if (editingId) {

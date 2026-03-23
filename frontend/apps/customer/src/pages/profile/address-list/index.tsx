@@ -16,6 +16,7 @@ const AddressList: React.FC = () => {
   const fetchAddresses = async () => {
     setLoading(true);
     try {
+      // 地址页每次进入都回源，确保默认地址状态是最新的。
       const res = await getAddressList();
       if (res && res.data) {
         setAddresses(res.data);
@@ -69,6 +70,7 @@ const AddressList: React.FC = () => {
 
   const handleSetDefault = async (id: number) => {
     try {
+      // 默认地址切换成功后整表刷新，避免本地保留多个默认态。
       await setDefaultAddress(id);
       message.success('设置成功');
       fetchAddresses();
@@ -82,6 +84,7 @@ const AddressList: React.FC = () => {
       const values = await form.validateFields();
       const payload = {
         ...values,
+        // 表单里用 boolean 控件，提交给后端时转回 0/1。
         isDefault: values.isDefault ? 1 : 0,
       };
 

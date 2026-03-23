@@ -23,7 +23,8 @@ export default defineAppConfig({
       {
         pagePath: 'pages/orders/index',
         text: '订单',
-        iconPath: './assets/tab-home.png', // Temporary reuse
+        // 订单 tab 目前复用接单图标，后续可以再单独补资源。
+        iconPath: './assets/tab-home.png',
         selectedIconPath: './assets/tab-home-active.png'
       },
       {

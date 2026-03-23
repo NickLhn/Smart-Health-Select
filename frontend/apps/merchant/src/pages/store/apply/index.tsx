@@ -171,6 +171,7 @@ const StoreApply: React.FC = () => {
 
     setLastLicenseOcrKey(key);
     setLicenseOcrLoading(true);
+    // 营业执照上传完成后自动触发 OCR，减少手工录入字段。
     ocrBusinessLicense(url)
       .then((res) => {
         if (res.code !== 200) {
@@ -210,6 +211,7 @@ const StoreApply: React.FC = () => {
     if (key === lastIdCardOcrKey) return;
 
     setLastIdCardOcrKey(key);
+    // 身份证正反面都就绪后再触发一次合并识别。
     runIdCardOcr(frontUrl, backUrl);
   }, [idCardBackList, idCardFrontList, lastIdCardOcrKey, runIdCardOcr]);
 

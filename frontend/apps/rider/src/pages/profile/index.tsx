@@ -14,6 +14,7 @@ const Profile: React.FC = () => {
     if (info) {
       setUserInfo(info)
     }
+    // 收入和单量数据来自配送统计接口，每次进入页面重新刷新。
     fetchIncome()
   })
 
@@ -26,6 +27,7 @@ const Profile: React.FC = () => {
   }
 
   const handleLogout = () => {
+    // 退出时清掉 token 和缓存的用户资料。
     Taro.removeStorageSync('token')
     Taro.removeStorageSync('userInfo')
     Taro.reLaunch({ url: '/pages/login/index' })

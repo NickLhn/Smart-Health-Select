@@ -64,6 +64,7 @@ const MyCoupons: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // 我的优惠券列表按使用状态切换查询。
       const res = await getMyCoupons(status);
       if (res.code === 200) {
         setCoupons(res.data || []);
@@ -107,6 +108,7 @@ const CouponMarket: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // 领券中心单独拉可领取优惠券，不和“我的优惠券”复用数据源。
       const res = await getAvailableCoupons();
       if (res.code === 200) {
         setList(res.data || []);
@@ -124,6 +126,7 @@ const CouponMarket: React.FC = () => {
 
   const handleReceive = async (id: number) => {
     try {
+      // 领取成功后立即刷新可领列表，避免继续展示已领完状态。
       const res = await receiveCoupon(id);
       if (res.code === 200) {
         message.success('领取成功');

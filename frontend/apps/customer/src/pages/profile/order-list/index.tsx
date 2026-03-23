@@ -25,6 +25,7 @@ const OrderList: React.FC<OrderListProps> = ({ active }) => {
       if (currStatus !== 'all') {
         params.status = parseInt(currStatus);
       }
+      // 个人中心订单页按标签和分页组合查询。
       const res = await getOrderList(params);
       if (res.code === 200) {
         setOrders(res.data.records);
@@ -47,6 +48,7 @@ const OrderList: React.FC<OrderListProps> = ({ active }) => {
 
   const handlePay = async (orderId: number) => {
     try {
+      // 个人中心里的去支付仍走统一支付接口，成功后刷新当前列表。
       const res = await payOrder(orderId);
       if (res.code === 200) {
         message.success('支付成功');
@@ -66,6 +68,7 @@ const OrderList: React.FC<OrderListProps> = ({ active }) => {
       content: '确认已收到商品吗？',
       onOk: async () => {
         try {
+            // 确认收货后刷新当前列表，立即同步订单状态。
             const res = await confirmReceipt(orderId);
             if (res.code === 200) {
                 message.success('确认收货成功');

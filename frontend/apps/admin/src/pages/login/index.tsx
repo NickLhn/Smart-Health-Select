@@ -17,6 +17,7 @@ const Login: React.FC = () => {
     try {
       const values = await mobileForm.validateFields(['mobile']);
       const mobile = values.mobile;
+      // 手机登录和重置密码复用同一个验证码发送接口。
       const res = await sendVerifyCode(mobile);
       if (res.code === 200) {
         message.success(res.message || '验证码发送成功');
@@ -48,6 +49,7 @@ const Login: React.FC = () => {
       const res = await login({ ...values, role: 'ADMIN' });
       if (res.code === 200) {
         message.success('登录成功');
+        // 登录成功后统一把 token 和用户信息写进 AuthContext。
         authLogin(res.data.token, res.data.userInfo);
         navigate('/');
       } else {
@@ -106,12 +108,13 @@ const Login: React.FC = () => {
             centered={false}
             size="large"
             className="custom-tabs"
-            items={[
-              {
-                key: 'account',
-                label: '账号登录',
-                children: (
-                  <Form
+          items={[
+            {
+              key: 'account',
+              label: '账号登录',
+              children: (
+                // 管理端保留账号密码登录，适合固定运营账号使用。
+                <Form
                     name="normal_login"
                     className="login-form mt-4 space-y-5"
                     initialValues={{ remember: true }}
@@ -164,11 +167,12 @@ const Login: React.FC = () => {
                   </Form>
                 ),
               },
-              {
-                key: 'mobile',
-                label: '手机登录',
-                children: (
-                  <Form
+            {
+              key: 'mobile',
+              label: '手机登录',
+              children: (
+                // 手机登录主要方便临时登录或忘记密码场景。
+                <Form
                     form={mobileForm}
                     name="mobile_login"
                     className="login-form mt-4 space-y-5"

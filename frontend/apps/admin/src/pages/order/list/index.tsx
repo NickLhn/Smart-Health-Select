@@ -40,6 +40,7 @@ const OrderList: React.FC = () => {
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
+      // 订单列表把分页、状态和关键字筛选统一交给后端处理。
       const res = await getAdminOrderList({
         page: pagination.current,
         size: pagination.pageSize,
@@ -234,6 +235,7 @@ const OrderList: React.FC = () => {
   };
 
   const showAudit = (record: Order) => {
+    // 每次打开审核弹窗都重置表单，避免带入上一单的审核意见。
     setAuditTarget(record);
     auditForm.resetFields();
     setAuditOpen(true);

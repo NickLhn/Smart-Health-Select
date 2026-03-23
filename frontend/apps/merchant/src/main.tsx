@@ -6,6 +6,7 @@ import App from './App.tsx'
 import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
 
+// 商家端根节点统一包 ErrorBoundary，避免页面异常直接白屏。
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ConfigProvider locale={zhCN}>

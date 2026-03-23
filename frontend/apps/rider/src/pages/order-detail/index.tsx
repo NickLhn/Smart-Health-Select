@@ -28,14 +28,15 @@ const OrderDetail: React.FC = () => {
 
   useEffect(() => {
     if (id) {
+      // 详情页优先在待接单列表里找，找不到再去我的订单里补查。
       fetchDetail(id)
     }
   }, [id])
 
   useEffect(() => {
-    // Init map only when info is loaded and status is delivering (1)
+    // 只有配送中状态才需要初始化地图与导航能力。
     if (info && info.status === 1 && !mapInstance) {
-       // H5 Map Initialization
+       // H5 环境直接挂载高德地图实例。
        if (process.env.TARO_ENV === 'h5') {
            if (!window.AMap) {
                console.warn('AMap not loaded yet, retrying...');
@@ -128,6 +129,7 @@ const OrderDetail: React.FC = () => {
     }
 
     if (found) {
+      // 页面只维护一份 info 状态，接单前后都复用同一个展示模型。
       setInfo(found)
       if (found.proofImage) {
         setProofImage(found.proofImage)
@@ -139,6 +141,7 @@ const OrderDetail: React.FC = () => {
     if (!info) return
     
     if (info.status === 0) {
+      // 待接单状态下按钮表示抢单。
       const res = await request.post(`/delivery/${info.id}/accept`)
       if (res.code === 200) {
         Taro.showToast({ title: '抢单成功', icon: 'success' })
@@ -149,6 +152,7 @@ const OrderDetail: React.FC = () => {
         Taro.showToast({ title: '请上传送达凭证', icon: 'none' })
         return
       }
+      // 配送中状态下按钮表示上传送达凭证并完成配送。
       const res = await request.post(`/delivery/${info.id}/complete?proofImage=${encodeURIComponent(proofImage)}`)
       if (res.code === 200) {
         Taro.showToast({ title: '已送达', icon: 'success' })
@@ -163,6 +167,7 @@ const OrderDetail: React.FC = () => {
       const destName = type === 'shop' ? info.shopAddress : info.receiverAddress
       
       if (process.env.TARO_ENV === 'h5') {
+          // H5 环境直接跳高德 URI Scheme，由浏览器或 App 处理。
           if (!destName) {
               Taro.showToast({ title: '无法获取目的地', icon: 'none' })
               return
@@ -170,6 +175,7 @@ const OrderDetail: React.FC = () => {
           const url = `https://uri.amap.com/navigation?to=,,${destName}&mode=ride&policy=1&src=zhijian&callnative=1`
           window.location.href = url
       } else {
+          // 小程序环境先做地址解析，再调用系统地图导航。
           const key = 'e43c92dca357b9d01d0183da81ea9af8';
           Taro.showLoading({ title: '准备导航...' });
           

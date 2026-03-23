@@ -31,6 +31,7 @@ const ArticleList: React.FC = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // 资讯页统一按当前分页和筛选条件请求后端。
       const res = await getArticlePage({ page, size, ...query });
       if (res.code === 200) {
         setData(res.data.records);
@@ -49,6 +50,7 @@ const ArticleList: React.FC = () => {
   }, [page, size, query]);
 
   const handleSearch = useCallback((values: any) => {
+    // 标题和分类筛选变化时都回到第一页。
     setQuery(values);
     setPage(1);
   }, []);
@@ -68,6 +70,7 @@ const ArticleList: React.FC = () => {
   }, [form]);
 
   const handleEdit = useCallback((record: HealthArticle) => {
+    // 编辑时直接把当前记录带入表单，详情页再负责更完整预览。
     setEditingId(record.id);
     if (record.coverImage) {
       setFileList([{
@@ -129,6 +132,7 @@ const ArticleList: React.FC = () => {
       const values = await form.validateFields();
       const imageUrl = fileList.length > 0 ? getFileUrl(fileList[0]) : '';
       
+      // 封面图走统一上传组件，表单提交时只保留 URL。
       const payload = {
         ...values,
         coverImage: imageUrl,

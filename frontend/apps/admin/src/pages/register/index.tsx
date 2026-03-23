@@ -14,6 +14,7 @@ const Register: React.FC = () => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
+      // 注册页固定申请管理员角色，后端再按管理员流程处理。
       const payload = {
         username: values.username,
         password: values.password,
@@ -49,6 +50,7 @@ const Register: React.FC = () => {
         return;
       }
 
+      // 注册页验证码和登录页共用同一个短信服务。
       await sendVerifyCode(mobile);
       message.success('验证码已发送');
       

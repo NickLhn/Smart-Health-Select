@@ -23,6 +23,7 @@ const BannerList: React.FC = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // 轮播图列表当前只受分页影响，不做额外本地筛选。
       const res = await getBannerList({ page, size });
       if (res.code === 200) {
         setData(res.data.records);
@@ -44,6 +45,7 @@ const BannerList: React.FC = () => {
     setEditingId(null);
     setFileList([]);
     form.resetFields();
+    // 新建时给一个默认状态和排序值，减少重复输入。
     form.setFieldsValue({ status: 1, sort: 0 });
     setEditorOpen(true);
   }, [form]);
@@ -51,6 +53,7 @@ const BannerList: React.FC = () => {
   const handleEdit = useCallback((record: Banner) => {
     setEditingId(record.id);
     if (record.imageUrl) {
+      // 编辑时构造一个已上传文件对象，复用 Upload 组件的回显能力。
       setFileList([{
         uid: '-1',
         name: 'image.png',
@@ -109,6 +112,7 @@ const BannerList: React.FC = () => {
     try {
       const values = await form.validateFields();
       
+      // 提交前从 Upload 组件里提取最终图片 URL。
       const imageUrl = fileList.length > 0 ? getFileUrl(fileList[0]) : '';
       if (!imageUrl) {
         message.error('请上传图片');
@@ -122,6 +126,7 @@ const BannerList: React.FC = () => {
       };
 
       if (editingId) {
+        // 编辑和新增共用同一个表单抽屉。
         await updateBanner(editingId, payload);
         message.success('更新成功');
       } else {

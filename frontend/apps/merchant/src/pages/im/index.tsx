@@ -45,6 +45,7 @@ const ImPage: React.FC = () => {
     try {
       const res = await getContacts();
       if (res.code === 200) {
+        // 联系人列表轮询刷新，用来更新最后消息和未读数。
         setContacts(res.data);
       }
     } catch (error) {
@@ -57,6 +58,7 @@ const ImPage: React.FC = () => {
     try {
       const res = await getHistory(activeContactId);
       if (res.code === 200) {
+        // 打开会话时历史接口会顺带触发后端已读逻辑。
         setMessages(res.data);
         scrollToBottom();
       }
@@ -88,7 +90,8 @@ const ImPage: React.FC = () => {
       if (res.code === 200) {
         setInputValue('');
         fetchMessages();
-        fetchContacts(); // Update last message in sidebar
+        // 发送成功后刷新联系人侧栏，确保最后一条消息同步变化。
+        fetchContacts();
       } else {
         messageApi.error(res.message || '发送失败');
       }

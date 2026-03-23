@@ -14,6 +14,7 @@ const ForgotPassword: React.FC = () => {
 
   const onFinish = async (values: any) => {
     if (currentStep === 0) {
+      // 第一步只缓存手机号和验证码，第二步再真正提交重置请求。
       setMobileInfo({ mobile: values.mobile, captcha: values.captcha });
       setCurrentStep(1);
     } else {
@@ -51,6 +52,7 @@ const ForgotPassword: React.FC = () => {
         return;
       }
 
+      // 忘记密码同样复用短信验证码接口。
       await sendVerifyCode(mobile);
       message.success('验证码已发送');
       

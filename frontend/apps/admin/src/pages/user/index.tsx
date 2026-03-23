@@ -23,6 +23,7 @@ const UserList: React.FC = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // 用户列表统一走 query 驱动，搜索和分页都只改 query。
       const res = await getUserList(query);
       if (res.code === 200) {
         setData(res.data.records);
@@ -43,6 +44,7 @@ const UserList: React.FC = () => {
   }, [fetchData]);
 
   const handleSearch = useCallback((values: any) => {
+    // 搜索后回到第一页，保证筛选结果从头展示。
     setQuery((prev) => ({ ...prev, ...values, page: 1 }));
   }, []);
 
@@ -54,6 +56,7 @@ const UserList: React.FC = () => {
   const handleStatusChange = useCallback(async (id: number, currentStatus: number) => {
     const newStatus = currentStatus === 1 ? 0 : 1;
     try {
+      // 状态切换成功后重新拉列表，避免本地状态和后端不一致。
       const res = await updateUserStatus(id, newStatus);
       if (res.code === 200) {
         message.success('状态更新成功');

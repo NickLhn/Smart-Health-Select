@@ -11,6 +11,7 @@ const Password: React.FC = () => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
+      // 修改密码直接复用管理端认证服务里的统一接口。
       const res = await updatePassword(values);
       if (res.code === 200) {
         message.success('密码修改成功');
@@ -64,6 +65,7 @@ const Password: React.FC = () => {
             { required: true, message: '请确认新密码!' },
             ({ getFieldValue }) => ({
               validator(_, value) {
+                // 二次确认只做前端一致性校验，避免明显误输。
                 if (!value || getFieldValue('newPassword') === value) {
                   return Promise.resolve();
                 }

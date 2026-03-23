@@ -28,8 +28,10 @@ const OrderDetail: React.FC = () => {
     if (!id) return;
     setLoading(true);
     try {
+      // 详情页通过订单 ID 单独回源，避免依赖列表页缓存。
       const res = await getOrderDetail(parseInt(id));
       if (res.code === 200) {
+        // 收货地址、审核状态、处方图等完整信息都依赖详情接口补全。
         setOrder(res.data);
       } else {
         message.error(res.message || '获取订单详情失败');
@@ -54,6 +56,7 @@ const OrderDetail: React.FC = () => {
       okType: 'danger',
       onOk: async () => {
         try {
+          // 取消成功后重新拉详情，按钮区和状态文案会同步刷新。
           const res = await cancelOrder(order.id);
           if (res.code === 200) {
             message.success('订单已取消');
@@ -70,6 +73,7 @@ const OrderDetail: React.FC = () => {
 
   const handlePay = () => {
     if (!order) return;
+    // 支付页单独承接模拟支付流程。
     navigate(`/payment/${order.id}`);
   };
 
@@ -80,6 +84,7 @@ const OrderDetail: React.FC = () => {
       content: '请确保您已收到商品并确认无误。确认收货后，订单将完成。',
       onOk: async () => {
         try {
+          // 确认收货成功后回源详情，订单步骤条会跟着变化。
           const res = await confirmReceipt(order.id);
           if (res.code === 200) {
             message.success('确认收货成功');

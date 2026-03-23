@@ -10,6 +10,7 @@ interface State {
   error?: Error;
 }
 
+// 用户端兜底错误边界，页面渲染异常时统一落到错误页。
 class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false
@@ -20,6 +21,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // 错误详情统一打到控制台，便于联调和线上排查。
     console.error('Uncaught error:', error, errorInfo);
   }
 

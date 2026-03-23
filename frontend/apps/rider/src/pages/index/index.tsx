@@ -51,6 +51,7 @@ const Index: React.FC = () => {
       Taro.reLaunch({ url: '/pages/login/index' })
       return
     }
+    // 听单状态和累计在线时长都持久化在本地，页面恢复时先同步回来。
     const storedOnlineValue = Taro.getStorageSync('rider_online')
     const storedIsOnline =
       storedOnlineValue === '' || storedOnlineValue === null || typeof storedOnlineValue === 'undefined'
@@ -69,6 +70,7 @@ const Index: React.FC = () => {
   })
 
   const fetchAll = async () => {
+    // 首页卡片和订单列表一起刷新，避免界面出现时间差。
     await Promise.all([fetchList(), fetchStats()])
     Taro.stopPullDownRefresh()
   }
@@ -77,6 +79,7 @@ const Index: React.FC = () => {
     setLoading(true)
     const res = await request.get('/delivery/pending/list', { page: 1, size: 20 })
     if (res.code === 200) {
+      // 首页只展示待抢单列表。
       setList(res.data.records || [])
     }
     setLoading(false)
@@ -96,6 +99,7 @@ const Index: React.FC = () => {
       Taro.showToast({ title: '当前休息中，切换到听单后才能接单', icon: 'none' })
       return
     }
+    // 只有听单中状态才允许抢单，和顶部开关保持一致。
     const res = await request.post(`/delivery/${id}/accept`)
     if (res.code === 200) {
       Taro.showToast({ title: '抢单成功', icon: 'success' })
@@ -106,10 +110,11 @@ const Index: React.FC = () => {
   }
 
   const handleCardClick = (id: number) => {
+    // 详情页承载导航、送达、上传凭证等后续动作。
     Taro.navigateTo({ url: `/pages/order-detail/index?id=${id}` })
   }
 
-  // Handle scroll for glassmorphism effect
+  // 头部卡片滚动时切换样式，增强沉浸式效果。
   const [scrollTop, setScrollTop] = useState(0)
   const onScroll = (e) => setScrollTop(e.detail.scrollTop)
 
@@ -120,6 +125,7 @@ const Index: React.FC = () => {
     const startedAt = Number(Taro.getStorageSync('rider_online_started_at') || 0)
 
     if (next) {
+      // 开始听单时记录起始时间，后续在线时长按当前时间差累加。
       Taro.setStorageSync('rider_online', true)
       Taro.setStorageSync('rider_online_started_at', now)
       setIsOnline(true)
@@ -129,6 +135,7 @@ const Index: React.FC = () => {
     }
 
     const newAcc = acc + (startedAt > 0 ? Math.max(0, now - startedAt) : 0)
+    // 休息时先把本段在线时长结转到累计值，再停止计时。
     Taro.setStorageSync('rider_online', false)
     Taro.setStorageSync('rider_online_started_at', 0)
     Taro.setStorageSync('rider_online_acc_ms', newAcc)

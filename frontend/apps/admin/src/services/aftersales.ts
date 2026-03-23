@@ -27,7 +27,7 @@ export interface RefundApply {
   auditReason?: string;
   createTime: string;
   updateTime: string;
-  // 关联字段，后端明细查询时可能额外返回。
+  // 关联字段由后端列表接口按需补充，前端不单独再查详情表。
   orderNo?: string;
   username?: string;
 }

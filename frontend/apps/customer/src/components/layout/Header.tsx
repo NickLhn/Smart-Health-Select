@@ -86,6 +86,7 @@ const UserMenu = () => {
   ];
 
   if (!isAuthenticated || !user) {
+    // 未登录时头部直接显示登录入口，不展示用户下拉菜单。
     return (
       <Button 
         type="primary" 
@@ -131,6 +132,7 @@ const Header: React.FC = () => {
   const handleSearch = (value: string) => {
     const keyword = value.trim();
     if (keyword) {
+      // 搜索统一跳药品列表页，并把关键字透传给列表页查询。
       navigate(`/medicine?keyword=${encodeURIComponent(keyword)}`);
       return;
     }

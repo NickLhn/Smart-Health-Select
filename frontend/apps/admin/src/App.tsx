@@ -102,6 +102,7 @@ const MainLayout: React.FC = () => {
   }, [isAuthenticated, navigate]);
 
   const onClick: MenuProps['onClick'] = (e) => {
+    // 菜单 key 直接复用路由路径，点击后不用再做额外映射。
     navigate(e.key);
   };
 
@@ -127,7 +128,7 @@ const MainLayout: React.FC = () => {
 
   // 计算当前菜单选中项和展开项
   const selectedKey = location.pathname === '/' ? '/dashboard' : location.pathname;
-  // 按路径结构推导展开菜单，例如 /user/user-list -> /user
+  // 按路径结构推导展开菜单，例如 /user/user-list -> /user。
   const openKey = '/' + selectedKey.split('/')[1];
 
   const currentTitle = (() => {

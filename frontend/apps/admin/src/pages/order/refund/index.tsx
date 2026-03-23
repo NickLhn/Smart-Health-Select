@@ -39,6 +39,7 @@ const RefundList: React.FC = () => {
   const fetchRefunds = useCallback(async () => {
     setLoading(true);
     try {
+      // 售后列表统一按分页、状态和筛选条件组合查询。
       const query: RefundQuery & { keyword?: string } = {
         page: pagination.current,
         size: pagination.pageSize,
@@ -72,6 +73,7 @@ const RefundList: React.FC = () => {
   };
 
   const showAuditModal = (record: RefundApply, action: 'approve' | 'reject') => {
+    // 打开弹窗时重置处理动作和备注，避免带入上一条记录。
     setCurrentRefund(record);
     setAuditAction(action);
     setAuditReason('');
@@ -82,6 +84,7 @@ const RefundList: React.FC = () => {
     if (!currentRefund) return;
     
     if (auditAction === 'reject' && !auditReason) {
+      // 拒绝时强制填写原因，方便后端回写给用户。
       message.warning('请填写拒绝原因');
       return;
     }
