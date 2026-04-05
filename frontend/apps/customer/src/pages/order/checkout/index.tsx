@@ -9,7 +9,8 @@ import { getPatientList } from '../../../services/patient';
 import type { Patient } from '../../../services/patient';
 import { getMyCoupons } from '../../../services/coupon';
 import type { UserCoupon } from '../../../services/coupon';
-import { createOrderFromCart, payOrder, calculateFreight } from '../../../services/order';
+import { createOrderFromCart, calculateFreight } from '../../../services/order';
+import { createStripeCheckoutSession } from '../../../services/payment';
 import { uploadFile } from '../../../services/file';
 
 const Checkout: React.FC = () => {
@@ -17,7 +18,6 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const { message } = AntdApp.useApp();
   const [currentStep, setCurrentStep] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('wechat');
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<number>();
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -26,7 +26,7 @@ const Checkout: React.FC = () => {
   const [selectedCouponId, setSelectedCouponId] = useState<number>();
   const [freight, setFreight] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [orderIds, setOrderIds] = useState<number[]>([]);
+  const [orderIds, setOrderIds] = useState<string[]>([]);
   const [prescriptionImage, setPrescriptionImage] = useState<string>();
   const [fileList, setFileList] = useState<any[]>([]);
   const [submittedItems, setSubmittedItems] = useState<any[]>([]);
@@ -114,7 +114,12 @@ const Checkout: React.FC = () => {
       });
 
       if (res.code === 200) {
-        setOrderIds(res.data);
+        const validOrderIds = (res.data || []).filter((id: string) => typeof id === 'string' && /^\d+$/.test(id));
+        if (validOrderIds.length === 0 || validOrderIds.length !== (res.data || []).length) {
+          message.error('下单成功，但订单ID无效，请检查后端订单主键配置');
+          return;
+        }
+        setOrderIds(validOrderIds);
         setSubmittedItems(cartItems); // Save items for display
         setCurrentStep(1);
         await refreshCart(); // Backend clears items, just refresh local state
@@ -133,47 +138,16 @@ const Checkout: React.FC = () => {
   const handlePay = async () => {
     setLoading(true);
     try {
-      // Pay all orders
-      let successCount = 0;
-      for (const id of orderIds) {
-        const res = await payOrder(id);
-        if (res.code === 200) successCount++;
-      }
-      
-      if (successCount === orderIds.length) {
-        message.success('支付成功');
-        setCurrentStep(2);
-      } else {
-        message.warning(`部分订单支付失败 (${successCount}/${orderIds.length})`);
-        // If at least one success, maybe go to success page?
-        // Or stay here.
-        if (successCount > 0) setCurrentStep(2);
-      }
+      // 购物车拆单后改成一次创建支付批次，避免前端循环逐单发起 mock 支付。
+      const res = await createStripeCheckoutSession({ orderIds });
+      window.location.href = res.data.url;
     } catch (error) {
       console.error(error);
-      message.error('支付失败');
+      message.error('创建 Stripe 支付会话失败');
     } finally {
       setLoading(false);
     }
   };
-
-  if (currentStep === 2) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full bg-white/80 backdrop-blur-xl p-12 rounded-3xl shadow-xl shadow-emerald-900/5 border border-white/60 text-center animate-fade-in">
-          <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircleOutlined style={{ fontSize: 48 }} className="text-emerald-500" />
-          </div>
-          <h2 className="text-3xl font-bold mb-4 text-gray-800">订单支付成功</h2>
-          <p className="text-gray-500 mb-10 text-lg">我们将尽快为您发货，请保持电话畅通。</p>
-          <div className="flex justify-center gap-6">
-            <Button size="large" onClick={() => navigate('/')} className="rounded-xl px-8 h-12">返回首页</Button>
-            <Button type="primary" size="large" onClick={() => navigate('/order/list')} className="rounded-xl px-8 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 border-none shadow-lg shadow-emerald-500/20">查看订单</Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const selectedAddress = addresses.find(a => a.id === selectedAddressId);
   const selectedCoupon = coupons.find(c => c.id === selectedCouponId);
@@ -434,20 +408,18 @@ const Checkout: React.FC = () => {
                {currentStep === 1 && (
                  <div className="px-6 pb-6 animate-fade-in">
                    <div className="mb-3 font-bold text-gray-800">支付方式</div>
-                   <Radio.Group onChange={e => setPaymentMethod(e.target.value)} value={paymentMethod} className="flex flex-col gap-3 w-full">
-                     <Radio value="wechat" className="flex items-center w-full border border-gray-200 p-3 rounded-xl hover:border-emerald-200 transition-colors [&.ant-radio-wrapper-checked]:border-emerald-500 [&.ant-radio-wrapper-checked]:bg-emerald-50/30">
-                       <div className="flex items-center">
-                          <PayCircleOutlined style={{ color: '#09BB07', fontSize: 24, marginRight: 12 }} /> 
-                          <span className="font-medium">微信支付</span>
-                       </div>
-                     </Radio>
-                     <Radio value="alipay" className="flex items-center w-full border border-gray-200 p-3 rounded-xl hover:border-emerald-200 transition-colors [&.ant-radio-wrapper-checked]:border-emerald-500 [&.ant-radio-wrapper-checked]:bg-emerald-50/30">
-                       <div className="flex items-center">
-                          <PayCircleOutlined style={{ color: '#1677FF', fontSize: 24, marginRight: 12 }} /> 
-                          <span className="font-medium">支付宝</span>
-                       </div>
-                     </Radio>
-                   </Radio.Group>
+                   <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4 space-y-3">
+                     <div className="flex items-center gap-3 font-medium text-gray-800">
+                       <PayCircleOutlined style={{ color: '#10B981', fontSize: 24 }} />
+                       Stripe Test Checkout
+                     </div>
+                     <div className="text-sm text-gray-600 leading-6">
+                       这一步会跳转到 Stripe 托管收银台，当前仅接入沙盒支付。
+                     </div>
+                     <div className="rounded-xl bg-white px-3 py-2 text-sm text-gray-600 border border-dashed border-emerald-200">
+                       推荐测试卡号：4242 4242 4242 4242
+                     </div>
+                   </div>
                  </div>
                )}
 
@@ -473,7 +445,7 @@ const Checkout: React.FC = () => {
                       loading={loading}
                       className="h-14 rounded-2xl text-lg font-bold bg-gradient-to-r from-emerald-500 to-teal-600 border-none shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:scale-[1.02] transition-all active:scale-95"
                     >
-                      立即支付
+                      前往 Stripe 支付
                     </Button>
                  )}
                </div>

@@ -18,6 +18,7 @@ export const shouldHideCustomerBottomNav = (pathname: string) => {
     /^\/product\/\d+/,
     /^\/order\/checkout/,
     /^\/payment\/\d+/,
+    /^\/payment\/result/,
     /^\/refund\/apply\/\d+/,
     /^\/ai-consultation/,
     /^\/login$/,

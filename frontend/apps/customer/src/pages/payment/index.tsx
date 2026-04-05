@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Radio, Spin, Result, Divider, Space, Typography, App as AntdApp } from 'antd';
+import { Alert, Button, Result, Spin, Typography, App as AntdApp } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PayCircleOutlined, LeftOutlined, CheckCircleFilled, WechatOutlined, AlipayCircleOutlined } from '@ant-design/icons';
-import { getOrderDetail, payOrder } from '../../services/order';
+import { LeftOutlined, CreditCardOutlined } from '@ant-design/icons';
+import { getOrderDetail } from '../../services/order';
 import type { Order } from '../../services/order';
+import { createStripeCheckoutSession } from '../../services/payment';
 
 const { Title, Text } = Typography;
 
@@ -14,16 +15,15 @@ const PaymentPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
   const [order, setOrder] = useState<Order>();
-  const [paymentMethod, setPaymentMethod] = useState('wechat');
 
   useEffect(() => {
     if (orderId) {
       // 支付页先拉订单详情，避免展示已失效或不存在的订单。
-      fetchOrder(parseInt(orderId));
+      fetchOrder(orderId);
     }
   }, [orderId]);
 
-  const fetchOrder = async (id: number) => {
+  const fetchOrder = async (id: string) => {
     setLoading(true);
     try {
       const res = await getOrderDetail(id);
@@ -41,22 +41,15 @@ const PaymentPage: React.FC = () => {
   };
 
   const handlePay = async () => {
-    if (!order) return;
+    if (!order || !orderId) return;
     setPayLoading(true);
     try {
-      // 这里保留一个短延迟，模拟真实支付过程中的等待感。
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const res = await payOrder(order.id);
-      if (res.code === 200) {
-        message.success('支付成功');
-        // 支付完成后直接回订单详情页继续看履约状态。
-        navigate(`/order/${order.id}`, { replace: true });
-      } else {
-        message.error(res.message || '支付失败');
-      }
+      // 单订单支付页也统一走 Stripe Checkout，避免页面直接篡改本地订单状态。
+      const res = await createStripeCheckoutSession({ orderIds: [orderId] });
+      window.location.href = res.data.url;
     } catch (error) {
-      message.error('支付出错');
+      console.error(error);
+      message.error('创建 Stripe 支付会话失败');
     } finally {
       setPayLoading(false);
     }
@@ -93,60 +86,36 @@ const PaymentPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
       <div className="bg-white sticky top-0 z-10 px-4 h-14 flex items-center shadow-sm">
         <Button type="text" icon={<LeftOutlined />} onClick={() => navigate(-1)} />
         <span className="text-lg font-bold ml-2">收银台</span>
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        {/* Order Amount */}
         <div className="bg-white p-6 rounded-xl shadow-sm text-center">
-          <div className="text-gray-500 mb-2">支付剩余时间 29:59</div>
+          <div className="text-gray-500 mb-2">Stripe 沙盒支付</div>
           <div className="text-4xl font-bold text-gray-900 mb-2">
             <span className="text-2xl">¥</span>{order.payAmount.toFixed(2)}
           </div>
           <div className="text-gray-500 text-sm">{order.medicineName} 等商品</div>
         </div>
 
-        {/* Payment Method */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 font-medium">
-            选择支付方式
+          <div className="px-4 py-3 border-b border-gray-100 font-medium flex items-center gap-2">
+            <CreditCardOutlined className="text-emerald-600" />
+            Stripe Test Checkout
           </div>
-          <Radio.Group 
-            className="w-full" 
-            value={paymentMethod} 
-            onChange={e => setPaymentMethod(e.target.value)}
-          >
-            <div 
-              className="flex items-center justify-between p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors"
-              onClick={() => setPaymentMethod('wechat')}
-            >
-              <div className="flex items-center gap-3">
-                <WechatOutlined className="text-3xl text-[#09BB07]" />
-                <div>
-                  <div className="font-medium text-gray-900">微信支付</div>
-                  <div className="text-xs text-gray-500">亿万用户的选择，更快更安全</div>
-                </div>
-              </div>
-              <Radio value="wechat" />
+          <div className="p-4 space-y-4">
+            <Alert
+              type="info"
+              showIcon
+              message="当前是 Stripe sandbox 模式"
+              description="点击下方按钮后会跳转到 Stripe 托管收银台。推荐测试卡号：4242 4242 4242 4242，任意未来日期、任意 CVC 和邮编即可。"
+            />
+            <div className="rounded-xl border border-dashed border-emerald-200 bg-emerald-50/40 px-4 py-3 text-sm text-gray-600">
+              这版只接入沙盒支付，不会真实扣款，也不会要求你在前端保存银行卡信息。
             </div>
-
-            <div 
-              className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors"
-              onClick={() => setPaymentMethod('alipay')}
-            >
-              <div className="flex items-center gap-3">
-                <AlipayCircleOutlined className="text-3xl text-[#1677FF]" />
-                <div>
-                  <div className="font-medium text-gray-900">支付宝</div>
-                  <div className="text-xs text-gray-500">数亿用户都在用，安全可信赖</div>
-                </div>
-              </div>
-              <Radio value="alipay" />
-            </div>
-          </Radio.Group>
+          </div>
         </div>
 
         <Button 
@@ -157,7 +126,7 @@ const PaymentPage: React.FC = () => {
           loading={payLoading}
           onClick={handlePay}
         >
-          立即支付 ¥{order.payAmount.toFixed(2)}
+          前往 Stripe 支付 ¥{order.payAmount.toFixed(2)}
         </Button>
       </div>
     </div>

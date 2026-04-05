@@ -1,9 +1,12 @@
 package com.zhijian.pojo;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -21,7 +24,8 @@ public class Order implements Serializable {
     /**
      * 订单 ID。
      */
-    @TableId
+    @TableId(type = IdType.AUTO)
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
     /**
@@ -152,6 +156,14 @@ public class Order implements Serializable {
      */
     @TableField("payment_time")
     private LocalDateTime payTime;
+
+    /**
+     * 待支付截止时间。
+     * <p>
+     * 下单成功或处方审核通过后会刷新这个时间，定时任务据此判断是否超时取消，
+     * 避免继续依赖 createTime 导致审核完成后立刻超时。
+     */
+    private LocalDateTime payExpireTime;
 
     /**
      * 发货时间。

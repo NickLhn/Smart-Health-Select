@@ -1,16 +1,29 @@
-$env:TOOLS_MYSQL_HOST='localhost'
-$env:TOOLS_MYSQL_PORT='3306'
-$env:TOOLS_MYSQL_USER='root'
-$env:TOOLS_MYSQL_PASSWORD='root'
-$env:TOOLS_MYSQL_DB='zhijian_db'
+终端 1：启动 tools_service
+
+cd /Users/liuhaonan/code/Smart-Health-Select/zhijian_langgraph
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+export TOOLS_MYSQL_HOST=127.0.0.1
+export TOOLS_MYSQL_PORT=3306
+export TOOLS_MYSQL_USER=root
+export TOOLS_MYSQL_PASSWORD=root
+export TOOLS_MYSQL_DB=zhijian_db
+
 python -m uvicorn tools_service.app:app --host 127.0.0.1 --port 18080
 
 
-$env:AGENT_TOOLS_BASE_URL='http://127.0.0.1:18080'
-$env:AGENT_REDIS_HOST='localhost'
-$env:AGENT_REDIS_PORT='6379'
-$env:AGENT_REDIS_DB='0'
+
+终端 2：启动 agent
+
+cd /Users/liuhaonan/code/Smart-Health-Select/zhijian_langgraph
+source .venv/bin/activate
+
+export AGENT_TOOLS_BASE_URL=http://127.0.0.1:18080
+export AGENT_REDIS_HOST=127.0.0.1
+export AGENT_REDIS_PORT=6379
+export AGENT_REDIS_DB=0
+export AGENT_REDIS_PASSWORD=
+
 python -m uvicorn agent.app:app --host 127.0.0.1 --port 18081
-
-
-langgraph dev

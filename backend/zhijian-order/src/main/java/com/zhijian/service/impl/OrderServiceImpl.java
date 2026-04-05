@@ -5,6 +5,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zhijian.common.context.UserContext;
 import com.zhijian.cart.service.CartService;
 import com.zhijian.delivery.service.DeliveryService;
 import com.zhijian.marketing.service.UserCouponService;
@@ -18,6 +22,7 @@ import com.zhijian.cart.pojo.CartItem;
 import com.zhijian.pojo.medicine.entity.Medicine;
 import com.zhijian.pojo.Order;
 import com.zhijian.pojo.OrderItem;
+import com.zhijian.pojo.PaymentBatch;
 import com.zhijian.pojo.PaymentRecord;
 import com.zhijian.pojo.user.entity.UserAddress;
 import com.zhijian.mapper.OrderItemMapper;
@@ -41,8 +46,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.zhijian.user.mapper.MerchantMapper;
@@ -58,6 +65,16 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements OrderService {
+
+    private static final int ORDER_STATUS_PENDING_PAYMENT = 0;
+    private static final int ORDER_STATUS_PENDING_SHIPMENT = 1;
+    private static final int ORDER_STATUS_AFTER_SALE = 4;
+    private static final int ORDER_STATUS_CANCELED = 6;
+    private static final int ORDER_STATUS_PENDING_AUDIT = 7;
+    private static final int PAYMENT_TIMEOUT_MINUTES = 30;
+    private static final int PAYMENT_BATCH_STATUS_PENDING = 0;
+    private static final int PAYMENT_BATCH_STATUS_CANCELED = 2;
+    private static final int PAYMENT_BATCH_STATUS_EXPIRED = 3;
 
     /**
      * 药品业务服务。
@@ -90,6 +107,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private final UserCouponService userCouponService;
 
     /**
+     * 支付批次业务服务。
+     */
+    private final PaymentBatchService paymentBatchService;
+
+    /**
      * 订单项数据访问对象。
      */
     private final OrderItemMapper orderItemMapper;
@@ -110,6 +132,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private final ApplicationEventPublisher eventPublisher;
 
     /**
+     * JSON 工具，用于解析支付批次中的订单列表。
+     */
+    private final ObjectMapper objectMapper;
+
+    /**
      * 商家数据访问对象。
      */
     private final MerchantMapper merchantMapper;
@@ -124,20 +151,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             throw new RuntimeException("订单不存在");
         }
         // 只能取消待支付订单
-        if (order.getStatus() != 0) {
+        if (order.getStatus() != ORDER_STATUS_PENDING_PAYMENT) {
             throw new RuntimeException("当前状态无法取消订单");
         }
-        
-        order.setStatus(6);
-        boolean success = this.updateById(order);
+
+        // 先用状态条件更新抢占这笔订单，抢到之后再恢复库存，避免和支付回写并发时重复修改。
+        boolean success = tryTransitionPendingOrderToCanceled(order.getId());
         if (success) {
-            // 取消后要把库存加回去，避免商品数量被白白占用。
-            fillOrderItems(List.of(order));
-            if (order.getItems() != null) {
-                for (OrderItem item : order.getItems()) {
-                    medicineService.restoreStock(item.getMedicineId(), item.getCount());
-                }
-            }
+            restoreOrderStock(order);
+            closePendingPaymentBatches(List.of(order.getId()), PAYMENT_BATCH_STATUS_CANCELED, "canceled", "用户主动取消订单");
         }
         return success;
     }
@@ -150,23 +172,27 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             throw new RuntimeException("订单不存在");
         }
         // 待发货(1)或待收货(2)状态可以申请退款
-        if (order.getStatus() != 1 && order.getStatus() != 2) {
+        if (order.getStatus() != ORDER_STATUS_PENDING_SHIPMENT && order.getStatus() != 2) {
             throw new RuntimeException("当前状态无法申请退款");
         }
-        
-        order.setStatus(4);
+
+        order.setStatus(ORDER_STATUS_AFTER_SALE);
         order.setRefundReason(reason);
         return this.updateById(order);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean processRefund(Long orderId, boolean agree, String remark) {
+    public boolean processRefund(Long orderId, Long sellerId, boolean agree, String remark) {
         Order order = this.getById(orderId);
         if (order == null) {
             throw new RuntimeException("订单不存在");
         }
-        if (order.getStatus() != 4) {
+        // 商家处理退款时必须校验订单归属，避免不同店铺之间串单操作。
+        if (sellerId == null || !sellerId.equals(order.getSellerId())) {
+            throw new RuntimeException("无权处理该订单退款");
+        }
+        if (order.getStatus() != ORDER_STATUS_AFTER_SALE) {
             throw new RuntimeException("订单不是售后状态");
         }
         
@@ -179,7 +205,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             if (order.getDeliveryTime() != null) {
                 order.setStatus(2);
             } else {
-                order.setStatus(1);
+                order.setStatus(ORDER_STATUS_PENDING_SHIPMENT);
             }
         }
         order.setRefundRemark(remark);
@@ -252,12 +278,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 return Result.failed("处方药必须上传处方图片");
             }
             order.setAuditStatus(1);
-            order.setStatus(7);
+            order.setStatus(ORDER_STATUS_PENDING_AUDIT);
             order.setPatientId(createDTO.getPatientId());
             order.setPrescriptionImage(createDTO.getPrescriptionImage());
+            order.setPayExpireTime(null);
         } else {
             order.setAuditStatus(0);
-            order.setStatus(0);
+            order.setStatus(ORDER_STATUS_PENDING_PAYMENT);
+            // 非处方单从下单开始计时，后续超时取消只认这个字段，不再依赖 createTime。
+            order.setPayExpireTime(buildPayExpireTime());
         }
         
         order.setReceiverName(createDTO.getReceiverName());
@@ -288,7 +317,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Result<List<Long>> createOrderFromCart(OrderCreateFromCartDTO createDTO, Long userId) {
+    public Result<List<String>> createOrderFromCart(OrderCreateFromCartDTO createDTO, Long userId) {
         log.info("createOrderFromCart called: userId={}, addressId={}, cartItemIds={}", userId, createDTO.getAddressId(), createDTO.getCartItemIds());
         
         // 先校验地址归属，避免用其他用户地址下单。
@@ -315,13 +344,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             }
         }
 
-        List<Long> orderIds = new ArrayList<>();
+        List<String> orderIds = new ArrayList<>();
 
         // 当前购物车下单采用简化拆单策略：一个购物车项对应一个订单。
         // 多商品拆单时，为避免优惠券分摊歧义，暂不支持使用优惠券。
         if (createDTO.getUserCouponId() != null && cartItems.size() > 1) {
              return Result.failed("多商品合并下单暂不支持使用优惠券");
         }
+
+        // 同一批购物车订单共用一个支付截止时间，方便和 Stripe payment batch 对齐。
+        LocalDateTime batchPayExpireTime = buildPayExpireTime();
 
         for (CartItem cartItem : cartItems) {
             // 逐项校验商品有效性和库存。
@@ -385,12 +417,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                     throw new RuntimeException("处方药必须上传处方图片");
                 }
                 order.setAuditStatus(1); // 待审核
-                order.setStatus(7);      // 待审核
+                order.setStatus(ORDER_STATUS_PENDING_AUDIT);      // 待审核
                 order.setPatientId(createDTO.getPatientId());
                 order.setPrescriptionImage(createDTO.getPrescriptionImage());
+                order.setPayExpireTime(null);
             } else {
                 order.setAuditStatus(0); // 无需审核
-                order.setStatus(0);      // 待支付
+                order.setStatus(ORDER_STATUS_PENDING_PAYMENT);      // 待支付
+                // 购物车拆单后仍然共用同样的支付窗口，避免定时任务与 Stripe 批次过期时间不一致。
+                order.setPayExpireTime(batchPayExpireTime);
             }
             
             order.setCommentStatus(0); // 未评价
@@ -399,7 +434,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             order.setReceiverAddress(fullAddress);
 
             this.save(order);
-            orderIds.add(order.getId());
+            if (order.getId() == null) {
+                // 这里必须拿到数据库回填的主键，否则后续支付、订单项关联都会错位。
+                throw new RuntimeException("订单创建成功但未返回订单ID，请检查主键自增配置");
+            }
+            // 前端是 JavaScript，Long 订单 ID 超过安全整数范围时必须改成字符串传输。
+            orderIds.add(String.valueOf(order.getId()));
 
             // 创建订单项
             OrderItem item = new OrderItem();
@@ -411,6 +451,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             item.setCount(cartItem.getCount());
             item.setTotalPrice(medicine.getPrice().multiply(new BigDecimal(cartItem.getCount())));
             orderItemMapper.insert(item);
+            if (item.getId() == null) {
+                throw new RuntimeException("订单项创建成功但未返回订单项ID，请检查主键自增配置");
+            }
             
             // 核销
             if (couponAmount.compareTo(BigDecimal.ZERO) > 0) {
@@ -488,7 +531,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     public IPage<Order> pageListAdmin(OrderQueryDTO queryDTO) {
         Page<Order> page = new Page<>(queryDTO.getPage(), queryDTO.getSize());
         LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+        String keyword = StringUtils.hasText(queryDTO.getKeyword()) ? queryDTO.getKeyword().trim() : null;
         wrapper.eq(queryDTO.getStatus() != null, Order::getStatus, queryDTO.getStatus())
+                // 管理端的关键词筛选统一兜底到订单号和收货人，避免前端有搜索框但后端完全不生效。
+                .and(StringUtils.hasText(keyword), w -> w
+                        .like(Order::getOrderNo, keyword)
+                        .or()
+                        .like(Order::getReceiverName, keyword))
                 .like(StringUtils.hasText(queryDTO.getOrderNo()), Order::getOrderNo, queryDTO.getOrderNo())
                 .like(StringUtils.hasText(queryDTO.getReceiverName()), Order::getReceiverName, queryDTO.getReceiverName())
                 .ge(parseDateTimeOrNull(queryDTO.getStartTime()) != null, Order::getCreateTime, parseDateTimeOrNull(queryDTO.getStartTime()))
@@ -516,7 +565,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (order == null) {
             throw new RuntimeException("订单不存在");
         }
-        if (!order.getUserId().equals(userId)) {
+        String role = UserContext.getRole();
+        boolean canAccess = order.getUserId().equals(userId)
+                || ("SELLER".equals(role) && userId.equals(order.getSellerId()))
+                || "ADMIN".equals(role);
+        if (!canAccess) {
             throw new RuntimeException("无权访问该订单");
         }
         
@@ -543,41 +596,57 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (!order.getUserId().equals(userId)) {
             throw new RuntimeException("无权访问该订单");
         }
-        if (order.getStatus() != 0) {
+        if (order.getStatus() != ORDER_STATUS_PENDING_PAYMENT) {
             // 如果订单状态已经是已支付(1)，则直接返回成功
-            if (order.getStatus() == 1) {
+            if (order.getStatus() == ORDER_STATUS_PENDING_SHIPMENT) {
                 return true;
             }
             throw new RuntimeException("订单状态异常，无法支付");
         }
 
-        // 模拟支付成功
-        order.setStatus(1);
-        order.setPayTime(LocalDateTime.now());
+        // 保留模拟支付接口，方便旧页面或演示流程继续使用。
+        return markOrderPaidInternal(order, 1, IdUtil.simpleUUID(), "mock", "cny", null, null, "paid", true);
+    }
 
-        // 记录支付流水
-        String transactionId = IdUtil.simpleUUID(); // 模拟流水号
-        paymentRecordService.createRecord(order, 1, transactionId); // 默认支付宝(1)
-
-        boolean success = this.updateById(order);
-        if (success) {
-            // 更新商品销量
-            List<OrderItem> orderItems = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
-                    .eq(OrderItem::getOrderId, order.getId()));
-            for (OrderItem item : orderItems) {
-                medicineService.update().setSql("sales = sales + " + item.getCount())
-                        .eq("id", item.getMedicineId())
-                        .update();
-            }
-
-            eventPublisher.publishEvent(new NotificationEvent(
-                order.getUserId(),
-                "您的订单 " + order.getOrderNo() + " 支付成功",
-                "ORDER_PAID",
-                order.getId()
-            ));
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void markOrdersPaid(
+            List<Long> orderIds,
+            Long userId,
+            Integer paymentMethod,
+            String transactionId,
+            String provider,
+            String currency,
+            String checkoutSessionId,
+            String paymentIntentId,
+            String providerStatus
+    ) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            throw new RuntimeException("支付批次中没有可处理的订单");
         }
-        return success;
+
+        // webhook 会按批次统一回写，所以这里一次性校验并处理整批订单。
+        List<Order> orders = this.listByIds(orderIds);
+        if (orders.size() != orderIds.size()) {
+            throw new RuntimeException("支付批次中存在无效订单");
+        }
+
+        for (Order order : orders) {
+            if (!order.getUserId().equals(userId)) {
+                throw new RuntimeException("存在不属于当前用户的订单");
+            }
+            markOrderPaidInternal(
+                    order,
+                    paymentMethod,
+                    transactionId,
+                    provider,
+                    currency,
+                    checkoutSessionId,
+                    paymentIntentId,
+                    providerStatus,
+                    false
+            );
+        }
     }
 
     @Override
@@ -586,40 +655,37 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
      * 检查并取消超时未支付订单
      */
     public void checkAndCancelTimeoutOrders() {
-        // 1. 查询超时订单 (超过30分钟未支付)
-        LocalDateTime timeout = LocalDateTime.now().minusMinutes(30);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime compatibilityTimeout = now.minusMinutes(PAYMENT_TIMEOUT_MINUTES);
+
+        // 优先使用独立的支付截止时间；对老数据保留 createTime 兜底，避免历史待支付订单永远不超时。
         List<Order> orders = this.lambdaQuery()
-                .eq(Order::getStatus, 0)
-                .lt(Order::getCreateTime, timeout)
+                .eq(Order::getStatus, ORDER_STATUS_PENDING_PAYMENT)
+                .and(wrapper -> wrapper
+                        .le(Order::getPayExpireTime, now)
+                        .or()
+                        .isNull(Order::getPayExpireTime)
+                        .lt(Order::getCreateTime, compatibilityTimeout))
                 .list();
 
         if (orders == null || orders.isEmpty()) {
             return;
         }
 
-        // 填充订单项信息以便获取药品ID和数量
-        fillOrderItems(orders);
-
         for (Order order : orders) {
-            // 2. 恢复库存
-            if (order.getItems() != null) {
-                for (OrderItem item : order.getItems()) {
-                    medicineService.restoreStock(item.getMedicineId(), item.getCount());
-                }
+            // 先用状态条件更新抢占订单，再恢复库存，避免和支付成功回写同时执行时把库存加回两次。
+            if (!tryTransitionPendingOrderToCanceled(order.getId())) {
+                continue;
             }
 
-            // 3. 更新订单状态为已取消
-            order.setStatus(4); // 修正：订单取消状态应该是6(已关闭/已取消)，这里沿用之前的逻辑，假设4是已取消(之前注释写的是售后中，这里可能是个bug或者复用状态)
-            // 根据 Order 实体定义： 0待支付 1待发货 2已发货 3已完成 4售后中 5已退款 6已取消 7待审核
-            // 应该用 6
-            order.setStatus(6);
-            this.updateById(order);
+            restoreOrderStock(order);
+            closePendingPaymentBatches(List.of(order.getId()), PAYMENT_BATCH_STATUS_EXPIRED, "expired", "订单超时未支付，批次同步过期");
 
             eventPublisher.publishEvent(new NotificationEvent(
-                order.getUserId(),
-                "您的订单 " + order.getOrderNo() + " 因超时未支付已自动取消",
-                "ORDER_CANCELLED",
-                order.getId()
+                    order.getUserId(),
+                    "您的订单 " + order.getOrderNo() + " 因超时未支付已自动取消",
+                    "ORDER_CANCELLED",
+                    order.getId()
             ));
         }
     }
@@ -854,10 +920,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         
         if (pass) {
             order.setAuditStatus(2); // 审核通过
-            order.setStatus(0); // 变为待支付
+            order.setStatus(ORDER_STATUS_PENDING_PAYMENT); // 变为待支付
+            // 处方审核完成后重新开始计时，避免审核等待时间直接吞掉支付窗口。
+            order.setPayExpireTime(buildPayExpireTime());
         } else {
             order.setAuditStatus(3); // 审核拒绝
-            order.setStatus(6); // 变为已取消 (6)
+            order.setStatus(ORDER_STATUS_CANCELED); // 变为已取消 (6)
+            order.setPayExpireTime(null);
             // 恢复库存
             // 注意：这里需要重新查询 items 才能准确恢复，因为 order.getMedicineId() 是 transient
             fillOrderItems(List.of(order));
@@ -913,8 +982,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         record.setUserId(order.getUserId());
         record.setAmount(amount.negate()); // 负数表示退款
         record.setPaymentMethod(paymentMethod);
+        record.setProvider(lastPayment != null ? lastPayment.getProvider() : null);
         record.setTransactionId(transactionId);
+        record.setCheckoutSessionId(lastPayment != null ? lastPayment.getCheckoutSessionId() : null);
+        record.setPaymentIntentId(lastPayment != null ? lastPayment.getPaymentIntentId() : null);
         record.setStatus(3); // 3: 已退款
+        record.setProviderStatus("refunded");
+        record.setCurrency(lastPayment != null ? lastPayment.getCurrency() : "cny");
         paymentRecordService.save(record);
 
         return true;
@@ -1008,6 +1082,136 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 order.setQuantity(item.getCount());
             }
         }
+    }
+
+    private boolean markOrderPaidInternal(
+            Order order,
+            Integer paymentMethod,
+            String transactionId,
+            String provider,
+            String currency,
+            String checkoutSessionId,
+            String paymentIntentId,
+            String providerStatus,
+            boolean allowAlreadyPaid
+    ) {
+        if (order.getStatus() != ORDER_STATUS_PENDING_PAYMENT) {
+            if (allowAlreadyPaid && order.getStatus() == ORDER_STATUS_PENDING_SHIPMENT) {
+                return true;
+            }
+            if (order.getStatus() == ORDER_STATUS_PENDING_SHIPMENT) {
+                return true;
+            }
+            throw new RuntimeException("订单状态异常，无法支付");
+        }
+
+        LocalDateTime payTime = LocalDateTime.now();
+        // 只有在订单仍是待支付时才允许落真实支付结果，避免重复回调或超时任务把状态打乱。
+        boolean success = this.lambdaUpdate()
+                .eq(Order::getId, order.getId())
+                .eq(Order::getStatus, ORDER_STATUS_PENDING_PAYMENT)
+                .set(Order::getStatus, ORDER_STATUS_PENDING_SHIPMENT)
+                .set(Order::getPayTime, payTime)
+                .set(Order::getPayExpireTime, null)
+                .update();
+        if (!success) {
+            Order latestOrder = this.getById(order.getId());
+            if (latestOrder != null && latestOrder.getStatus() == ORDER_STATUS_PENDING_SHIPMENT) {
+                return true;
+            }
+            throw new RuntimeException("更新订单支付状态失败，订单可能已被取消或已过期");
+        }
+
+        order.setStatus(ORDER_STATUS_PENDING_SHIPMENT);
+        order.setPayTime(payTime);
+        order.setPayExpireTime(null);
+        paymentRecordService.createRecord(
+                order,
+                paymentMethod,
+                transactionId,
+                provider,
+                currency,
+                checkoutSessionId,
+                paymentIntentId,
+                providerStatus
+        );
+        increaseSalesAndNotify(order);
+        return true;
+    }
+
+    private LocalDateTime buildPayExpireTime() {
+        return LocalDateTime.now().plusMinutes(PAYMENT_TIMEOUT_MINUTES);
+    }
+
+    private boolean tryTransitionPendingOrderToCanceled(Long orderId) {
+        return this.lambdaUpdate()
+                .eq(Order::getId, orderId)
+                .eq(Order::getStatus, ORDER_STATUS_PENDING_PAYMENT)
+                .set(Order::getStatus, ORDER_STATUS_CANCELED)
+                .set(Order::getPayExpireTime, null)
+                .update();
+    }
+
+    private void restoreOrderStock(Order order) {
+        // 库存回补必须在抢到状态更新之后执行，避免支付成功和取消同时发生时回补两次。
+        fillOrderItems(List.of(order));
+        if (order.getItems() == null) {
+            return;
+        }
+        for (OrderItem item : order.getItems()) {
+            medicineService.restoreStock(item.getMedicineId(), item.getCount());
+        }
+    }
+
+    private void closePendingPaymentBatches(List<Long> orderIds, Integer batchStatus, String providerStatus, String remark) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            return;
+        }
+
+        Set<Long> targetOrderIds = new HashSet<>(orderIds);
+        List<PaymentBatch> pendingBatches = paymentBatchService.lambdaQuery()
+                .eq(PaymentBatch::getStatus, PAYMENT_BATCH_STATUS_PENDING)
+                .list();
+        for (PaymentBatch batch : pendingBatches) {
+            List<Long> batchOrderIds = parseBatchOrderIds(batch.getOrderIdsJson());
+            boolean containsTargetOrder = batchOrderIds.stream().anyMatch(targetOrderIds::contains);
+            if (!containsTargetOrder) {
+                continue;
+            }
+
+            // 一个 Stripe checkout session 对应一整个支付批次，只要其中任一订单被取消/过期，就把整批关闭。
+            batch.setStatus(batchStatus);
+            batch.setProviderStatus(providerStatus);
+            batch.setRemark(remark);
+            paymentBatchService.updateById(batch);
+        }
+    }
+
+    private List<Long> parseBatchOrderIds(String orderIdsJson) {
+        try {
+            return objectMapper.readValue(orderIdsJson, new TypeReference<List<Long>>() {
+            });
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("解析支付批次订单列表失败");
+        }
+    }
+
+    private void increaseSalesAndNotify(Order order) {
+        // 支付成功后统一在这里补销量和站内通知，避免 mock 支付和 Stripe 支付各写一套。
+        List<OrderItem> orderItems = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
+                .eq(OrderItem::getOrderId, order.getId()));
+        for (OrderItem item : orderItems) {
+            medicineService.update().setSql("sales = sales + " + item.getCount())
+                    .eq("id", item.getMedicineId())
+                    .update();
+        }
+
+        eventPublisher.publishEvent(new NotificationEvent(
+                order.getUserId(),
+                "您的订单 " + order.getOrderNo() + " 支付成功",
+                "ORDER_PAID",
+                order.getId()
+        ));
     }
 
     private LocalDateTime parseDateTimeOrNull(String value) {

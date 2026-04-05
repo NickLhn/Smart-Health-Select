@@ -2,10 +2,10 @@ import request from './request';
 
 // 用户端药品与评价查询接口。
 export interface Medicine {
-  id: number;
+  id: string;
   name: string;
   categoryName?: string;
-  categoryId?: number;
+  categoryId?: string;
   price: number;
   stock: number;
   sales: number;
@@ -16,16 +16,16 @@ export interface Medicine {
   indication?: string;
   usageMethod?: string;
   contraindication?: string;
-  sellerId?: number;
+  sellerId?: string;
   sellerName?: string;
   status?: number;
   createTime?: string;
 }
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
-  parentId: number;
+  parentId: string;
   icon?: string;
   children?: Category[];
 }
@@ -71,9 +71,9 @@ export const getMedicineList = (params: MedicineQuery) => {
 };
 
 export interface MedicineComment {
-  id: number;
-  medicineId: number;
-  userId: number;
+  id: string;
+  medicineId: string;
+  userId: string;
   userName: string;
   userAvatar?: string;
   star: number;
@@ -86,7 +86,7 @@ export interface MedicineComment {
   replyTime?: string;
 }
 
-export const getMedicineCommentList = (medicineId: number, page: number = 1, size: number = 10) => {
+export const getMedicineCommentList = (medicineId: string, page: number = 1, size: number = 10) => {
   return request.get<PageResult<MedicineComment>>(`/medicine/comment/list/${medicineId}`, {
     params: { page, size }
   });
@@ -104,6 +104,6 @@ export const getCategoryList = () => {
 };
 
 // 药品详情页通过这个接口展示说明、禁忌、商家等完整信息。
-export const getMedicineDetail = (id: number) => {
+export const getMedicineDetail = (id: string) => {
   return request.get<Medicine>(`/medicine/${id}`);
 };

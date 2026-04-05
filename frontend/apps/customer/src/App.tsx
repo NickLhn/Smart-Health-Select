@@ -32,6 +32,7 @@ const CouponPage = lazy(() => import('./pages/profile/coupon'));
 const FavoritePage = lazy(() => import('./pages/profile/favorite'));
 const CommentPage = lazy(() => import('./pages/profile/comment'));
 const PaymentPage = lazy(() => import('./pages/payment'));
+const PaymentResultPage = lazy(() => import('./pages/payment/result'));
 
 const RouteFallback = () => <div className="py-12 text-center text-gray-500">页面加载中...</div>;
 
@@ -69,6 +70,7 @@ const App: React.FC = () => {
                       <Route path="cart" element={<Cart />} />
                       <Route path="order/checkout" element={<Checkout />} />
                       <Route path="payment/:orderId" element={<PaymentPage />} />
+                      <Route path="payment/result" element={<RequireAuth><PaymentResultPage /></RequireAuth>} />
                       <Route path="refund/apply/:orderId" element={<RefundApplyPage />} />
                       <Route path="ai-consultation" element={<AIConsultation />} />
                       <Route path="profile" element={<Profile />} />

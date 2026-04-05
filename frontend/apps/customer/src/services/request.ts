@@ -3,7 +3,7 @@ import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // 定义接口返回格式
 interface Result<T = any> {
-  code: number;
+  code: number | string;
   message: string;
   data: T;
 }
@@ -35,8 +35,9 @@ class Request {
     this.instance.interceptors.response.use(
       (response: AxiosResponse<Result>) => {
         const { code, message, data } = response.data;
+        const normalizedCode = Number(code);
         // 约定 code=200 代表业务成功，其余情况一律抛出错误给页面层处理。
-        if (code === 200) {
+        if (normalizedCode === 200) {
           return response;
         } else {
           // 处理业务错误

@@ -10,7 +10,7 @@ import type { Category, Medicine } from '../../../services/product';
 const { Text } = Typography;
 
 interface CategoryOption {
-  value: number;
+  value: string;
   label: string;
   children?: CategoryOption[];
 }
@@ -27,7 +27,7 @@ const ProductList: React.FC = () => {
   const { message, modal } = App.useApp();
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState<number | undefined>(undefined);
-  const [categoryPath, setCategoryPath] = useState<number[] | undefined>(undefined);
+  const [categoryPath, setCategoryPath] = useState<string[] | undefined>(undefined);
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Medicine[]>([]);

@@ -29,7 +29,7 @@ const FavoritePage: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleRemove = async (medicineId: number) => {
+  const handleRemove = async (medicineId: string) => {
     try {
       // 收藏接口本身是 toggle，取消成功后本地直接移除列表项。
       const res = await toggleFavorite({ medicineId });
@@ -45,7 +45,7 @@ const FavoritePage: React.FC = () => {
     }
   };
 
-  const handleToDetail = (id: number) => {
+  const handleToDetail = (id: string) => {
     // 收藏卡片点击后统一跳商品详情页。
     navigate(`/product/${id}`);
   };

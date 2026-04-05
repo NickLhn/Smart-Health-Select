@@ -28,6 +28,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/auth/**",
                         "/sms/**",
+                        "/payments/stripe/webhook",
                         "/doc.html",
                         "/webjars/**",
                         "/swagger-resources/**",

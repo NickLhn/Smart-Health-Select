@@ -16,5 +16,14 @@ public interface PaymentRecordService extends IService<PaymentRecord> {
      * @param paymentMethod 支付方式
      * @param transactionId 交易流水号
      */
-    void createRecord(Order order, Integer paymentMethod, String transactionId);
+    void createRecord(
+            Order order,
+            Integer paymentMethod,
+            String transactionId,
+            String provider,
+            String currency,
+            String checkoutSessionId,
+            String paymentIntentId,
+            String providerStatus
+    );
 }

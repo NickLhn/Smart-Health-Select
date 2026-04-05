@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { List, Tag, Button, Tabs, App, Image, Empty } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { getOrderList, payOrder, confirmReceipt } from '@/services/order';
-import type { Order } from '@/services/order';
+import { getOrderList, confirmReceipt } from '@/services/order';
+import type { Order, OrderId } from '@/services/order';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 
 interface OrderListProps {
@@ -46,22 +46,12 @@ const OrderList: React.FC<OrderListProps> = ({ active }) => {
     }
   }, [status, active]);
 
-  const handlePay = async (orderId: number) => {
-    try {
-      // 个人中心里的去支付仍走统一支付接口，成功后刷新当前列表。
-      const res = await payOrder(orderId);
-      if (res.code === 200) {
-        message.success('支付成功');
-        fetchOrders(page, status);
-      } else {
-        message.error(res.message || '支付失败');
-      }
-    } catch (error) {
-      message.error('支付出错');
-    }
+  const handlePay = (orderId: OrderId) => {
+    // 列表页不直接支付，只负责把用户带到统一的 Stripe 收银台入口。
+    navigate(`/payment/${orderId}`);
   };
   
-  const handleConfirmReceipt = (orderId: number) => {
+  const handleConfirmReceipt = (orderId: OrderId) => {
     modal.confirm({
       title: '确认收货',
       icon: <ExclamationCircleOutlined />,

@@ -23,15 +23,30 @@ public class PaymentRecordServiceImpl extends ServiceImpl<PaymentRecordMapper, P
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void createRecord(Order order, Integer paymentMethod, String transactionId) {
-        // 当前项目采用模拟支付，但仍保留支付记录，方便后续接真实支付渠道。
+    public void createRecord(
+            Order order,
+            Integer paymentMethod,
+            String transactionId,
+            String provider,
+            String currency,
+            String checkoutSessionId,
+            String paymentIntentId,
+            String providerStatus
+    ) {
+        // 无论是 mock 还是 Stripe sandbox，都统一沉淀一条支付流水，便于后续排障和对账。
         PaymentRecord record = new PaymentRecord();
         record.setOrderId(order.getId());
         record.setUserId(order.getUserId());
-        record.setAmount(order.getTotalAmount());
+        // 这里记录实付金额，而不是商品原价，避免优惠券场景下金额失真。
+        record.setAmount(order.getPayAmount());
         record.setPaymentMethod(paymentMethod);
+        record.setProvider(provider);
         record.setTransactionId(transactionId);
+        record.setCheckoutSessionId(checkoutSessionId);
+        record.setPaymentIntentId(paymentIntentId);
         record.setStatus(1);
+        record.setProviderStatus(providerStatus);
+        record.setCurrency(currency);
         this.save(record);
     }
 }

@@ -2,14 +2,14 @@ import request from './request';
 
 // 收藏夹相关接口。
 export interface FavoriteItem {
-  id: number;
+  id: string;
   name: string;
   mainImage: string;
   price: number;
 }
 
 export interface FavoriteAddDTO {
-  medicineId: number;
+  medicineId: string;
 }
 
 // 切换收藏状态：同一个接口同时处理收藏和取消收藏。
@@ -18,7 +18,7 @@ export const toggleFavorite = (data: FavoriteAddDTO) => {
 };
 
 // 检查某个药品是否已经被当前用户收藏。
-export const checkFavorite = (medicineId: number) => {
+export const checkFavorite = (medicineId: string) => {
   return request.get<boolean>(`/api/favorite/check/${medicineId}`);
 };
 

@@ -16,7 +16,7 @@ const ReviewList: React.FC = () => {
 
   const [replyVisible, setReplyVisible] = useState(false);
   const [replyContent, setReplyContent] = useState('');
-  const [currentReplyId, setCurrentReplyId] = useState<number | null>(null);
+  const [currentReplyId, setCurrentReplyId] = useState<string | null>(null);
   const [currentReplyRecord, setCurrentReplyRecord] = useState<MedicineComment | null>(null);
   const [replyLoading, setReplyLoading] = useState(false);
 

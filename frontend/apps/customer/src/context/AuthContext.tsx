@@ -5,6 +5,7 @@ import type { UserInfo } from '../services/auth';
 interface AuthContextType {
   user: UserInfo | null;
   isAuthenticated: boolean;
+  isReady: boolean;
   login: (token: string, userInfo: UserInfo) => void;
   logout: () => void;
 }
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     // 首次挂载时从 localStorage 恢复登录状态。
@@ -30,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('user');
       }
     }
+    setIsReady(true);
   }, []);
 
   const login = (token: string, userInfo: UserInfo) => {
@@ -49,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isReady, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

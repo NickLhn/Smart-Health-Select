@@ -13,7 +13,7 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 interface CategoryOption {
-  value: number;
+  value: string;
   label: string;
   children?: CategoryOption[];
 }
@@ -45,11 +45,11 @@ const mapCategoryTree = (data: Category[]): CategoryOption[] => {
   }));
 };
 
-const findCategoryPath = (targetId: number, allCategories: Category[]): number[] => {
-  const path: number[] = [];
+const findCategoryPath = (targetId: string, allCategories: Category[]): string[] => {
+  const path: string[] = [];
   let currentId = targetId;
   let depth = 0;
-  while (currentId !== 0 && depth < 10) {
+  while (currentId !== '0' && depth < 10) {
     path.unshift(currentId);
     const cat = allCategories.find((c) => c.id === currentId);
     if (!cat) break;
@@ -88,7 +88,7 @@ const ProductEdit: React.FC = () => {
     }
   }, [message]);
 
-  const fetchDetail = useCallback(async (productId: number) => {
+  const fetchDetail = useCallback(async (productId: string) => {
     try {
       const res = await getMedicineDetail(productId);
       if (res.code === 200) {
@@ -130,7 +130,7 @@ const ProductEdit: React.FC = () => {
   useEffect(() => {
     // 编辑模式必须等分类加载完再回填，否则找不到分类路径。
     if (isEdit && categories.length > 0 && id) {
-      fetchDetail(Number(id));
+      fetchDetail(id);
     }
   }, [categories.length, fetchDetail, id, isEdit]);
 
@@ -211,7 +211,7 @@ const ProductEdit: React.FC = () => {
       let res;
       if (isEdit) {
         // 编辑和新建复用同一套表单，只根据是否有 id 决定接口。
-        res = await updateMedicine(Number(id), payload);
+        res = await updateMedicine(id!, payload);
       } else {
         res = await createMedicine(payload);
       }

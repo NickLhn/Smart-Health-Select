@@ -2,21 +2,21 @@ import request from './request';
 
 // 首页聚合接口返回的数据模型。
 export interface Banner {
-  id: number;
+  id: string;
   imageUrl: string;
   linkUrl: string;
 }
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   icon: string;
-  parentId: number;
+  parentId: string;
   children?: Category[];
 }
 
 export interface Medicine {
-  id: number;
+  id: string;
   name: string;
   mainImage: string;
   price: number;
@@ -28,7 +28,7 @@ export interface Medicine {
 }
 
 export interface HealthArticle {
-  id: number;
+  id: string;
   title: string;
   category: string;
   summary: string;

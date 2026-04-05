@@ -1,7 +1,8 @@
 package com.zhijian.common.exception;
 
 import com.zhijian.common.result.Result;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -16,8 +17,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
  * 统一处理控制器抛出的异常，并返回标准响应结果。
  */
 @ControllerAdvice
-@Slf4j
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
      * 处理全局异常。

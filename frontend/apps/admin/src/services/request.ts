@@ -3,7 +3,7 @@ import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // 定义接口返回格式
 interface Result<T = any> {
-  code: number;
+  code: number | string;
   message: string;
   data: T;
 }
@@ -35,8 +35,9 @@ class Request {
     this.instance.interceptors.response.use(
       (response: AxiosResponse<Result>) => {
         const { code, message, data } = response.data;
+        const normalizedCode = Number(code);
         // 业务码非 200 时直接进入异常流，页面只需要处理成功或失败提示。
-        if (code === 200) {
+        if (normalizedCode === 200) {
           return response;
         } else {
           // 处理业务错误
@@ -47,6 +48,13 @@ class Request {
       (error) => {
         // 处理网络错误
         console.error('Network Error:', error);
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          if (!window.location.pathname.includes('/login')) {
+            window.location.href = '/login';
+          }
+        }
         return Promise.reject(error);
       }
     );

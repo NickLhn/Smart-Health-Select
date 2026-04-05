@@ -58,7 +58,7 @@ public class OrderController {
     // 从购物车拆分生成订单时，后端会按店铺等规则返回多个订单 ID。
     @Operation(summary = "从购物车创建订单")
     @PostMapping("/createFromCart")
-    public Result<List<Long>> createFromCart(@RequestBody @Valid OrderCreateFromCartDTO createDTO) {
+    public Result<List<String>> createFromCart(@RequestBody @Valid OrderCreateFromCartDTO createDTO) {
         Long userId = UserContext.getUserId();
         if (userId == null) {
             return Result.failed("请先登录");
@@ -271,13 +271,31 @@ public class OrderController {
             return Result.failed("无权操作");
         }
         
-        Integer status = (Integer) params.get("status");
+        Integer status = parseInteger(params.get("status"));
         String remark = (String) params.get("remark");
         // 前端约定 status=1 表示同意退款，其他值按拒绝处理。
         boolean agree = status != null && status == 1;
         
-        boolean success = orderService.processRefund(id, agree, remark);
+        // 退款处理必须再次把卖家身份带到 service 层，防止有人绕过 controller 校验直接调用服务。
+        boolean success = orderService.processRefund(id, sellerId, agree, remark);
         return success ? Result.success(null, "处理完成") : Result.failed("处理失败");
+    }
+
+    private Integer parseInteger(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return Integer.parseInt(text.trim());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
     @Operation(summary = "审核订单 (URL参数)")
@@ -303,7 +321,7 @@ public class OrderController {
             }
         }
         
-        Integer status = (Integer) params.get("status");
+        Integer status = parseInteger(params.get("status"));
         String reason = (String) params.get("reason");
         // 前端约定 status=1 表示审核通过，其他值按拒绝处理。
         boolean pass = status != null && status == 1;

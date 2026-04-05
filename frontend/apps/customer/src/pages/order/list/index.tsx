@@ -3,7 +3,7 @@ import { Button, Tabs, Empty, Tag, App as AntdApp, Pagination, Modal, Form, Inpu
 import { useNavigate } from 'react-router-dom';
 import { ShoppingOutlined, FormOutlined, WalletOutlined, InboxOutlined, MedicineBoxOutlined } from '@ant-design/icons';
 import { getOrderList, confirmReceipt, commentOrder } from '../../../services/order';
-import type { Order } from '../../../services/order';
+import type { Order, OrderId } from '../../../services/order';
 
 const OrderList: React.FC = () => {
   const navigate = useNavigate();
@@ -12,7 +12,7 @@ const OrderList: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
-  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<OrderId | null>(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -21,7 +21,7 @@ const OrderList: React.FC = () => {
 
   // Review Modal State
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
-  const [currentOrderId, setCurrentOrderId] = useState<number | null>(null);
+  const [currentOrderId, setCurrentOrderId] = useState<OrderId | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewForm] = Form.useForm();
 
@@ -72,12 +72,12 @@ const OrderList: React.FC = () => {
     fetchOrders(status, 1);
   }, [activeTab]);
 
-  const handlePay = async (orderId: number) => {
+  const handlePay = async (orderId: OrderId) => {
     // 列表页支付直接跳支付页，后续流程统一在收银台处理。
     navigate(`/payment/${orderId}`);
   };
 
-  const handleConfirmReceipt = async (orderId: number) => {
+  const handleConfirmReceipt = async (orderId: OrderId) => {
     Modal.confirm({
       title: '确认收货',
       content: '确认已收到商品后，将完成订单。',
@@ -107,7 +107,7 @@ const OrderList: React.FC = () => {
     });
   };
 
-  const handleReview = (orderId: number) => {
+  const handleReview = (orderId: OrderId) => {
     // 评价弹窗每次都绑定当前订单，避免把内容发错单。
     setCurrentOrderId(orderId);
     setReviewModalVisible(true);

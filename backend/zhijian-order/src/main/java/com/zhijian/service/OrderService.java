@@ -26,7 +26,7 @@ public interface OrderService extends IService<Order> {
     /**
      * 从购物车创建订单。
      */
-    Result<List<Long>> createOrderFromCart(OrderCreateFromCartDTO createDTO, Long userId);
+    Result<List<String>> createOrderFromCart(OrderCreateFromCartDTO createDTO, Long userId);
 
     /**
      * 计算运费。
@@ -57,6 +57,21 @@ public interface OrderService extends IService<Order> {
      * 支付订单。
      */
     boolean payOrder(Long id, Long userId);
+
+    /**
+     * 将一批订单标记为已支付。
+     */
+    void markOrdersPaid(
+            List<Long> orderIds,
+            Long userId,
+            Integer paymentMethod,
+            String transactionId,
+            String provider,
+            String currency,
+            String checkoutSessionId,
+            String paymentIntentId,
+            String providerStatus
+    );
 
     /**
      * 订单退款。
@@ -101,7 +116,7 @@ public interface OrderService extends IService<Order> {
     /**
      * 处理退款。
      */
-    boolean processRefund(Long orderId, boolean agree, String remark);
+    boolean processRefund(Long orderId, Long sellerId, boolean agree, String remark);
 
     /**
      * 分页查询待审核订单。

@@ -5,8 +5,8 @@ import type { CartItemVO } from '../services/cart';
 
 // 购物车上下文会把后端返回的 VO 映射为前端更易用的结构。
 export interface CartItem {
-  id: number;
-  medicineId: number;
+  id: string;
+  medicineId: string;
   name: string;
   price: number;
   quantity: number;
@@ -18,9 +18,9 @@ export interface CartItem {
 // 购物车上下文负责维护购物车项、总价和常用操作。
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (medicineId: number, quantity: number) => Promise<boolean>;
-  removeFromCart: (id: number) => Promise<void>;
-  updateQuantity: (id: number, quantity: number) => Promise<void>;
+  addToCart: (medicineId: string, quantity: number) => Promise<boolean>;
+  removeFromCart: (id: string) => Promise<void>;
+  updateQuantity: (id: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
   refreshCart: () => Promise<void>;
   totalPrice: number;
@@ -66,7 +66,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshCart();
   }, [refreshCart]);
 
-  const addToCart = async (medicineId: number, quantity: number) => {
+  const addToCart = async (medicineId: string, quantity: number) => {
     try {
       const res = await apiAddToCart({ medicineId, count: quantity });
       if (res && res.code === 200) {
@@ -83,7 +83,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const removeFromCart = async (id: number) => {
+  const removeFromCart = async (id: string) => {
     try {
       const res = await deleteCartItems([id]);
       if (res && res.code === 200) {
@@ -98,7 +98,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateQuantity = async (id: number, quantity: number) => {
+  const updateQuantity = async (id: string, quantity: number) => {
     if (quantity <= 0) {
       // 数量减到 0 及以下时，直接视为删除。
       return removeFromCart(id);

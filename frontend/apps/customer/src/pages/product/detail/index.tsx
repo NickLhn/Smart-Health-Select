@@ -29,12 +29,13 @@ const ProductDetail: React.FC = () => {
       if (!id) return;
       setLoading(true);
       try {
-        const res = await getMedicineDetail(Number(id));
+        // 药品 ID 可能是 19 位 Long，不能再先转 Number，否则会丢精度。
+        const res = await getMedicineDetail(id);
         if (res && res.code === 200) {
           setMedicine(res.data);
           // Check favorite status
           try {
-            const favRes = await checkFavorite(Number(id));
+            const favRes = await checkFavorite(id);
             if (favRes.code === 200) {
               setIsFavorite(favRes.data);
             }
@@ -56,7 +57,7 @@ const ProductDetail: React.FC = () => {
       if (!id) return;
       setCommentsLoading(true);
       try {
-        const res = await getMedicineCommentList(Number(id), 1, 10);
+        const res = await getMedicineCommentList(id, 1, 10);
         if (res.code === 200) {
             setComments(res.data.records);
             setCommentsTotal(res.data.total);

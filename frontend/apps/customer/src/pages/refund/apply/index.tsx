@@ -19,11 +19,11 @@ const RefundApplyPage: React.FC = () => {
   useEffect(() => {
     if (orderId) {
       // 申请售后前先拉订单详情，默认带出可退金额。
-      fetchOrderDetail(parseInt(orderId));
+      fetchOrderDetail(orderId);
     }
   }, [orderId]);
 
-  const fetchOrderDetail = async (id: number) => {
+  const fetchOrderDetail = async (id: string) => {
     try {
       const res = await getOrderDetail(id);
       if (res.code === 200) {
@@ -44,7 +44,7 @@ const RefundApplyPage: React.FC = () => {
     try {
       // 页面只负责收集售后参数，真正状态流转由后端控制。
       const res = await applyRefund({
-        orderId: parseInt(orderId),
+        orderId,
         ...values,
       });
 

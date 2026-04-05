@@ -1,5 +1,6 @@
 package com.zhijian.pojo;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -20,7 +21,7 @@ public class OrderItem implements Serializable {
     /**
      * 订单项 ID。
      */
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**

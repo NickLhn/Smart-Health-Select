@@ -35,6 +35,12 @@ public class OrderQueryDTO {
     private String receiverName;
 
     /**
+     * 通用关键词。
+     */
+    @Schema(description = "通用关键词（匹配订单号或收货人）")
+    private String keyword;
+
+    /**
      * 开始时间。
      */
     @Schema(description = "开始时间（yyyy-MM-dd HH:mm:ss）")

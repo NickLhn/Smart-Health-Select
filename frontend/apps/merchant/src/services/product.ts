@@ -2,9 +2,9 @@ import request from './request';
 
 // 商家端商品与评价管理接口。
 export interface Medicine {
-  id: number;
+  id: string;
   name: string;
-  categoryId: number;
+  categoryId: string;
   categoryName?: string; // 列表查询时可能会返回
   mainImage: string;
   price: number;
@@ -16,7 +16,7 @@ export interface Medicine {
   contraindication?: string;
   expiryDate?: string;
   productionDate?: string;
-  sellerId: number;
+  sellerId: string;
   status: number; // 1上架 0下架
   createTime?: string;
   updateTime?: string;
@@ -25,7 +25,7 @@ export interface Medicine {
 // 创建和更新商品时共用的数据结构。
 export interface MedicineDTO {
   name: string;
-  categoryId: number;
+  categoryId: string;
   mainImage: string;
   price: number;
   stock: number;
@@ -42,7 +42,7 @@ export interface MedicineQuery extends Record<string, any> {
   page?: number;
   size?: number;
   keyword?: string;
-  categoryId?: number;
+  categoryId?: string;
   status?: number;
 }
 
@@ -56,18 +56,18 @@ export interface PageResult<T> {
 }
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
-  parentId: number;
+  parentId: string;
   level: number;
   sort: number;
   children?: Category[];
 }
 
 export interface MedicineComment {
-  id: number;
-  medicineId: number;
-  userId: number;
+  id: string;
+  medicineId: string;
+  userId: string;
   userName: string;
   userAvatar?: string;
   star: number;
@@ -85,7 +85,7 @@ export async function getMerchantCommentList(page: number = 1, size: number = 10
 }
 
 // 回复评价时只提交回复内容，后端按 commentId 绑定到评价记录。
-export async function replyComment(commentId: number, content: string) {
+export async function replyComment(commentId: string, content: string) {
   return request.post(`/medicine/comment/reply/${commentId}`, { reply: content });
 }
 
@@ -97,7 +97,7 @@ export async function getMedicineList(params: MedicineQuery) {
 }
 
 // 获取单个商品详情，编辑页会复用这个接口。
-export async function getMedicineDetail(id: number) {
+export async function getMedicineDetail(id: string) {
   return request.get<Medicine>(`/medicine/${id}`);
 }
 
@@ -107,12 +107,12 @@ export async function createMedicine(data: MedicineDTO) {
 }
 
 // 更新商品。
-export async function updateMedicine(id: number, data: MedicineDTO) {
+export async function updateMedicine(id: string, data: MedicineDTO) {
   return request.put<void>(`/medicine/${id}`, data);
 }
 
 // 更新商品上架/下架状态。
-export async function updateMedicineStatus(id: number, status: number) {
+export async function updateMedicineStatus(id: string, status: number) {
   return request.patch<void>(`/medicine/${id}/status`, null, {
     params: { status },
   });

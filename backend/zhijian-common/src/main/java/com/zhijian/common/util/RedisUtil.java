@@ -1,6 +1,5 @@
 package com.zhijian.common.util;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -10,13 +9,16 @@ import java.util.concurrent.TimeUnit;
  * Redis 工具类。
  */
 @Component
-@RequiredArgsConstructor
 public class RedisUtil {
 
     /**
      * Redis 字符串操作模板。
      */
     private final StringRedisTemplate stringRedisTemplate;
+
+    public RedisUtil(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
+    }
 
     /**
      * 设置键值对。

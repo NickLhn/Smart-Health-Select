@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Steps, Descriptions, Button, Divider, Table, Tag, Image, Spin, App as AntdApp, Modal, Input, Form } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
+import {
   LeftOutlined,
   CopyOutlined,
   EnvironmentOutlined,
   ShopOutlined,
   MessageOutlined,
+  WalletOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
   CarOutlined,
-  WalletOutlined,
   FileTextOutlined
 } from '@ant-design/icons';
-import { payOrder, getOrderDetail, confirmReceipt, cancelOrder, applyRefund } from '../../../services/order';
+import { getOrderDetail, confirmReceipt, cancelOrder, applyRefund } from '../../../services/order';
 import type { Order } from '../../../services/order';
 import dayjs from 'dayjs';
 
@@ -29,7 +29,7 @@ const OrderDetail: React.FC = () => {
     setLoading(true);
     try {
       // 详情页通过订单 ID 单独回源，避免依赖列表页缓存。
-      const res = await getOrderDetail(parseInt(id));
+      const res = await getOrderDetail(id);
       if (res.code === 200) {
         // 收货地址、审核状态、处方图等完整信息都依赖详情接口补全。
         setOrder(res.data);

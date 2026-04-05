@@ -1,5 +1,7 @@
 import request from './request';
 
+export type OrderId = string;
+
 // 用户端订单相关接口：
 // 包括从购物车下单、支付、取消、评价、售后申请以及订单查询。
 export interface OrderCreateFromCartDTO {
@@ -12,7 +14,7 @@ export interface OrderCreateFromCartDTO {
 
 // 购物车提交后可能按店铺拆成多个订单，因此返回值是订单 ID 列表。
 export const createOrderFromCart = (data: OrderCreateFromCartDTO) => {
-  return request.post('/orders/createFromCart', data);
+  return request.post<string[]>('/orders/createFromCart', data);
 };
 
 // 下单前先试算运费，前端据此展示最终应付金额。
@@ -21,7 +23,7 @@ export const calculateFreight = (data: OrderCreateFromCartDTO) => {
 };
 
 export interface OrderCommentDTO {
-  orderId: number;
+  orderId: OrderId;
   star: number;
   content: string;
   images?: string;
@@ -38,7 +40,7 @@ export const payOrder = (orderId: number) => {
 };
 
 // 取消订单通常发生在待支付或特定可取消状态。
-export const cancelOrder = (orderId: number) => {
+export const cancelOrder = (orderId: OrderId | number) => {
   return request.post(`/orders/${orderId}/cancel`);
 };
 
@@ -55,7 +57,7 @@ export interface OrderQueryDTO {
 }
 
 export interface Order {
-  id: number;
+  id: OrderId;
   orderNo: string;
   medicineName?: string;
   medicineImage?: string;
@@ -92,11 +94,11 @@ export const getOrderList = (params: OrderQueryDTO) => {
 };
 
 // 订单详情页会基于这个接口展示商品、地址、状态和审核信息。
-export const getOrderDetail = (id: number) => {
+export const getOrderDetail = (id: OrderId | number) => {
   return request.get<Order>(`/orders/${id}`);
 };
 
 // 订单完成前最后一步，由用户主动确认收货。
-export const confirmReceipt = (id: number) => {
+export const confirmReceipt = (id: OrderId | number) => {
   return request.post(`/orders/${id}/receive`);
 };

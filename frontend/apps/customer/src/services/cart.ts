@@ -2,13 +2,13 @@ import request from './request';
 
 // 购物车相关接口。
 export interface CartAddDTO {
-  medicineId: number;
+  medicineId: string;
   count: number;
 }
 
 export interface CartItemVO {
-  id: number;
-  medicineId: number;
+  id: string;
+  medicineId: string;
   medicineName: string;
   medicineImage: string;
   price: number;
@@ -17,7 +17,7 @@ export interface CartItemVO {
 }
 
 export interface CartUpdateDTO {
-  id: number;
+  id: string;
   count: number;
 }
 
@@ -37,6 +37,6 @@ export const getCartList = () => {
 };
 
 // 删除接口支持批量删除，因此参数是购物车项 ID 数组。
-export const deleteCartItems = (ids: number[]) => {
+export const deleteCartItems = (ids: string[]) => {
   return request.delete('/cart/delete', { data: ids });
 };
